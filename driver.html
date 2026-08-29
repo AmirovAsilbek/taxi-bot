@@ -4,46 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Haydovchi Paneli</title>
+    <!-- Yandex Maps & Router API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #ffffff; }
-        .card { background: #1e1e1e; border: 2px solid #ffcc00; border-radius: 16px; padding: 15px; margin-bottom: 15px; text-align: center; }
-        .status-badge { display: inline-block; padding: 8px 18px; border-radius: 20px; font-weight: bold; font-size: 15px; margin-bottom: 12px; }
-        .active-status { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+        body { 
+            margin: 0; 
+            padding: 12px; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #121212; 
+            color: #ffffff; 
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .card { 
+            background: #1e1e1e; 
+            border: 2px solid #ffcc00; 
+            border-radius: 16px; 
+            padding: 14px; 
+            text-align: center; 
+        }
+
+        .status-badge { 
+            display: inline-block; 
+            padding: 6px 16px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            margin-bottom: 8px; 
+        }
+        .active-status { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
         .inactive-status { background: #dc3545; color: white; }
-        .input-group { text-align: left; margin-bottom: 10px; }
-        .input-group label { display: block; font-size: 13px; color: #ccc; margin-bottom: 4px; }
-        .input-group input { width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #444; background: #2a2a2a; color: #fff; font-size: 14px; outline: none; }
+
+        .input-group { text-align: left; margin-bottom: 8px; }
+        .input-group label { display: block; font-size: 12px; color: #ccc; margin-bottom: 3px; }
+        .input-group input { 
+            width: 100%; 
+            padding: 9px; 
+            border-radius: 8px; 
+            border: 1.5px solid #444; 
+            background: #2a2a2a; 
+            color: #fff; 
+            font-size: 14px; 
+            outline: none; 
+        }
         .input-group input:focus { border-color: #ffcc00; }
-        .btn { border: none; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; width: 100%; cursor: pointer; }
+
+        .btn { 
+            border: none; 
+            padding: 13px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            border-radius: 12px; 
+            width: 100%; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
         .btn-online { background: #28a745; color: #fff; }
         .btn-offline { background: #dc3545; color: #fff; }
+        .btn-navi { 
+            background: #ffcc00; 
+            color: #000; 
+            text-decoration: none; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        /* Xarita konteyneri */
+        .map-card {
+            background: #1e1e1e;
+            border: 2px solid #ffcc00;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: left;
+        }
+        #driverMap {
+            width: 100%;
+            height: 280px;
+            border-radius: 12px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .route-info {
+            font-size: 13px;
+            color: #ddd;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 
+    <!-- 1. Profil ma'lumotlari -->
     <div class="card">
-        <h3 style="margin-top: 0; color: #ffcc00;">👤 Profil ma'lumotlari</h3>
+        <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
         <div class="input-group">
             <label>Ism Familiya:</label>
-            <input type="text" id="driverName" placeholder="Masalan: Ali Valiyev">
+            <input type="text" id="driverName" placeholder="Asilbek Amirov">
         </div>
         <div class="input-group">
             <label>Telefon raqam:</label>
-            <input type="text" id="driverPhone" placeholder="+998 90 123 45 67">
+            <input type="text" id="driverPhone" placeholder="+998901234567">
         </div>
         <div class="input-group">
             <label>Mashina rusumi va raqami:</label>
-            <input type="text" id="driverCar" placeholder="Cobalt (01 A 777 AA)">
+            <input type="text" id="driverCar" placeholder="70 N 079 NN">
         </div>
     </div>
 
+    <!-- 2. Holat boshqaruvi -->
     <div class="card">
-        <h2>👨‍✈️ Haydovchi Kabineti</h2>
+        <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
         <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
-        <p id="statusDesc" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Liniyaga chiqish uchun tugmani bosing.</p>
+        <p id="statusDesc" style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
         <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
+    </div>
+
+    <!-- 3. Yandex Navigator Xaritasi va Mijoz tomon marshrut -->
+    <div class="map-card" id="mapSection">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
+            <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
+        </div>
+        <div class="route-info" id="routeDetails" style="display: none;">
+            <span>📏 Masofa: <b id="routeDist">0 km</b></span>
+            <span>⏱ Vaqt: <b id="routeTime">0 daq</b></span>
+        </div>
+
+        <div id="driverMap"></div>
+
+        <a id="openYandexNaviBtn" href="#" target="_blank" class="btn btn-navi" style="display: none;">
+            🧭 Yandex Navigatorda yo'nalishni ochish
+        </a>
     </div>
 
     <script>
@@ -52,8 +151,10 @@
 
         let isOnline = false;
         let watchId = null;
+        let map, multiRoute;
+        let driverCoords = [39.6542, 66.9597]; // Dastlabki markaz
+        let clientCoords = null; // Mijozning koordinatasi
 
-        // Ma'lumotlarni xotiradan yuklash
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
             if (localStorage.getItem('driver_phone')) document.getElementById('driverPhone').value = localStorage.getItem('driver_phone');
@@ -63,6 +164,85 @@
                 startTracking();
             }
         });
+
+        // Yandex Xaritani yuklash
+        ymaps.ready(initMap);
+
+        function initMap() {
+            map = new ymaps.Map("driverMap", {
+                center: driverCoords,
+                zoom: 15,
+                controls: ['zoomControl']
+            });
+
+            // Haydovchining real joylashuvini olish
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
+                    map.setCenter(driverCoords, 15);
+                    
+                    // So'nggi buyurtma manzilini tekshirish
+                    checkClientOrder();
+                });
+            }
+        }
+
+        // Haydovchi va mijoz o'rtasida Yandex avtomobil marshrutini chizish
+        function buildRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                map.geoObjects.remove(multiRoute);
+            }
+
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [fromCoords, toCoords],
+                params: {
+                    routingMode: 'auto' // Avtomobil marshruti
+                }
+            }, {
+                boundsAutoApply: true,
+                wayPointStartIconColor: "#28a745",
+                wayPointFinishIconColor: "#ffcc00",
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 5
+            });
+
+            map.geoObjects.add(multiRoute);
+
+            // Masofa va vaqtni hisoblash
+            multiRoute.model.events.add('requestsuccess', function () {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    const distance = activeRoute.properties.get("distance").text;
+                    const duration = activeRoute.properties.get("duration").text;
+
+                    document.getElementById('routeDetails').style.display = 'flex';
+                    document.getElementById('routeDist').innerText = distance;
+                    document.getElementById('routeTime').innerText = duration;
+                    document.getElementById('routeStatus').innerText = "🟢 Marshrut tayyor";
+
+                    // Yandex Navigator ilovasi uchun to'g'ridan-to'g'ri havola
+                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
+                    const naviBtn = document.getElementById('openYandexNaviBtn');
+                    naviBtn.href = naviUrl;
+                    naviBtn.style.display = 'flex';
+                }
+            });
+        }
+
+        function checkClientOrder() {
+            // Serverdan eng so'nggi mijoz buyurtmasini tekshirish
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                const data = res.record;
+                if (data && data.client_lat && data.client_lon) {
+                    clientCoords = [data.client_lat, data.client_lon];
+                    buildRoute(driverCoords, clientCoords);
+                }
+            }).catch(e => console.log(e));
+        }
 
         function toggleWork() {
             const name = document.getElementById('driverName').value.trim();
@@ -96,15 +276,17 @@
 
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(pos => {
+                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
+
                     const data = {
-                        lat: pos.coords.latitude,
-                        lon: pos.coords.longitude,
+                        lat: driverCoords[0],
+                        lon: driverCoords[1],
                         name: localStorage.getItem('driver_name'),
                         car: localStorage.getItem('driver_car'),
                         phone: localStorage.getItem('driver_phone'),
                         time: Date.now()
                     };
-                    // Jonli koordinatani global serverga uzatish
+
                     fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
                         method: 'PUT',
                         headers: {
@@ -113,6 +295,11 @@
                         },
                         body: JSON.stringify(data)
                     }).catch(err => console.log(err));
+
+                    // Agar mijoz manzili bo'lsa, marshrutni jonli yangilab borish
+                    if (clientCoords) {
+                        buildRoute(driverCoords, clientCoords);
+                    }
                 }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
             }
         }
