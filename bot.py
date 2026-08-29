@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import sqlite3
+import os
+from aiohttp import web
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -365,7 +367,22 @@ async def finish_order(callback: types.CallbackQuery):
     except Exception as e:
         logging.error(f"Mijozga xabar yuborishda xatolik: {e}")
 
+# --- RENDER PORT MUAMMOSINI HAL QILUVCHI KOD ---
+async def handle_dummy_web(request):
+    return web.Response(text="Bot runs smoothly!")
+
 async def main():
+    # Render port beradi, shu portni eshitish uchun kichik veb-server ishga tushadi
+    app = web.Application()
+    app.router.add_get('/', handle_dummy_web)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    
+    # Telegram bot polling rejimida ishlaydi
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
