@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 
-BOT_TOKEN = "8643693514:AAFvSzFPBXjoAmvt4ltAtlBD_zwLp63e93I"
+BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I"
 ADMIN_ID = 8726943857
 
 # --- MA'LUMOTLAR BAZASI (SQLITE) BILAN ISHLASH ---
