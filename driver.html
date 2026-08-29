@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Haydovchi Paneli</title>
-    <!-- Yandex Maps & Router API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -15,9 +14,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background: #121212; 
             color: #ffffff; 
-            height: auto;
             min-height: 100%;
-            overflow-y: auto; /* Sahifa pastga bemalol suriladi */
+            overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
         }
 
@@ -84,7 +82,6 @@
             margin-top: 10px;
         }
 
-        /* Ekranning eng pastigacha cho'ziluvchi Xarita bloki */
         .map-card {
             background: #1e1e1e;
             border: 2px solid #ffcc00;
@@ -97,7 +94,7 @@
 
         #driverMap {
             width: 100%;
-            height: 480px; /* Xarita ancha katta va pastgacha cho'zilgan */
+            height: 480px; 
             border-radius: 12px;
             margin-top: 8px;
             overflow: hidden;
@@ -115,7 +112,6 @@
 <body>
 
     <div class="container">
-        <!-- 1. Profil ma'lumotlari -->
         <div class="card">
             <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
             <div class="input-group">
@@ -132,7 +128,6 @@
             </div>
         </div>
 
-        <!-- 2. Holat boshqaruvi -->
         <div class="card">
             <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
             <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
@@ -140,7 +135,6 @@
             <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
         </div>
 
-        <!-- 3. Katta Yandex Navigator Xaritasi (Pastgacha cho'ziladi) -->
         <div class="map-card" id="mapSection">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
@@ -167,8 +161,7 @@
         let watchId = null;
         let map, multiRoute;
         let driverCoords = [39.6542, 66.9597];
-        let clientCoords = null;
-        let clientPlacemark = null;
+        let lastClientCoords = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
@@ -196,8 +189,8 @@
                 });
             }
 
-            // Har 3 soniyada mijozning jonli joylashuvini tekshirib turish
-            setInterval(checkClientLiveOrder, 3000);
+            // Har 2 soniyada yangi mijoz buyurtmasini tekshirib boradi
+            setInterval(checkClientLiveOrder, 2000);
         }
 
         function checkClientLiveOrder() {
@@ -208,8 +201,11 @@
             .then(res => {
                 const data = res.record;
                 if (data && data.client_lat && data.client_lon) {
-                    clientCoords = [data.client_lat, data.client_lon];
-                    buildRoute(driverCoords, clientCoords);
+                    const newCoords = [data.client_lat, data.client_lon];
+                    if (!lastClientCoords || lastClientCoords[0] !== newCoords[0] || lastClientCoords[1] !== newCoords[1]) {
+                        lastClientCoords = newCoords;
+                        buildRoute(driverCoords, newCoords);
+                    }
                 }
             }).catch(e => console.log(e));
         }
@@ -238,7 +234,7 @@
                     document.getElementById('routeDetails').style.display = 'flex';
                     document.getElementById('routeDist').innerText = activeRoute.properties.get("distance").text;
                     document.getElementById('routeTime').innerText = activeRoute.properties.get("duration").text;
-                    document.getElementById('routeStatus').innerText = "🟢 Marshrut tayyor";
+                    document.getElementById('routeStatus').innerText = "🟢 Mijoz topildi";
 
                     const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
                     const naviBtn = document.getElementById('openYandexNaviBtn');
@@ -282,27 +278,30 @@
                 watchId = navigator.geolocation.watchPosition(pos => {
                     driverCoords = [pos.coords.latitude, pos.coords.longitude];
 
-                    // Serverdagi ma'lumotlarni yangilash (haydovchi koordinatasi)
-                    fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
-                        },
-                        body: JSON.stringify({
-                            lat: driverCoords[0],
-                            lon: driverCoords[1],
-                            name: localStorage.getItem('driver_name'),
-                            car: localStorage.getItem('driver_car'),
-                            phone: localStorage.getItem('driver_phone'),
-                            client_lat: clientCoords ? clientCoords[0] : null,
-                            client_lon: clientCoords ? clientCoords[1] : null,
-                            time: Date.now()
-                        })
-                    }).catch(err => console.log(err));
+                    fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                        headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+                    })
+                    .then(r => r.json())
+                    .then(r => {
+                        let record = r.record || {};
+                        record.lat = driverCoords[0];
+                        record.lon = driverCoords[1];
+                        record.name = localStorage.getItem('driver_name');
+                        record.car = localStorage.getItem('driver_car');
+                        record.phone = localStorage.getItem('driver_phone');
 
-                    if (clientCoords) {
-                        buildRoute(driverCoords, clientCoords);
+                        return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                            },
+                            body: JSON.stringify(record)
+                        });
+                    });
+
+                    if (lastClientCoords) {
+                        buildRoute(driverCoords, lastClientCoords);
                     }
                 }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
             }
