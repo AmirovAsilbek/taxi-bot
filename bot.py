@@ -12,7 +12,7 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardBut
 BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I"
 ADMIN_ID = 8726943857
 
-# --- MA'LUMOTLAR BAZASI (SQLITE) BILAN ISHLASH ---
+#--- MA'LUMOTLAR BAZASI (SQLITE) BILAN ISHLASH ---
 def init_db():
     conn = sqlite3.connect("taxi_bot.db")
     cursor = conn.cursor()
