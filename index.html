@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
@@ -11,9 +11,16 @@
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; overflow: hidden; }
         
+        /* Tungi rejim stili */
+        body.dark-theme { background: #121212; color: #ffffff; }
+        body.dark-theme .side-menu { background: #1e1e1e; color: #ffffff; }
+        body.dark-theme .menu-title { color: #ffffff; border-bottom-color: #ffcc00; }
+        body.dark-theme .order-item { background: #2a2a2a; border-color: #333; color: #ddd; }
+        body.dark-theme .order-item strong { color: #fff; }
+        body.dark-theme select { background: #333; color: #fff; border-color: #444; }
+
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* 3 ta chiziqli Menyu tugmasi */
         .menu-btn {
             position: absolute;
             top: 15px;
@@ -32,20 +39,13 @@
             align-items: center;
             gap: 4px;
         }
-        .menu-btn span {
-            display: block;
-            width: 20px;
-            height: 2.5px;
-            background-color: #333;
-            border-radius: 2px;
-        }
+        .menu-btn span { display: block; width: 20px; height: 2.5px; background-color: #333; border-radius: 2px; }
 
-        /* Yon menyu */
         .side-menu {
             position: absolute;
             top: 0;
-            right: -75vw;
-            width: 75vw;
+            right: -80vw;
+            width: 80vw;
             height: 100%;
             background: #ffffff;
             z-index: 20;
@@ -56,62 +56,19 @@
             flex-direction: column;
             overflow-y: auto;
         }
-        .side-menu.active {
-            right: 0;
-        }
-        .close-btn {
-            align-self: flex-end;
-            font-size: 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        .menu-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #111;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #ffcc00;
-            padding-bottom: 5px;
-        }
+        .side-menu.active { right: 0; }
+        .close-btn { align-self: flex-end; font-size: 24px; background: none; border: none; cursor: pointer; color: #888; margin-bottom: 10px; }
         
-        /* Buyurtmalar ro'yxati */
-        .order-item {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 10px;
-            font-size: 13px;
-            color: #333;
-        }
-        .order-item strong {
-            color: #000;
-            display: block;
-            margin-bottom: 3px;
-        }
+        .menu-title { font-size: 16px; font-weight: bold; margin: 15px 0 10px 0; border-bottom: 2px solid #ffcc00; padding-bottom: 4px; color: #111; }
+        
+        .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
+        select { padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; outline: none; }
+        
+        .order-item { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
+        .order-item strong { display: block; margin-bottom: 2px; }
 
-        .bottom-container {
-            position: absolute;
-            bottom: 20px;
-            left: 5%;
-            width: 90%;
-            z-index: 10;
-        }
-        .btn {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 14px;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
+        .bottom-container { position: absolute; bottom: 20px; left: 5%; width: 90%; z-index: 10; }
+        .btn { background: #ffcc00; color: #000; border: none; padding: 16px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -122,19 +79,43 @@
         <span></span>
     </button>
 
-    <!-- Yon menyu va Saqlangan buyurtmalar -->
     <div class="side-menu" id="sideMenu">
         <button class="close-btn" onclick="toggleMenu()">&times;</button>
-        <div class="menu-title">🚖 Buyurtmalarim</div>
+        
+        <div class="menu-title" id="titleSettings">⚙️ Sozlamalar</div>
+        
+        <div class="setting-item">
+            <span id="labelTheme">🌙 Qorong'u rejim</span>
+            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+        </div>
+
+        <div class="setting-item">
+            <span id="labelMapType">🗺 Xarita turi</span>
+            <select id="mapTypeSelect" onchange="changeMapType()">
+                <option value="yandex#map">Sxema (Vektor)</option>
+                <option value="yandex#satellite">Sun'iy yo'ldosh</option>
+                <option value="yandex#hybrid">Gibrid (Sputnik + Yo'llar)</option>
+            </select>
+        </div>
+
+        <div class="setting-item">
+            <span id="labelLang">🌐 Til</span>
+            <select id="langSelect" onchange="changeLanguage()">
+                <option value="uz">O'zbekcha</option>
+                <option value="ru">Русский</option>
+            </select>
+        </div>
+
+        <div class="menu-title" id="titleOrders">🚖 Buyurtmalarim</div>
         <div id="ordersList">
-            <p style="color: #777; font-size: 14px;">Hozircha buyurtmalar yo'q.</p>
+            <p style="color: #777; font-size: 13px;" id="noOrdersText">Hozircha buyurtmalar yo'q.</p>
         </div>
     </div>
 
     <div id="map"></div>
 
     <div class="bottom-container">
-        <button class="btn" onclick="sendLocation()">🚖 Shu yerdan taksi chaqirish</button>
+        <button class="btn" id="orderBtn" onclick="sendLocation()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
     <script>
@@ -142,6 +123,34 @@
         tg.expand();
 
         let myMap, userPlacemark;
+        let currentLang = 'uz';
+
+        const translations = {
+            uz: {
+                settings: "⚙️ Sozlamalar",
+                theme: "🌙 Qorong'u rejim",
+                mapType: "🗺 Xarita turi",
+                lang: "🌐 Til",
+                orders: "🚖 Buyurtmalarim",
+                noOrders: "Hozircha buyurtmalar yo'q.",
+                btnText: "🚖 Shu yerdan taksi chaqirish",
+                orderTitle: "Buyurtma",
+                time: "Vaqt",
+                location: "Joylashuv"
+            },
+            ru: {
+                settings: "⚙️ Настройки",
+                theme: "🌙 Темный режим",
+                mapType: "🗺 Тип карты",
+                lang: "🌐 Язык",
+                orders: "🚖 Мои заказы",
+                noOrders: "Заказов пока нет.",
+                btnText: "🚖 Заказать такси отсюда",
+                orderTitle: "Заказ",
+                time: "Время",
+                location: "Локация"
+            }
+        };
 
         ymaps.ready(init);
 
@@ -169,7 +178,7 @@
             }
 
             loadOnlineDrivers();
-            renderOrders(); // Saqlangan buyurtmalarni yuklash
+            renderOrders();
         }
 
         function loadOnlineDrivers() {
@@ -189,11 +198,32 @@
         }
 
         function toggleMenu() {
-            const menu = document.getElementById('sideMenu');
-            menu.classList.toggle('active');
+            document.getElementById('sideMenu').classList.toggle('active');
         }
 
-        // Buyurtmani xotiraga saqlash va yuborish
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+        }
+
+        function changeMapType() {
+            const selectedType = document.getElementById('mapTypeSelect').value;
+            myMap.setType(selectedType);
+        }
+
+        function changeLanguage() {
+            currentLang = document.getElementById('langSelect').value;
+            const t = translations[currentLang];
+
+            document.getElementById('titleSettings').innerText = t.settings;
+            document.getElementById('labelTheme').innerText = t.theme;
+            document.getElementById('labelMapType').innerText = t.mapType;
+            document.getElementById('labelLang').innerText = t.lang;
+            document.getElementById('titleOrders').innerText = t.orders;
+            document.getElementById('orderBtn').innerText = t.btnText;
+            
+            renderOrders();
+        }
+
         function sendLocation() {
             const coords = userPlacemark.geometry.getCoordinates();
             const now = new Date();
@@ -205,7 +235,6 @@
                 lon: coords[1].toFixed(5)
             };
 
-            // Eski buyurtmalarni olish va yangisini qo'shish
             let orders = JSON.parse(localStorage.getItem('my_taxi_orders') || '[]');
             orders.unshift(newOrder);
             localStorage.setItem('my_taxi_orders', JSON.stringify(orders));
@@ -219,21 +248,21 @@
             tg.sendData(JSON.stringify(data));
         }
 
-        // Buyurtmalarni menyuda ko'rsatish funksiyasi
         function renderOrders() {
             const orders = JSON.parse(localStorage.getItem('my_taxi_orders') || '[]');
             const container = document.getElementById('ordersList');
+            const t = translations[currentLang];
 
             if (orders.length === 0) {
-                container.innerHTML = '<p style="color: #777; font-size: 14px;">Hozircha buyurtmalar yo\'q.</p>';
+                container.innerHTML = `<p style="color: #777; font-size: 13px;">${t.noOrders}</p>`;
                 return;
             }
 
             container.innerHTML = orders.map((order, index) => `
                 <div class="order-item">
-                    <strong>Buyurtma #${orders.length - index}</strong>
-                    📅 Vaqt: ${order.time}<br>
-                    📍 Joylashuv: ${order.lat}, ${order.lon}
+                    <strong>${t.orderTitle} #${orders.length - index}</strong>
+                    📅 ${t.time}: ${order.time}<br>
+                    📍 ${t.location}: ${order.lat}, ${order.lon}
                 </div>
             `).join('');
         }
