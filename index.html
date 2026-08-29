@@ -35,6 +35,9 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
+        const ADMIN_ID = "8726943857";
+
         let myMap, userPlacemark;
         let driverPlacemark = null;
 
@@ -58,10 +61,9 @@
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     myMap.setCenter(coords, 16);
                     userPlacemark.geometry.setCoordinates(coords);
-                }, null, { maximumAge: 60000 });
+                }, null, { enableHighAccuracy: true });
             }
 
-            // Har 2.5 soniyada haydovchi harakatini jonli kuzatish
             setInterval(fetchDriverLiveLocation, 2500);
         }
 
@@ -89,7 +91,6 @@
                         });
                         myMap.geoObjects.add(driverPlacemark);
                     } else {
-                        // Mashinani xaritada jonli siljitish
                         driverPlacemark.geometry.setCoordinates(dCoords);
                     }
                 }
@@ -99,22 +100,55 @@
 
         function requestTaxi() {
             const coords = userPlacemark.geometry.getCoordinates();
-            
-            // Mijoz lokatsiyasini serverga uzatish (haydovchiga ko'rinishi uchun)
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
-                },
-                body: JSON.stringify({
-                    client_lat: coords[0],
-                    client_lon: coords[1],
-                    time: Date.now()
-                })
-            }).catch(e => console.log(e));
+            const client = tg.initDataUnsafe?.user;
+            const clientName = client?.first_name ? `${client.first_name} ${client.last_name || ''}` : "Mijoz";
+            const clientId = client?.id || 0;
 
-            document.getElementById('orderBtn').innerText = '⏳ Qidirilmoqda...';
+            document.getElementById('orderBtn').innerText = '⏳ Qidirilmoqda... Haydovchiga yuborildi';
+
+            // 1. Haydovchi xaritasida mijozni ko'rsatish uchun koordinatani uzatish
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                let current = res.record || {};
+                current.client_lat = coords[0];
+                current.client_lon = coords[1];
+                current.client_name = clientName;
+
+                return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                    },
+                    body: JSON.stringify(current)
+                });
+            });
+
+            // 2. Telegram Bot orqali buyurtmani to'g'ridan-to'g'ri adminga/haydovchilarga jo'natish
+            const yandexNavi = `https://yandex.uz/maps/?rtext=~${coords[0]},${coords[1]}&rtt=auto`;
+            const orderText = `🔔 <b>Yangi buyurtma!</b>\n\n👤 Mijoz: ${clientName}\n📍 Manzil: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: ADMIN_ID,
+                    text: orderText,
+                    parse_mode: "HTML",
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: "🧭 Yandex Navigatorda ochish", url: yandexNavi }],
+                            [
+                                { text: "✅ Qabul qilish", callback_data: `accept_${clientId}` },
+                                { text: "❌ Rad etish", callback_data: `reject_${clientId}` }
+                            ]
+                        ]
+                    }
+                })
+            });
         }
     </script>
 </body>
