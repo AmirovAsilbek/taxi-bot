@@ -9,15 +9,24 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { 
+        body, html { 
             margin: 0; 
-            padding: 12px; 
+            padding: 0; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background: #121212; 
             color: #ffffff; 
+            height: auto;
+            min-height: 100%;
+            overflow-y: auto; /* Sahifa pastga bemalol suriladi */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            min-height: 100vh;
         }
         
         .card { 
@@ -61,7 +70,6 @@
             border-radius: 12px; 
             width: 100%; 
             cursor: pointer; 
-            transition: 0.2s;
         }
         .btn-online { background: #28a745; color: #fff; }
         .btn-offline { background: #dc3545; color: #fff; }
@@ -76,21 +84,25 @@
             margin-top: 10px;
         }
 
-        /* Xarita konteyneri */
+        /* Ekranning eng pastigacha cho'ziluvchi Xarita bloki */
         .map-card {
             background: #1e1e1e;
             border: 2px solid #ffcc00;
             border-radius: 16px;
             padding: 12px;
-            text-align: left;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
         }
+
         #driverMap {
             width: 100%;
-            height: 280px;
+            height: 480px; /* Xarita ancha katta va pastgacha cho'zilgan */
             border-radius: 12px;
             margin-top: 8px;
             overflow: hidden;
         }
+
         .route-info {
             font-size: 13px;
             color: #ddd;
@@ -102,47 +114,49 @@
 </head>
 <body>
 
-    <!-- 1. Profil ma'lumotlari -->
-    <div class="card">
-        <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
-        <div class="input-group">
-            <label>Ism Familiya:</label>
-            <input type="text" id="driverName" placeholder="Asilbek Amirov">
-        </div>
-        <div class="input-group">
-            <label>Telefon raqam:</label>
-            <input type="text" id="driverPhone" placeholder="+998901234567">
-        </div>
-        <div class="input-group">
-            <label>Mashina rusumi va raqami:</label>
-            <input type="text" id="driverCar" placeholder="70 N 079 NN">
-        </div>
-    </div>
-
-    <!-- 2. Holat boshqaruvi -->
-    <div class="card">
-        <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
-        <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
-        <p id="statusDesc" style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
-        <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
-    </div>
-
-    <!-- 3. Yandex Navigator Xaritasi va Mijoz tomon marshrut -->
-    <div class="map-card" id="mapSection">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
-            <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
-        </div>
-        <div class="route-info" id="routeDetails" style="display: none;">
-            <span>📏 Masofa: <b id="routeDist">0 km</b></span>
-            <span>⏱ Vaqt: <b id="routeTime">0 daq</b></span>
+    <div class="container">
+        <!-- 1. Profil ma'lumotlari -->
+        <div class="card">
+            <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
+            <div class="input-group">
+                <label>Ism Familiya:</label>
+                <input type="text" id="driverName" placeholder="Asilbek Amirov">
+            </div>
+            <div class="input-group">
+                <label>Telefon raqam:</label>
+                <input type="text" id="driverPhone" placeholder="+998901234567">
+            </div>
+            <div class="input-group">
+                <label>Mashina rusumi va raqami:</label>
+                <input type="text" id="driverCar" placeholder="70 N 079 NN">
+            </div>
         </div>
 
-        <div id="driverMap"></div>
+        <!-- 2. Holat boshqaruvi -->
+        <div class="card">
+            <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
+            <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
+            <p id="statusDesc" style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
+            <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
+        </div>
 
-        <a id="openYandexNaviBtn" href="#" target="_blank" class="btn btn-navi" style="display: none;">
-            🧭 Yandex Navigatorda yo'nalishni ochish
-        </a>
+        <!-- 3. Katta Yandex Navigator Xaritasi (Pastgacha cho'ziladi) -->
+        <div class="map-card" id="mapSection">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
+                <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
+            </div>
+            <div class="route-info" id="routeDetails" style="display: none;">
+                <span>📏 Masofa: <b id="routeDist">0 km</b></span>
+                <span>⏱ Vaqt: <b id="routeTime">0 daq</b></span>
+            </div>
+
+            <div id="driverMap"></div>
+
+            <a id="openYandexNaviBtn" href="#" target="_blank" class="btn btn-navi" style="display: none;">
+                🧭 Yandex Navigatorda yo'nalishni ochish
+            </a>
+        </div>
     </div>
 
     <script>
@@ -152,8 +166,9 @@
         let isOnline = false;
         let watchId = null;
         let map, multiRoute;
-        let driverCoords = [39.6542, 66.9597]; // Dastlabki markaz
-        let clientCoords = null; // Mijozning koordinatasi
+        let driverCoords = [39.6542, 66.9597];
+        let clientCoords = null;
+        let clientPlacemark = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
@@ -165,7 +180,6 @@
             }
         });
 
-        // Yandex Xaritani yuklash
         ymaps.ready(initMap);
 
         function initMap() {
@@ -175,62 +189,18 @@
                 controls: ['zoomControl']
             });
 
-            // Haydovchining real joylashuvini olish
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     driverCoords = [pos.coords.latitude, pos.coords.longitude];
                     map.setCenter(driverCoords, 15);
-                    
-                    // So'nggi buyurtma manzilini tekshirish
-                    checkClientOrder();
                 });
             }
+
+            // Har 3 soniyada mijozning jonli joylashuvini tekshirib turish
+            setInterval(checkClientLiveOrder, 3000);
         }
 
-        // Haydovchi va mijoz o'rtasida Yandex avtomobil marshrutini chizish
-        function buildRoute(fromCoords, toCoords) {
-            if (multiRoute) {
-                map.geoObjects.remove(multiRoute);
-            }
-
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [fromCoords, toCoords],
-                params: {
-                    routingMode: 'auto' // Avtomobil marshruti
-                }
-            }, {
-                boundsAutoApply: true,
-                wayPointStartIconColor: "#28a745",
-                wayPointFinishIconColor: "#ffcc00",
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 5
-            });
-
-            map.geoObjects.add(multiRoute);
-
-            // Masofa va vaqtni hisoblash
-            multiRoute.model.events.add('requestsuccess', function () {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    const distance = activeRoute.properties.get("distance").text;
-                    const duration = activeRoute.properties.get("duration").text;
-
-                    document.getElementById('routeDetails').style.display = 'flex';
-                    document.getElementById('routeDist').innerText = distance;
-                    document.getElementById('routeTime').innerText = duration;
-                    document.getElementById('routeStatus').innerText = "🟢 Marshrut tayyor";
-
-                    // Yandex Navigator ilovasi uchun to'g'ridan-to'g'ri havola
-                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
-                    const naviBtn = document.getElementById('openYandexNaviBtn');
-                    naviBtn.href = naviUrl;
-                    naviBtn.style.display = 'flex';
-                }
-            });
-        }
-
-        function checkClientOrder() {
-            // Serverdan eng so'nggi mijoz buyurtmasini tekshirish
+        function checkClientLiveOrder() {
             fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
                 headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
             })
@@ -242,6 +212,40 @@
                     buildRoute(driverCoords, clientCoords);
                 }
             }).catch(e => console.log(e));
+        }
+
+        function buildRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                map.geoObjects.remove(multiRoute);
+            }
+
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [fromCoords, toCoords],
+                params: { routingMode: 'auto' }
+            }, {
+                boundsAutoApply: true,
+                wayPointStartIconColor: "#28a745",
+                wayPointFinishIconColor: "#ffcc00",
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 5
+            });
+
+            map.geoObjects.add(multiRoute);
+
+            multiRoute.model.events.add('requestsuccess', function () {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    document.getElementById('routeDetails').style.display = 'flex';
+                    document.getElementById('routeDist').innerText = activeRoute.properties.get("distance").text;
+                    document.getElementById('routeTime').innerText = activeRoute.properties.get("duration").text;
+                    document.getElementById('routeStatus').innerText = "🟢 Marshrut tayyor";
+
+                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
+                    const naviBtn = document.getElementById('openYandexNaviBtn');
+                    naviBtn.href = naviUrl;
+                    naviBtn.style.display = 'flex';
+                }
+            });
         }
 
         function toggleWork() {
@@ -278,25 +282,25 @@
                 watchId = navigator.geolocation.watchPosition(pos => {
                     driverCoords = [pos.coords.latitude, pos.coords.longitude];
 
-                    const data = {
-                        lat: driverCoords[0],
-                        lon: driverCoords[1],
-                        name: localStorage.getItem('driver_name'),
-                        car: localStorage.getItem('driver_car'),
-                        phone: localStorage.getItem('driver_phone'),
-                        time: Date.now()
-                    };
-
+                    // Serverdagi ma'lumotlarni yangilash (haydovchi koordinatasi)
                     fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify({
+                            lat: driverCoords[0],
+                            lon: driverCoords[1],
+                            name: localStorage.getItem('driver_name'),
+                            car: localStorage.getItem('driver_car'),
+                            phone: localStorage.getItem('driver_phone'),
+                            client_lat: clientCoords ? clientCoords[0] : null,
+                            client_lon: clientCoords ? clientCoords[1] : null,
+                            time: Date.now()
+                        })
                     }).catch(err => console.log(err));
 
-                    // Agar mijoz manzili bo'lsa, marshrutni jonli yangilab borish
                     if (clientCoords) {
                         buildRoute(driverCoords, clientCoords);
                     }
