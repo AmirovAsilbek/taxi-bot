@@ -11,16 +11,23 @@
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; overflow: hidden; }
         
-        /* Tungi rejim stili */
+        #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; transition: filter 0.3s ease; }
+
+        /* Qorong'u rejim: Xaritani to'q kulrang tusga kiritish */
+        body.dark-theme #map {
+            filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%);
+        }
+
+        /* Qorong'u rejim menyusi */
         body.dark-theme { background: #121212; color: #ffffff; }
         body.dark-theme .side-menu { background: #1e1e1e; color: #ffffff; }
-        body.dark-theme .menu-title { color: #ffffff; border-bottom-color: #ffcc00; }
-        body.dark-theme .order-item { background: #2a2a2a; border-color: #333; color: #ddd; }
+        body.dark-theme .menu-title { color: #ffffff; }
+        body.dark-theme .order-item { background: #2a2a2a; color: #ddd; }
         body.dark-theme .order-item strong { color: #fff; }
-        body.dark-theme select { background: #333; color: #fff; border-color: #444; }
+        body.dark-theme select { background: #2a2a2a; color: #fff; border-color: #ffcc00; }
+        body.dark-theme .close-btn { color: #fff; }
 
-        #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
-
+        /* Menyu tugmasi */
         .menu-btn {
             position: absolute;
             top: 15px;
@@ -41,6 +48,7 @@
         }
         .menu-btn span { display: block; width: 20px; height: 2.5px; background-color: #333; border-radius: 2px; }
 
+        /* Yon menyu */
         .side-menu {
             position: absolute;
             top: 0;
@@ -57,14 +65,31 @@
             overflow-y: auto;
         }
         .side-menu.active { right: 0; }
-        .close-btn { align-self: flex-end; font-size: 24px; background: none; border: none; cursor: pointer; color: #888; margin-bottom: 10px; }
+        .close-btn { align-self: flex-end; font-size: 24px; background: none; border: none; cursor: pointer; color: #888; margin-bottom: 5px; }
         
-        .menu-title { font-size: 16px; font-weight: bold; margin: 15px 0 10px 0; border-bottom: 2px solid #ffcc00; padding-bottom: 4px; color: #111; }
+        .menu-title { font-size: 17px; font-weight: bold; margin: 10px 0; color: #111; display: flex; align-items: center; gap: 6px; }
+
+        /* Sariq ramkali bloklar */
+        .yellow-box {
+            border: 2px solid #ffcc00;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+        }
+
+        .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
         
-        .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; }
-        select { padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px; outline: none; }
+        select { 
+            padding: 6px 10px; 
+            border-radius: 8px; 
+            border: 1.5px solid #ffcc00; 
+            background: #fff; 
+            font-size: 13px; 
+            outline: none; 
+            font-weight: 500;
+        }
         
-        .order-item { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
+        .order-item { background: #f8f9fa; border: 1px solid #ffcc00; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
         .order-item strong { display: block; margin-bottom: 2px; }
 
         .bottom-container { position: absolute; bottom: 20px; left: 5%; width: 90%; z-index: 10; }
@@ -84,29 +109,42 @@
         
         <div class="menu-title" id="titleSettings">⚙️ Sozlamalar</div>
         
-        <div class="setting-item">
-            <span id="labelTheme">🌙 Qorong'u rejim</span>
-            <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+        <!-- Qorong'u rejim -->
+        <div class="yellow-box">
+            <div class="setting-item">
+                <span id="labelTheme">🌙 Qorong'u rejim</span>
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+            </div>
         </div>
 
-        <div class="setting-item">
-            <span id="labelMapType">🗺 Xarita turi</span>
-            <select id="mapTypeSelect" onchange="changeMapType()">
-                <option value="yandex#map">Sxema (Vektor)</option>
-                <option value="yandex#satellite">Sun'iy yo'ldosh</option>
-                <option value="yandex#hybrid">Gibrid (Sputnik + Yo'llar)</option>
-            </select>
+        <!-- Xarita turi -->
+        <div class="yellow-box">
+            <div class="setting-item">
+                <span id="labelMapType">🗺 Xarita turi</span>
+                <select id="mapTypeSelect" onchange="changeMapType()">
+                    <option value="yandex#map">Sxema (Vektor)</option>
+                    <option value="yandex#satellite">Sun'iy yo'ldosh</option>
+                    <option value="yandex#hybrid">Gibrid</option>
+                </select>
+            </div>
         </div>
 
-        <div class="setting-item">
-            <span id="labelLang">🌐 Til</span>
-            <select id="langSelect" onchange="changeLanguage()">
-                <option value="uz">O'zbekcha</option>
-                <option value="ru">Русский</option>
-            </select>
+        <!-- Til -->
+        <div class="yellow-box">
+            <div class="setting-item">
+                <span id="labelLang">🌐 Til</span>
+                <select id="langSelect" onchange="changeLanguage()">
+                    <option value="uz">O'zbekcha</option>
+                    <option value="ru">Русский</option>
+                </select>
+            </div>
         </div>
 
-        <div class="menu-title" id="titleOrders">🚖 Buyurtmalarim</div>
+        <!-- Buyurtmalar sarlavhasi sariq ramkada -->
+        <div class="yellow-box" style="margin-top: 5px;">
+            <div class="menu-title" id="titleOrders" style="margin: 0; font-size: 15px;">🚖 Buyurtmalarim</div>
+        </div>
+        
         <div id="ordersList">
             <p style="color: #777; font-size: 13px;" id="noOrdersText">Hozircha buyurtmalar yo'q.</p>
         </div>
