@@ -8,10 +8,14 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #ffffff; overflow: hidden; }
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #1e1e1e; border-top: 2px solid #ffcc00; z-index: 20; border-radius: 20px 20px 0 0; padding: 15px 20px 25px 20px; }
-        .btn { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; cursor: pointer; }
+        
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #1e1e1e; border-top: 2px solid #ffcc00; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); padding: 15px 20px 25px 20px; }
+        .driver-card { display: none; background: #ffcc00; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+        .driver-card h4 { margin: 0 0 6px 0; font-size: 16px; display: flex; justify-content: space-between; }
+        .driver-card p { margin: 3px 0; font-size: 13px; font-weight: 500; }
+        .btn { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; cursor: pointer; transition: 0.2s; }
     </style>
 </head>
 <body>
@@ -19,6 +23,11 @@
     <div id="map"></div>
 
     <div class="bottom-sheet">
+        <div class="driver-card" id="driverCard">
+            <h4><span id="dName">Haydovchi</span> <span id="dStatus">🟢 Yo'lda</span></h4>
+            <p>🚘 Mashina: <b id="dCar">...</b></p>
+            <p>📞 Telefon: <b id="dPhone">...</b></p>
+        </div>
         <button class="btn" id="orderBtn" onclick="requestTaxi()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
@@ -26,11 +35,25 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let myMap, userPlacemark;
+        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
+        const ADMIN_ID = "8726943857";
 
-        ymaps.ready(() => {
-            myMap = new ymaps.Map("map", { center: [39.6542, 66.9597], zoom: 16, controls: ['zoomControl'] });
-            userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, { draggable: true, preset: 'islands#redCircleDotIcon' });
+        let myMap, userPlacemark;
+        let driverPlacemark = null;
+
+        ymaps.ready(init);
+
+        function init() {
+            myMap = new ymaps.Map("map", {
+                center: [39.6542, 66.9597],
+                zoom: 16,
+                controls: ['zoomControl']
+            });
+
+            userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
+                draggable: true,
+                preset: 'islands#redCircleDotIcon'
+            });
             myMap.geoObjects.add(userPlacemark);
 
             if (navigator.geolocation) {
@@ -38,19 +61,95 @@
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     myMap.setCenter(coords, 16);
                     userPlacemark.geometry.setCoordinates(coords);
-                });
+                }, null, { enableHighAccuracy: true });
             }
-        });
+
+            setInterval(fetchDriverLiveLocation, 2500);
+        }
+
+        function fetchDriverLiveLocation() {
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                const data = res.record;
+                if (data && data.lat && data.lon) {
+                    const dCoords = [data.lat, data.lon];
+
+                    document.getElementById('driverCard').style.display = 'block';
+                    document.getElementById('dName').innerText = data.name || 'Haydovchi';
+                    document.getElementById('dCar').innerText = data.car || 'Mashina';
+                    document.getElementById('dPhone').innerText = data.phone || '';
+                    document.getElementById('orderBtn').innerText = "🚖 Haydovchi siz tomonga yo'lda...";
+
+                    if (!driverPlacemark) {
+                        driverPlacemark = new ymaps.Placemark(dCoords, {
+                            hintContent: `${data.name} (${data.car})`
+                        }, {
+                            preset: 'islands#yellowTaxiIcon'
+                        });
+                        myMap.geoObjects.add(driverPlacemark);
+                    } else {
+                        driverPlacemark.geometry.setCoordinates(dCoords);
+                    }
+                }
+            })
+            .catch(err => console.log(err));
+        }
 
         function requestTaxi() {
             const coords = userPlacemark.geometry.getCoordinates();
-            document.getElementById('orderBtn').innerText = '⏳ Yuborilmoqda...';
-            
-            // Botga koordinatalarni yuborish
-            tg.sendData(JSON.stringify({
-                latitude: coords[0],
-                longitude: coords[1]
-            }));
+            const client = tg.initDataUnsafe?.user;
+            const clientName = client?.first_name ? `${client.first_name} ${client.last_name || ''}` : "Mijoz";
+            const clientId = client?.id || 0;
+
+            // Tugma matnini yangilash (oyna aslo yopilmaydi)
+            document.getElementById('orderBtn').innerText = '⏳ Qidirilmoqda... Haydovchiga yuborildi';
+
+            // 1. Haydovchi xaritasi uchun koordinatani saqlash
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                let current = res.record || {};
+                current.client_lat = coords[0];
+                current.client_lon = coords[1];
+                current.client_name = clientName;
+
+                return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                    },
+                    body: JSON.stringify(current)
+                });
+            });
+
+            // 2. Telegram orqali xabar yuborish
+            const yandexNavi = `https://yandex.uz/maps/?rtext=~${coords[0]},${coords[1]}&rtt=auto`;
+            const orderText = `🔔 <b>Yangi buyurtma!</b>\n\n👤 Mijoz: ${clientName}\n📍 Manzil: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: ADMIN_ID,
+                    text: orderText,
+                    parse_mode: "HTML",
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: "🧭 Yandex Navigatorda ochish", url: yandexNavi }],
+                            [
+                                { text: "✅ Qabul qilish", callback_data: `accept_${clientId}` },
+                                { text: "❌ Rad etish", callback_data: `reject_${clientId}` }
+                            ]
+                        ]
+                    }
+                })
+            }).catch(e => console.error(e));
         }
     </script>
 </body>
