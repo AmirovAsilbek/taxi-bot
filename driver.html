@@ -42,7 +42,7 @@
     <div class="card">
         <h2>👨‍✈️ Haydovchi Kabineti</h2>
         <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
-        <p id="statusDesc" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
+        <p id="statusDesc" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Liniyaga chiqish uchun tugmani bosing.</p>
         <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
     </div>
 
@@ -53,10 +53,15 @@
         let isOnline = false;
         let watchId = null;
 
+        // Ma'lumotlarni xotiradan yuklash
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
             if (localStorage.getItem('driver_phone')) document.getElementById('driverPhone').value = localStorage.getItem('driver_phone');
             if (localStorage.getItem('driver_car')) document.getElementById('driverCar').value = localStorage.getItem('driver_car');
+            
+            if (localStorage.getItem('driver_online') === 'true') {
+                startTracking();
+            }
         });
 
         function toggleWork() {
@@ -73,41 +78,55 @@
             localStorage.setItem('driver_phone', phone);
             localStorage.setItem('driver_car', car);
 
-            isOnline = !isOnline;
-            const badge = document.getElementById("statusBadge");
-            const btn = document.getElementById("toggleBtn");
-            const desc = document.getElementById("statusDesc");
-
-            if (isOnline) {
-                badge.className = "status-badge active-status";
-                badge.innerText = "🟢 Faol (Online)";
-                btn.className = "btn btn-offline";
-                btn.innerText = "🔴 Liniyadan chiqish (Offline)";
-                desc.innerText = "Jonli geolokatsiya uzatilmoqda...";
-
-                // Real vaqt rejimida harakatni kuzatish (GPS Watcher)
-                if (navigator.geolocation) {
-                    watchId = navigator.geolocation.watchPosition(pos => {
-                        const coords = {
-                            lat: pos.coords.latitude,
-                            lon: pos.coords.longitude,
-                            name: name,
-                            car: car,
-                            time: Date.now()
-                        };
-                        localStorage.setItem('live_driver_coords', JSON.stringify(coords));
-                    }, null, { enableHighAccuracy: true, maximumAge: 3000 });
-                }
+            if (!isOnline) {
+                startTracking();
             } else {
-                badge.className = "status-badge inactive-status";
-                badge.innerText = "🔴 Nofaol (Offline)";
-                btn.className = "btn btn-online";
-                btn.innerText = "🟢 Liniyaga chiqish (Online)";
-                desc.innerText = "Liniyadan chiqdingiz.";
-
-                if (watchId) navigator.geolocation.clearWatch(watchId);
-                localStorage.removeItem('live_driver_coords');
+                stopTracking();
             }
+        }
+
+        function startTracking() {
+            isOnline = true;
+            localStorage.setItem('driver_online', 'true');
+            document.getElementById("statusBadge").className = "status-badge active-status";
+            document.getElementById("statusBadge").innerText = "🟢 Faol (Online)";
+            document.getElementById("toggleBtn").className = "btn btn-offline";
+            document.getElementById("toggleBtn").innerText = "🔴 Liniyadan chiqish (Offline)";
+            document.getElementById("statusDesc").innerText = "Jonli geolokatsiya uzatilmoqda...";
+
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(pos => {
+                    const data = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        name: localStorage.getItem('driver_name'),
+                        car: localStorage.getItem('driver_car'),
+                        phone: localStorage.getItem('driver_phone'),
+                        time: Date.now()
+                    };
+                    // Jonli koordinatani global serverga uzatish
+                    fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                        },
+                        body: JSON.stringify(data)
+                    }).catch(err => console.log(err));
+                }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
+            }
+        }
+
+        function stopTracking() {
+            isOnline = false;
+            localStorage.setItem('driver_online', 'false');
+            document.getElementById("statusBadge").className = "status-badge inactive-status";
+            document.getElementById("statusBadge").innerText = "🔴 Nofaol (Offline)";
+            document.getElementById("toggleBtn").className = "btn btn-online";
+            document.getElementById("toggleBtn").innerText = "🟢 Liniyaga chiqish (Online)";
+            document.getElementById("statusDesc").innerText = "Liniyadan chiqdingiz.";
+
+            if (watchId) navigator.geolocation.clearWatch(watchId);
         }
     </script>
 </body>
