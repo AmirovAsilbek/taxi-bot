@@ -83,6 +83,7 @@
             align-items: center; 
             gap: 8px;
             margin-top: 10px;
+            font-weight: bold;
         }
 
         .map-card {
@@ -143,8 +144,8 @@
         <!-- Yandex Navigator Xaritasi -->
         <div class="map-card" id="mapSection">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
-                <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
+                <b style="color: #ffcc00; font-size: 15px;">🧭 Xaritadagi joylashuvingiz</b>
+                <span id="routeStatus" style="font-size: 12px; color: #aaa;">Kutilmoqda...</span>
             </div>
             <div class="route-info" id="routeDetails" style="display: none;">
                 <span>📏 Masofa: <b id="routeDist">0 km</b></span>
@@ -169,6 +170,7 @@
         let isOnline = false;
         let watchId = null;
         let map, multiRoute;
+        let driverMarker = null;
         let driverCoords = [39.6542, 66.9597];
         let lastClientCoords = null;
 
@@ -188,15 +190,25 @@
         function initMap() {
             map = new ymaps.Map("driverMap", {
                 center: driverCoords,
-                zoom: 15,
+                zoom: 16,
                 controls: ['zoomControl']
             });
+
+            // Haydovchi o'zini ko'rib turishi uchun maxsus sariq taksi belgisi
+            driverMarker = new ymaps.Placemark(driverCoords, {
+                hintContent: "Sizning mashinangiz",
+                balloonContent: "Siz shu yerdasiz"
+            }, {
+                preset: 'islands#yellowTaxiIcon'
+            });
+            map.geoObjects.add(driverMarker);
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     driverCoords = [pos.coords.latitude, pos.coords.longitude];
-                    map.setCenter(driverCoords, 15);
-                });
+                    map.setCenter(driverCoords, 16);
+                    driverMarker.geometry.setCoordinates(driverCoords);
+                }, null, { enableHighAccuracy: true });
             }
 
             setInterval(checkClientLiveOrder, 2000);
@@ -261,6 +273,11 @@
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(pos => {
                     driverCoords = [pos.coords.latitude, pos.coords.longitude];
+
+                    // Haydovchi belgisini xaritada jonli siljitish
+                    if (driverMarker) {
+                        driverMarker.geometry.setCoordinates(driverCoords);
+                    }
 
                     fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
                         headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
