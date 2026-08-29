@@ -8,86 +8,338 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; }
-        .card { background: #1e1e1e; border: 2px solid #ffcc00; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-        .input-group { margin-bottom: 8px; }
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #121212; 
+            color: #ffffff; 
+            min-height: 100%;
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 100vh;
+        }
+        
+        .card { 
+            background: #1e1e1e; 
+            border: 2px solid #ffcc00; 
+            border-radius: 16px; 
+            padding: 14px; 
+            text-align: center; 
+        }
+
+        .status-badge { 
+            display: inline-block; 
+            padding: 6px 16px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            margin-bottom: 8px; 
+            transition: all 0.3s ease;
+        }
+        .active-status { background: #28a745; color: white; box-shadow: 0 0 10px rgba(40, 167, 69, 0.4); }
+        .inactive-status { background: #dc3545; color: white; }
+
+        .input-group { text-align: left; margin-bottom: 8px; }
         .input-group label { display: block; font-size: 12px; color: #ccc; margin-bottom: 3px; }
-        .input-group input { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: #fff; outline: none; }
-        .btn { border: none; padding: 13px; font-size: 15px; font-weight: bold; border-radius: 12px; width: 100%; cursor: pointer; }
+        .input-group input { 
+            width: 100%; 
+            padding: 9px; 
+            border-radius: 8px; 
+            border: 1.5px solid #444; 
+            background: #2a2a2a; 
+            color: #fff; 
+            font-size: 14px; 
+            outline: none; 
+        }
+        .input-group input:focus { border-color: #ffcc00; }
+
+        .btn { 
+            border: none; 
+            padding: 13px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            border-radius: 12px; 
+            width: 100%; 
+            cursor: pointer; 
+            transition: 0.2s;
+        }
         .btn-online { background: #28a745; color: #fff; }
-        #driverMap { width: 100%; height: 350px; border-radius: 12px; margin-top: 8px; }
+        .btn-offline { background: #dc3545; color: #fff; }
+        .btn-navi { 
+            background: #ffcc00; 
+            color: #000; 
+            text-decoration: none; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .map-card {
+            background: #1e1e1e;
+            border: 2px solid #ffcc00;
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 25px;
+        }
+
+        #driverMap {
+            width: 100%;
+            height: 480px; 
+            border-radius: 12px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .route-info {
+            font-size: 13px;
+            color: #ddd;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
-        <div class="input-group">
-            <label>Ism Familiya:</label>
-            <input type="text" id="driverName" placeholder="Asilbek Amirov">
+    <div class="container">
+        <!-- Profil ma'lumotlari -->
+        <div class="card">
+            <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
+            <div class="input-group">
+                <label>Ism Familiya:</label>
+                <input type="text" id="driverName" placeholder="Asilbek Amirov">
+            </div>
+            <div class="input-group">
+                <label>Telefon raqam:</label>
+                <input type="text" id="driverPhone" placeholder="+998901234567">
+            </div>
+            <div class="input-group">
+                <label>Mashina rusumi va raqami:</label>
+                <input type="text" id="driverCar" placeholder="70 N 079 NN">
+            </div>
         </div>
-        <div class="input-group">
-            <label>Telefon raqam:</label>
-            <input type="text" id="driverPhone" placeholder="+998901234567">
-        </div>
-        <div class="input-group">
-            <label>Mashina rusumi va raqami:</label>
-            <input type="text" id="driverCar" placeholder="70 N 079 NN">
-        </div>
-        <button class="btn btn-online" onclick="goOnline()">🟢 Liniyaga chiqish va Saqlash</button>
-    </div>
 
-    <div class="card">
-        <b style="color: #ffcc00;">🧭 Yandex Xaritasi</b>
-        <div id="driverMap"></div>
+        <!-- Holat boshqaruvi -->
+        <div class="card">
+            <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
+            <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
+            <p id="statusDesc" style="font-size: 12px; color: #aaa; margin: 0 0 10px 0;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
+            <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish va Saqlash</button>
+        </div>
+
+        <!-- Yandex Navigator Xaritasi -->
+        <div class="map-card" id="mapSection">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <b style="color: #ffcc00; font-size: 15px;">🧭 Yandex Navigator xaritasi</b>
+                <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
+            </div>
+            <div class="route-info" id="routeDetails" style="display: none;">
+                <span>📏 Masofa: <b id="routeDist">0 km</b></span>
+                <span>⏱ Vaqt: <b id="routeTime">0 daq</b></span>
+            </div>
+
+            <div id="driverMap"></div>
+
+            <a id="openYandexNaviBtn" href="#" target="_blank" class="btn btn-navi" style="display: none;">
+                🧭 Yandex Navigatorda yo'nalishni ochish
+            </a>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let map, myCoords = [39.6542, 66.9597];
+        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
+        const ADMIN_ID = "8726943857";
+
+        let isOnline = false;
+        let watchId = null;
+        let map, multiRoute;
+        let driverCoords = [39.6542, 66.9597];
+        let lastClientCoords = null;
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('d_name')) document.getElementById('driverName').value = localStorage.getItem('d_name');
-            if (localStorage.getItem('d_phone')) document.getElementById('driverPhone').value = localStorage.getItem('d_phone');
-            if (localStorage.getItem('d_car')) document.getElementById('driverCar').value = localStorage.getItem('d_car');
-        });
-
-        ymaps.ready(() => {
-            map = new ymaps.Map("driverMap", { center: myCoords, zoom: 15, controls: ['zoomControl'] });
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    myCoords = [pos.coords.latitude, pos.coords.longitude];
-                    map.setCenter(myCoords, 15);
-                    map.geoObjects.add(new ymaps.Placemark(myCoords, {}, { preset: 'islands#yellowTaxiIcon' }));
-                });
+            if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
+            if (localStorage.getItem('driver_phone')) document.getElementById('driverPhone').value = localStorage.getItem('driver_phone');
+            if (localStorage.getItem('driver_car')) document.getElementById('driverCar').value = localStorage.getItem('driver_car');
+            
+            if (localStorage.getItem('driver_online') === 'true') {
+                setOnlineUI();
+                startTracking();
             }
         });
 
-        function goOnline() {
+        ymaps.ready(initMap);
+
+        function initMap() {
+            map = new ymaps.Map("driverMap", {
+                center: driverCoords,
+                zoom: 15,
+                controls: ['zoomControl']
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
+                    map.setCenter(driverCoords, 15);
+                });
+            }
+
+            setInterval(checkClientLiveOrder, 2000);
+        }
+
+        function setOnlineUI() {
+            isOnline = true;
+            localStorage.setItem('driver_online', 'true');
+            document.getElementById("statusBadge").className = "status-badge active-status";
+            document.getElementById("statusBadge").innerText = "🟢 Faol (Online)";
+            document.getElementById("toggleBtn").className = "btn btn-offline";
+            document.getElementById("toggleBtn").innerText = "🔴 Liniyadan chiqish (Offline)";
+            document.getElementById("statusDesc").innerText = "Jonli geolokatsiya uzatilmoqda...";
+        }
+
+        function setOfflineUI() {
+            isOnline = false;
+            localStorage.setItem('driver_online', 'false');
+            document.getElementById("statusBadge").className = "status-badge inactive-status";
+            document.getElementById("statusBadge").innerText = "🔴 Nofaol (Offline)";
+            document.getElementById("toggleBtn").className = "btn btn-online";
+            document.getElementById("toggleBtn").innerText = "🟢 Liniyaga chiqish va Saqlash";
+            document.getElementById("statusDesc").innerText = "Liniyadan chiqdingiz.";
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        }
+
+        function toggleWork() {
             const name = document.getElementById('driverName').value.trim();
             const phone = document.getElementById('driverPhone').value.trim();
             const car = document.getElementById('driverCar').value.trim();
 
             if (!name || !phone || !car) {
-                alert("Iltimos, barcha maydonlarni to'ldiring!");
+                alert("Iltimos, barcha maydonlarni to'liq kiriting!");
                 return;
             }
 
-            localStorage.setItem('d_name', name);
-            localStorage.setItem('d_phone', phone);
-            localStorage.setItem('d_car', car);
+            localStorage.setItem('driver_name', name);
+            localStorage.setItem('driver_phone', phone);
+            localStorage.setItem('driver_car', car);
 
-            // Botga haydovchi ma'lumotlarini uzatish
-            tg.sendData(JSON.stringify({
-                action: "driver_online",
-                name: name,
-                phone: phone,
-                car: car,
-                lat: myCoords[0],
-                lon: myCoords[1]
-            }));
+            if (!isOnline) {
+                setOnlineUI();
+                startTracking();
+
+                // Ilova yopilmaydi, to'g'ridan-to'g'ri API orqali adminga xabar ketadi
+                const yandexNavi = `https://yandex.uz/maps/?rtext=~${driverCoords[0]},${driverCoords[1]}&rtt=auto`;
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: ADMIN_ID,
+                        text: `🟢 <b>Haydovchi liniyaga chiqdi!</b>\n\n👤 ${name}\n📞 ${phone}\n🚘 ${car}\n🧭 <a href='${yandexNavi}'>Navigatorda ko'rish</a>`,
+                        parse_mode: "HTML"
+                    })
+                }).catch(e => console.error(e));
+
+            } else {
+                setOfflineUI();
+            }
+        }
+
+        function startTracking() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(pos => {
+                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
+
+                    fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                        headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+                    })
+                    .then(r => r.json())
+                    .then(r => {
+                        let record = r.record || {};
+                        record.lat = driverCoords[0];
+                        record.lon = driverCoords[1];
+                        record.name = localStorage.getItem('driver_name');
+                        record.car = localStorage.getItem('driver_car');
+                        record.phone = localStorage.getItem('driver_phone');
+
+                        return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                            },
+                            body: JSON.stringify(record)
+                        });
+                    }).catch(e => console.log(e));
+
+                    if (lastClientCoords) {
+                        buildRoute(driverCoords, lastClientCoords);
+                    }
+                }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
+            }
+        }
+
+        function checkClientLiveOrder() {
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                const data = res.record;
+                if (data && data.client_lat && data.client_lon) {
+                    const newCoords = [data.client_lat, data.client_lon];
+                    if (!lastClientCoords || lastClientCoords[0] !== newCoords[0] || lastClientCoords[1] !== newCoords[1]) {
+                        lastClientCoords = newCoords;
+                        buildRoute(driverCoords, newCoords);
+                    }
+                }
+            }).catch(e => console.log(e));
+        }
+
+        function buildRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                map.geoObjects.remove(multiRoute);
+            }
+
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [fromCoords, toCoords],
+                params: { routingMode: 'auto' }
+            }, {
+                boundsAutoApply: true,
+                wayPointStartIconColor: "#28a745",
+                wayPointFinishIconColor: "#ffcc00",
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 5
+            });
+
+            map.geoObjects.add(multiRoute);
+
+            multiRoute.model.events.add('requestsuccess', function () {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    document.getElementById('routeDetails').style.display = 'flex';
+                    document.getElementById('routeDist').innerText = activeRoute.properties.get("distance").text;
+                    document.getElementById('routeTime').innerText = activeRoute.properties.get("duration").text;
+                    document.getElementById('routeStatus').innerText = "🟢 Mijoz topildi";
+
+                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
+                    const naviBtn = document.getElementById('openYandexNaviBtn');
+                    naviBtn.href = naviUrl;
+                    naviBtn.style.display = 'flex';
+                }
+            });
         }
     </script>
 </body>
