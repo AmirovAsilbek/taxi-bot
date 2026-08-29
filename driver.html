@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Haydovchi Paneli</title>
-    <!-- Yandex Maps & Router API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -116,12 +115,15 @@
 <body>
 
     <div class="container">
-        <!-- Profil ma'lumotlari -->
         <div class="card">
             <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
             <div class="input-group">
-                <label>Ism Familiya:</label>
-                <input type="text" id="driverName" placeholder="Ism Familiyangizni kiriting">
+                <label>Ism:</label>
+                <input type="text" id="driverFirstName" placeholder="Ismingizni kiriting">
+            </div>
+            <div class="input-group">
+                <label>Familiya:</label>
+                <input type="text" id="driverLastName" placeholder="Familiyangizni kiriting">
             </div>
             <div class="input-group">
                 <label>Telefon raqam:</label>
@@ -133,7 +135,6 @@
             </div>
         </div>
 
-        <!-- Holat boshqaruvi -->
         <div class="card">
             <h3 style="margin: 0 0 8px 0;">👨‍✈️ Haydovchi Kabineti</h3>
             <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
@@ -141,7 +142,6 @@
             <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish va Saqlash</button>
         </div>
 
-        <!-- Yandex Navigator Xaritasi -->
         <div class="map-card" id="mapSection">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <b style="color: #ffcc00; font-size: 15px;">🧭 Xaritadagi joylashuvingiz</b>
@@ -175,7 +175,8 @@
         let lastClientCoords = null;
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
+            if (localStorage.getItem('driver_first_name')) document.getElementById('driverFirstName').value = localStorage.getItem('driver_first_name');
+            if (localStorage.getItem('driver_last_name')) document.getElementById('driverLastName').value = localStorage.getItem('driver_last_name');
             if (localStorage.getItem('driver_phone')) document.getElementById('driverPhone').value = localStorage.getItem('driver_phone');
             if (localStorage.getItem('driver_car')) document.getElementById('driverCar').value = localStorage.getItem('driver_car');
             
@@ -194,7 +195,6 @@
                 controls: ['zoomControl']
             });
 
-            // Haydovchi o'zini ko'rib turishi uchun maxsus sariq taksi belgisi
             driverMarker = new ymaps.Placemark(driverCoords, {
                 hintContent: "Sizning mashinangiz",
                 balloonContent: "Siz shu yerdasiz"
@@ -209,155 +209,3 @@
                     map.setCenter(driverCoords, 16);
                     driverMarker.geometry.setCoordinates(driverCoords);
                 }, null, { enableHighAccuracy: true });
-            }
-
-            setInterval(checkClientLiveOrder, 2000);
-        }
-
-        function setOnlineUI() {
-            isOnline = true;
-            localStorage.setItem('driver_online', 'true');
-            document.getElementById("statusBadge").className = "status-badge active-status";
-            document.getElementById("statusBadge").innerText = "🟢 Faol (Online)";
-            document.getElementById("toggleBtn").className = "btn btn-offline";
-            document.getElementById("toggleBtn").innerText = "🔴 Liniyadan chiqish (Offline)";
-            document.getElementById("statusDesc").innerText = "Jonli geolokatsiya uzatilmoqda...";
-        }
-
-        function setOfflineUI() {
-            isOnline = false;
-            localStorage.setItem('driver_online', 'false');
-            document.getElementById("statusBadge").className = "status-badge inactive-status";
-            document.getElementById("statusBadge").innerText = "🔴 Nofaol (Offline)";
-            document.getElementById("toggleBtn").className = "btn btn-online";
-            document.getElementById("toggleBtn").innerText = "🟢 Liniyaga chiqish va Saqlash";
-            document.getElementById("statusDesc").innerText = "Liniyadan chiqdingiz.";
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-        }
-
-        function toggleWork() {
-            const name = document.getElementById('driverName').value.trim();
-            const phone = document.getElementById('driverPhone').value.trim();
-            const car = document.getElementById('driverCar').value.trim();
-
-            if (!name || !phone || !car) {
-                alert("Iltimos, barcha maydonlarni to'liq kiriting!");
-                return;
-            }
-
-            localStorage.setItem('driver_name', name);
-            localStorage.setItem('driver_phone', phone);
-            localStorage.setItem('driver_car', car);
-
-            if (!isOnline) {
-                setOnlineUI();
-                startTracking();
-
-                const yandexNavi = `https://yandex.uz/maps/?rtext=~${driverCoords[0]},${driverCoords[1]}&rtt=auto`;
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        chat_id: ADMIN_ID,
-                        text: `🟢 <b>Haydovchi liniyaga chiqdi!</b>\n\n👤 ${name}\n📞 ${phone}\n🚘 ${car}\n🧭 <a href='${yandexNavi}'>Navigatorda ko'rish</a>`,
-                        parse_mode: "HTML"
-                    })
-                }).catch(e => console.error(e));
-
-            } else {
-                setOfflineUI();
-            }
-        }
-
-        function startTracking() {
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(pos => {
-                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
-
-                    // Haydovchi belgisini xaritada jonli siljitish
-                    if (driverMarker) {
-                        driverMarker.geometry.setCoordinates(driverCoords);
-                    }
-
-                    fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                        headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-                    })
-                    .then(r => r.json())
-                    .then(r => {
-                        let record = r.record || {};
-                        record.lat = driverCoords[0];
-                        record.lon = driverCoords[1];
-                        record.name = localStorage.getItem('driver_name');
-                        record.car = localStorage.getItem('driver_car');
-                        record.phone = localStorage.getItem('driver_phone');
-
-                        return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
-                            },
-                            body: JSON.stringify(record)
-                        });
-                    }).catch(e => console.log(e));
-
-                    if (lastClientCoords) {
-                        buildRoute(driverCoords, lastClientCoords);
-                    }
-                }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
-            }
-        }
-
-        function checkClientLiveOrder() {
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                const data = res.record;
-                if (data && data.client_lat && data.client_lon) {
-                    const newCoords = [data.client_lat, data.client_lon];
-                    if (!lastClientCoords || lastClientCoords[0] !== newCoords[0] || lastClientCoords[1] !== newCoords[1]) {
-                        lastClientCoords = newCoords;
-                        buildRoute(driverCoords, newCoords);
-                    }
-                }
-            }).catch(e => console.log(e));
-        }
-
-        function buildRoute(fromCoords, toCoords) {
-            if (multiRoute) {
-                map.geoObjects.remove(multiRoute);
-            }
-
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [fromCoords, toCoords],
-                params: { routingMode: 'auto' }
-            }, {
-                boundsAutoApply: true,
-                wayPointStartIconColor: "#28a745",
-                wayPointFinishIconColor: "#ffcc00",
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 5
-            });
-
-            map.geoObjects.add(multiRoute);
-
-            multiRoute.model.events.add('requestsuccess', function () {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    document.getElementById('routeDetails').style.display = 'flex';
-                    document.getElementById('routeDist').innerText = activeRoute.properties.get("distance").text;
-                    document.getElementById('routeTime').innerText = activeRoute.properties.get("duration").text;
-                    document.getElementById('routeStatus').innerText = "🟢 Mijoz topildi";
-
-                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
-                    const naviBtn = document.getElementById('openYandexNaviBtn');
-                    naviBtn.href = naviUrl;
-                    naviBtn.style.display = 'flex';
-                }
-            });
-        }
-    </script>
-</body>
-</html>
