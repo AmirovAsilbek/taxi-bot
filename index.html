@@ -2,7 +2,7 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Taksi Buyurtma</title>
     <!-- Yandex Maps API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
@@ -13,21 +13,15 @@
         
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; transition: filter 0.3s ease; }
 
-        /* Qorong'u rejim: Xarita to'q kulrang bo'lishi */
-        body.dark-theme #map {
-            filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%);
-        }
-
-        /* Qorong'u rejim menyusi */
+        /* Qorong'u rejim */
+        body.dark-theme #map { filter: invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%); }
         body.dark-theme { background: #121212; color: #ffffff; }
-        body.dark-theme .side-menu { background: #1e1e1e; color: #ffffff; }
-        body.dark-theme .menu-title { color: #ffffff; }
+        body.dark-theme .side-menu, body.dark-theme .bottom-sheet { background: #1e1e1e; color: #ffffff; }
         body.dark-theme .order-item { background: #2a2a2a; color: #ddd; }
-        body.dark-theme .order-item strong { color: #fff; }
         body.dark-theme select { background: #2a2a2a; color: #fff; border-color: #ffcc00; }
         body.dark-theme .close-btn { color: #fff; }
 
-        /* Menyu tugmasi */
+        /* O'ng tepadagi menyu tugmasi */
         .menu-btn {
             position: absolute;
             top: 15px;
@@ -56,7 +50,7 @@
             width: 80vw;
             height: 100%;
             background: #ffffff;
-            z-index: 20;
+            z-index: 30;
             transition: right 0.3s ease;
             box-shadow: -4px 0 15px rgba(0,0,0,0.2);
             padding: 20px 15px;
@@ -67,33 +61,61 @@
         .side-menu.active { right: 0; }
         .close-btn { align-self: flex-end; font-size: 24px; background: none; border: none; cursor: pointer; color: #888; margin-bottom: 5px; }
         
-        .menu-title { font-size: 17px; font-weight: bold; margin: 10px 0; color: #111; display: flex; align-items: center; gap: 6px; }
-
-        /* Sariq ramkali bloklar */
-        .yellow-box {
-            border: 2px solid #ffcc00;
-            border-radius: 12px;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-        }
-
+        .yellow-box { border: 2px solid #ffcc00; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
         .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        
-        select { 
-            padding: 6px 10px; 
-            border-radius: 8px; 
-            border: 1.5px solid #ffcc00; 
-            background: #fff; 
-            font-size: 13px; 
-            outline: none; 
-            font-weight: 500;
-        }
-        
+        select { padding: 6px 10px; border-radius: 8px; border: 1.5px solid #ffcc00; background: #fff; font-size: 13px; outline: none; }
         .order-item { background: #f8f9fa; border: 1px solid #ffcc00; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 12px; }
-        .order-item strong { display: block; margin-bottom: 2px; }
 
-        .bottom-container { position: absolute; bottom: 20px; left: 5%; width: 90%; z-index: 10; }
-        .btn { background: #ffcc00; color: #000; border: none; padding: 16px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; }
+        /* Pastga tushib-chiqib turadigan Pastki Panel (Bottom Sheet) */
+        .bottom-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            z-index: 20;
+            border-radius: 22px 22px 0 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+            padding: 12px 20px 25px 20px;
+            transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+            transform: translateY(0); /* Ochiq holati */
+        }
+
+        /* Yig'ilgan (faqat tutqichi ko'rinadigan) holati */
+        .bottom-sheet.collapsed {
+            transform: translateY(calc(100% - 48px));
+        }
+
+        /* Panelni tortish/bosish chizig'i */
+        .sheet-handle {
+            width: 44px;
+            height: 5px;
+            background: #ccc;
+            border-radius: 3px;
+            margin: 0 auto 12px auto;
+            cursor: pointer;
+        }
+
+        .sheet-status {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -104,12 +126,10 @@
         <span></span>
     </button>
 
+    <!-- Yon menyu -->
     <div class="side-menu" id="sideMenu">
         <button class="close-btn" onclick="toggleMenu()">&times;</button>
         
-        <div class="menu-title" id="titleSettings">⚙️ Sozlamalar</div>
-        
-        <!-- Qorong'u rejim -->
         <div class="yellow-box">
             <div class="setting-item">
                 <span id="labelTheme">🌙 Qorong'u rejim</span>
@@ -117,7 +137,6 @@
             </div>
         </div>
 
-        <!-- Xarita turi -->
         <div class="yellow-box">
             <div class="setting-item">
                 <span id="labelMapType">🗺 Xarita turi</span>
@@ -129,7 +148,6 @@
             </div>
         </div>
 
-        <!-- Til -->
         <div class="yellow-box">
             <div class="setting-item">
                 <span id="labelLang">🌐 Til</span>
@@ -141,7 +159,7 @@
         </div>
 
         <div class="yellow-box" style="margin-top: 5px;">
-            <div class="menu-title" id="titleOrders" style="margin: 0; font-size: 15px;">🚖 Buyurtmalarim</div>
+            <div style="font-weight: bold; font-size: 15px;" id="titleOrders">🚖 Buyurtmalarim</div>
         </div>
         
         <div id="ordersList">
@@ -149,10 +167,14 @@
         </div>
     </div>
 
+    <!-- Xarita -->
     <div id="map"></div>
 
-    <div class="bottom-container">
-        <button class="btn" id="orderBtn" onclick="sendLocation()">🚖 Shu yerdan taksi chaqirish</button>
+    <!-- Pastga yig'iluvchi panel -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle" onclick="toggleSheet()"></div>
+        <div class="sheet-status" onclick="toggleSheet()" id="sheetStatusText">📍 Taksi chaqirish</div>
+        <button class="btn" id="orderBtn" onclick="handleOrder()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
     <script>
@@ -164,7 +186,6 @@
 
         const translations = {
             uz: {
-                settings: "⚙️ Sozlamalar",
                 theme: "🌙 Qorong'u rejim",
                 mapType: "🗺 Xarita turi",
                 lang: "🌐 Til",
@@ -172,11 +193,12 @@
                 noOrders: "Hozircha buyurtmalar yo'q.",
                 btnText: "🚖 Shu yerdan taksi chaqirish",
                 orderTitle: "Buyurtma",
+                searching: "🚖 Taksi qidirilmoqda... (Bosing)",
+                callTaxi: "📍 Taksi chaqirish",
                 time: "Vaqt",
                 location: "Joylashuv"
             },
             ru: {
-                settings: "⚙️ Настройки",
                 theme: "🌙 Темный режим",
                 mapType: "🗺 Тип карты",
                 lang: "🌐 Язык",
@@ -184,21 +206,18 @@
                 noOrders: "Заказов пока нет.",
                 btnText: "🚖 Заказать такси отсюда",
                 orderTitle: "Заказ",
+                searching: "🚖 Поиск такси... (Нажмите)",
+                callTaxi: "📍 Заказ такси",
                 time: "Время",
                 location: "Локация"
             }
         };
 
-        // Sahifa yuklanganda saqlangan sozlamalarni tiklash
         window.addEventListener('DOMContentLoaded', () => {
-            // Mavzuni tiklash
-            const savedTheme = localStorage.getItem('app_theme');
-            if (savedTheme === 'dark') {
+            if (localStorage.getItem('app_theme') === 'dark') {
                 document.body.classList.add('dark-theme');
                 document.getElementById('themeToggle').checked = true;
             }
-
-            // Tilni tiklash
             const savedLang = localStorage.getItem('app_lang');
             if (savedLang) {
                 currentLang = savedLang;
@@ -237,44 +256,24 @@
                 });
             }
 
-            loadOnlineDrivers();
             renderOrders();
-        }
-
-        function loadOnlineDrivers() {
-            const drivers = [
-                { id: 1, lat: 39.6555, lon: 66.9610 },
-                { id: 2, lat: 39.6530, lon: 66.9570 }
-            ];
-
-            drivers.forEach(driver => {
-                const driverPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {
-                    hintContent: 'Taksi'
-                }, {
-                    preset: 'islands#yellowTaxiIcon'
-                });
-                myMap.geoObjects.add(driverPlacemark);
-            });
         }
 
         function toggleMenu() {
             document.getElementById('sideMenu').classList.toggle('active');
         }
 
-        // Qorong'u rejimni saqlab qolish
         function toggleTheme() {
             const isDark = document.body.classList.toggle('dark-theme');
             localStorage.setItem('app_theme', isDark ? 'dark' : 'light');
         }
 
-        // Xarita turini saqlab qolish
         function changeMapType() {
             const selectedType = document.getElementById('mapTypeSelect').value;
             myMap.setType(selectedType);
             localStorage.setItem('app_map_type', selectedType);
         }
 
-        // Tilni saqlab qolish
         function changeLanguage() {
             currentLang = document.getElementById('langSelect').value;
             localStorage.setItem('app_lang', currentLang);
@@ -283,7 +282,6 @@
 
         function applyLanguage(lang) {
             const t = translations[lang];
-            document.getElementById('titleSettings').innerText = t.settings;
             document.getElementById('labelTheme').innerText = t.theme;
             document.getElementById('labelMapType').innerText = t.mapType;
             document.getElementById('labelLang').innerText = t.lang;
@@ -292,7 +290,13 @@
             renderOrders();
         }
 
-        function sendLocation() {
+        // Panelni pastga tushirish / yuqoriga chiqarish
+        function toggleSheet() {
+            document.getElementById('bottomSheet').classList.toggle('collapsed');
+        }
+
+        // Buyurtma berish: Mini App yopilmaydi, panel pastga tushib turadi
+        function handleOrder() {
             const coords = userPlacemark.geometry.getCoordinates();
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + now.toLocaleDateString();
@@ -306,14 +310,12 @@
             let orders = JSON.parse(localStorage.getItem('my_taxi_orders') || '[]');
             orders.unshift(newOrder);
             localStorage.setItem('my_taxi_orders', JSON.stringify(orders));
-
             renderOrders();
 
-            const data = {
-                latitude: coords[0],
-                longitude: coords[1]
-            };
-            tg.sendData(JSON.stringify(data));
+            // Matnni o'zgartirib, panelni pastga tushirish
+            const t = translations[currentLang];
+            document.getElementById('sheetStatusText').innerText = t.searching;
+            document.getElementById('bottomSheet').classList.add('collapsed');
         }
 
         function renderOrders() {
