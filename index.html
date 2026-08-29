@@ -8,16 +8,120 @@
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #121212; color: #fff; }
-        #map { height: 78vh; width: 100%; }
-        .container { padding: 12px; text-align: center; background: #1e1e1e; }
-        .btn { background: #ffcc00; color: #000; border: none; padding: 14px 20px; font-size: 16px; font-weight: bold; border-radius: 10px; width: 100%; cursor: pointer; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; overflow: hidden; }
+        
+        /* Xarita konteyneri */
+        #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* O'ng tepadagi 3 ta chiziqli Menyu tugmasi */
+        .menu-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            background: #ffffff;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+        .menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2.5px;
+            background-color: #333;
+            border-radius: 2px;
+        }
+
+        /* Yarim ekrangacha ochiladigan yon menyu */
+        .side-menu {
+            position: absolute;
+            top: 0;
+            right: -60vw;
+            width: 60vw; /* Yarim ekrandan sal ko'proq */
+            height: 100%;
+            background: #ffffff;
+            z-index: 20;
+            transition: right 0.3s ease;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.2);
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .side-menu.active {
+            right: 0;
+        }
+        .close-btn {
+            align-self: flex-end;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .menu-item {
+            padding: 12px 10px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        /* Pastki taksi chaqirish tugmasi */
+        .bottom-container {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            width: 90%;
+            z-index: 10;
+        }
+        .btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Menyu Tugmasi (3 ta chiziq) -->
+    <button class="menu-btn" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Yarim ekranli Menyu -->
+    <div class="side-menu" id="sideMenu">
+        <button class="close-btn" onclick="toggleMenu()">&times;</button>
+        <div class="menu-item">🚖 Buyurtmalarim</div>
+        <div class="menu-item">👤 Profil</div>
+        <div class="menu-item">⚙️ Sozlamalar</div>
+        <div class="menu-item">📞 Yordam</div>
+    </div>
+
+    <!-- Xarita -->
     <div id="map"></div>
-    <div class="container">
+
+    <!-- Pastki tugma -->
+    <div class="bottom-container">
         <button class="btn" onclick="sendLocation()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
@@ -30,23 +134,23 @@
         ymaps.ready(init);
 
         function init() {
-            // Sun'iy yo'ldosh va qorong'u rejim xaritasi
+            // Rasmdagidek aniq vektorli xarita rejimi (yandex#map)
             myMap = new ymaps.Map("map", {
                 center: [39.6542, 66.9597],
-                zoom: 15,
-                type: 'yandex#hybrid',
-                controls: ['zoomControl']
+                zoom: 16,
+                type: 'yandex#map', // Vektorli aniq xarita
+                controls: []
             });
 
-            // Mijoz belgisi
+            // Foydalanuvchi joylashuvi belgisi
             userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
                 draggable: true,
-                preset: 'islands#redDotIcon'
+                preset: 'islands#redCircleDotIcon'
             });
 
             myMap.geoObjects.add(userPlacemark);
 
-            // Joylashuvni aniqlash
+            // Avto joylashuvni aniqlash
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const coords = [position.coords.latitude, position.coords.longitude];
@@ -55,24 +159,30 @@
                 });
             }
 
-            // Online haydovchilarni ko'rsatish
             loadOnlineDrivers();
         }
 
+        // Online taksilarni ko'rsatish
         function loadOnlineDrivers() {
             const drivers = [
-                { id: 1, lat: 39.6560, lon: 66.9610 },
-                { id: 2, lat: 39.6520, lon: 66.9550 }
+                { id: 1, lat: 39.6555, lon: 66.9610 },
+                { id: 2, lat: 39.6530, lon: 66.9570 }
             ];
 
             drivers.forEach(driver => {
                 const driverPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {
-                    hintContent: 'Online Taksi'
+                    hintContent: 'Taksi'
                 }, {
                     preset: 'islands#yellowTaxiIcon'
                 });
                 myMap.geoObjects.add(driverPlacemark);
             });
+        }
+
+        // Menyuni ochish/yopish funksiyasi
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            menu.classList.toggle('active');
         }
 
         function sendLocation() {
