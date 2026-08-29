@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Haydovchi Paneli</title>
+    <!-- Yandex Maps & Router API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -119,15 +120,15 @@
             <h4 style="margin: 0 0 10px 0; color: #ffcc00;">👤 Profil ma'lumotlari</h4>
             <div class="input-group">
                 <label>Ism Familiya:</label>
-                <input type="text" id="driverName" placeholder="Asilbek Amirov">
+                <input type="text" id="driverName" placeholder="Ism Familiyangizni kiriting">
             </div>
             <div class="input-group">
                 <label>Telefon raqam:</label>
-                <input type="text" id="driverPhone" placeholder="+998901234567">
+                <input type="text" id="driverPhone" placeholder="+998 (__) ___-__-__">
             </div>
             <div class="input-group">
                 <label>Mashina rusumi va raqami:</label>
-                <input type="text" id="driverCar" placeholder="70 N 079 NN">
+                <input type="text" id="driverCar" placeholder="Masalan: Cobalt (01 A 777 AA)">
             </div>
         </div>
 
@@ -240,7 +241,6 @@
                 setOnlineUI();
                 startTracking();
 
-                // Ilova yopilmaydi, to'g'ridan-to'g'ri API orqali adminga xabar ketadi
                 const yandexNavi = `https://yandex.uz/maps/?rtext=~${driverCoords[0]},${driverCoords[1]}&rtt=auto`;
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                     method: "POST",
