@@ -26,7 +26,7 @@
 </head>
 <body>
 
-    <!-- Haydovchi profili -->
+    <!-- Profil ma'lumotlari -->
     <div class="card">
         <h3 style="margin-top: 0; color: #ffcc00;">👤 Profil ma'lumotlari</h3>
         <div class="input-group">
@@ -43,11 +43,11 @@
         </div>
     </div>
 
-    <!-- Holatni boshqarish -->
+    <!-- Holat paneli -->
     <div class="card">
         <h2 style="margin: 0 0 10px 0;">👨‍✈️ Haydovchi Kabineti</h2>
         <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
-        <p id="statusDesc" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Liniyaga chiqish uchun ma'lumotlarni to'ldirib tugmani bosing.</p>
+        <p id="statusDesc" style="font-size: 13px; color: #aaa; margin-bottom: 15px;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
         <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish (Online)</button>
     </div>
 
@@ -62,15 +62,16 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
+        const ADMIN_ID = "8726943857";
+
         let isOnline = false;
 
-        // Sahifa ochilganda xotiradan ma'lumotlar va oxirgi holatni tiklash
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('driver_name')) document.getElementById('driverName').value = localStorage.getItem('driver_name');
             if (localStorage.getItem('driver_phone')) document.getElementById('driverPhone').value = localStorage.getItem('driver_phone');
             if (localStorage.getItem('driver_car')) document.getElementById('driverCar').value = localStorage.getItem('driver_car');
 
-            // Holatni tekshirish
             const savedStatus = localStorage.getItem('driver_online_status');
             if (savedStatus === 'true') {
                 setOnlineUI();
@@ -113,39 +114,56 @@
             const car = document.getElementById('driverCar').value.trim();
 
             if (!name || !phone || !car) {
-                alert("Iltimos, avval ism, telefon va avtomobil ma'lumotlarini to'liq kiriting!");
+                alert("Iltimos, ma'lumotlarni to'liq kiriting!");
                 return;
             }
 
-            // Ma'lumotlarni saqlash
             localStorage.setItem('driver_name', name);
             localStorage.setItem('driver_phone', phone);
             localStorage.setItem('driver_car', car);
 
+            const user = tg.initDataUnsafe?.user;
+            const userId = user?.id || "Noma'lum";
+            const userTag = user?.username ? `@${user.username}` : `ID: ${userId}`;
+
             if (!isOnline) {
-                // Online bo'lish
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(pos => {
+                        // Interfeys darhol online bo'ladi va ilova ochiq qoladi
                         setOnlineUI();
-                        // Botga xabar berish (ilova yopilmasligi uchun oxirida kerak bo'lsa yuboriladi)
-                        tg.sendData(JSON.stringify({
-                            action: "driver_online",
-                            name: name,
-                            phone: phone,
-                            car: car,
-                            lat: pos.coords.latitude,
-                            lon: pos.coords.longitude
-                        }));
-                    }, (err) => {
-                        alert("Geolokatsiyani yoqing va ruxsat bering!");
+
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+
+                        const text = `📋 <b>Yangi haydovchilik arizasi!</b>\n\n👤 Ismi: ${name}\n📞 Tel: ${phone}\n🚘 Mashinasi: ${car}\n📱 Telegram: ${userTag}\n📍 Joylashuv: https://maps.google.com/?q=${lat},${lon}`;
+                        
+                        const replyMarkup = {
+                            inline_keyboard: [
+                                [
+                                    { text: "✅ Tasdiqlash", callback_data: `approve_driver_${userId}` },
+                                    { text: "❌ Rad etish", callback_data: `reject_driver_${userId}` }
+                                ]
+                            ]
+                        };
+
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                chat_id: ADMIN_ID,
+                                text: text,
+                                parse_mode: "HTML",
+                                reply_markup: replyMarkup
+                            })
+                        }).catch(e => console.error(e));
+
+                    }, () => {
+                        alert("Geolokatsiyaga ruxsat bering!");
                     }, { enableHighAccuracy: true });
                 }
             } else {
-                // Offline bo'lish
+                // Offline tugmasi bosilganda ham oyna yopilmaydi, faqat qizil holatga qaytadi
                 setOfflineUI();
-                tg.sendData(JSON.stringify({
-                    action: "driver_offline"
-                }));
             }
         }
     </script>
