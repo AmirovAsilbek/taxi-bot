@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Taksi Buyurtma</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f7; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #ffffff; overflow: hidden; }
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); padding: 15px 20px 25px 20px; }
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #1e1e1e; border-top: 2px solid #ffcc00; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); padding: 15px 20px 25px 20px; }
         .driver-card { display: none; background: #ffcc00; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
         .driver-card h4 { margin: 0 0 6px 0; font-size: 16px; display: flex; justify-content: space-between; }
         .driver-card p { margin: 3px 0; font-size: 13px; font-weight: 500; }
@@ -44,7 +44,7 @@
             myMap = new ymaps.Map("map", {
                 center: [39.6542, 66.9597],
                 zoom: 16,
-                controls: []
+                controls: ['zoomControl']
             });
 
             userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
@@ -53,7 +53,6 @@
             });
             myMap.geoObjects.add(userPlacemark);
 
-            // Joylashuvni faqat bir marta avtomatik olish
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
@@ -62,15 +61,13 @@
                 }, null, { maximumAge: 60000 });
             }
 
-            // Haydovchi harakatini har 2.5 soniyada yangilab turish
+            // Har 2.5 soniyada haydovchi harakatini jonli kuzatish
             setInterval(fetchDriverLiveLocation, 2500);
         }
 
         function fetchDriverLiveLocation() {
             fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: {
-                    'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
-                }
+                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
             })
             .then(res => res.json())
             .then(res => {
@@ -78,12 +75,11 @@
                 if (data && data.lat && data.lon) {
                     const dCoords = [data.lat, data.lon];
 
-                    // Kartochkani ko'rsatish
                     document.getElementById('driverCard').style.display = 'block';
                     document.getElementById('dName').innerText = data.name || 'Haydovchi';
                     document.getElementById('dCar').innerText = data.car || 'Mashina';
                     document.getElementById('dPhone').innerText = data.phone || '';
-                    document.getElementById('orderBtn').innerText = '🚖 Haydovchi siz tomonga harakatlanmoqda';
+                    document.getElementById('orderBtn').innerText = '🚖 Haydovchi siz tomon yo\'lda...';
 
                     if (!driverPlacemark) {
                         driverPlacemark = new ymaps.Placemark(dCoords, {
@@ -93,7 +89,7 @@
                         });
                         myMap.geoObjects.add(driverPlacemark);
                     } else {
-                        // Xaritada mashina joylashuvini jonli siljitish
+                        // Mashinani xaritada jonli siljitish
                         driverPlacemark.geometry.setCoordinates(dCoords);
                     }
                 }
@@ -103,7 +99,22 @@
 
         function requestTaxi() {
             const coords = userPlacemark.geometry.getCoordinates();
-            tg.sendData(JSON.stringify({ latitude: coords[0], longitude: coords[1] }));
+            
+            // Mijoz lokatsiyasini serverga uzatish (haydovchiga ko'rinishi uchun)
+            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
+                },
+                body: JSON.stringify({
+                    client_lat: coords[0],
+                    client_lon: coords[1],
+                    time: Date.now()
+                })
+            }).catch(e => console.log(e));
+
+            document.getElementById('orderBtn').innerText = '⏳ Qidirilmoqda...';
         }
     </script>
 </body>
