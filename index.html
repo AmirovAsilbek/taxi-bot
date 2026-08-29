@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Taksi Buyurtma</title>
+    <!-- Yandex Maps API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -16,7 +17,7 @@
         body.dark-theme select { background: #2a2a2a; color: #fff; border-color: #ffcc00; }
         body.dark-theme .close-btn { color: #fff; }
 
-        .menu-btn { position: absolute; top: 15px; right: 15px; z-index: 10; background: #ffffff; border: none; width: 45px; height: 45px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; flex-direction: center; align-items: center; justify-content: center; gap: 4px; }
+        .menu-btn { position: absolute; top: 15px; right: 15px; z-index: 10; background: #ffffff; border: none; width: 45px; height: 45px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         .menu-btn span { display: block; width: 20px; height: 2.5px; background-color: #333; border-radius: 2px; }
 
         .side-menu { position: absolute; top: 0; right: -80vw; width: 80vw; height: 100%; background: #ffffff; z-index: 30; transition: right 0.3s ease; box-shadow: -4px 0 15px rgba(0,0,0,0.2); padding: 20px 15px; display: flex; flex-direction: column; overflow-y: auto; }
@@ -26,17 +27,18 @@
         .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
         select { padding: 6px 10px; border-radius: 8px; border: 1.5px solid #ffcc00; background: #fff; font-size: 13px; outline: none; }
 
-        /* Pastki axborot paneli */
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); padding: 15px 20px 25px 20px; transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); transform: translateY(0); }
+        /* Pastki panel */
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); padding: 12px 20px 25px 20px; transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); transform: translateY(0); }
         .bottom-sheet.collapsed { transform: translateY(calc(100% - 50px)); }
-        .sheet-handle { width: 44px; height: 5px; background: #ccc; border-radius: 3px; margin: 0 auto 12px auto; cursor: pointer; }
+        .sheet-handle { width: 44px; height: 5px; background: #ccc; border-radius: 3px; margin: 0 auto 10px auto; cursor: pointer; }
+        .sheet-status { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 10px; cursor: pointer; }
 
         /* Haydovchi info kartasi */
-        .driver-card { display: none; background: #ffcc00; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 12px; text-align: left; }
-        .driver-card h4 { margin: 0 0 6px 0; font-size: 16px; display: flex; justify-content: space-between; }
+        .driver-card { display: none; background: #ffcc00; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 10px; text-align: left; }
+        .driver-card h4 { margin: 0 0 6px 0; font-size: 15px; display: flex; justify-content: space-between; }
         .driver-card p { margin: 3px 0; font-size: 13px; font-weight: 500; }
 
-        .btn { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; cursor: pointer; }
+        .btn { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3); }
     </style>
 </head>
 <body>
@@ -67,20 +69,23 @@
 
     <div class="bottom-sheet" id="bottomSheet">
         <div class="sheet-handle" onclick="toggleSheet()"></div>
+        <div class="sheet-status" onclick="toggleSheet()" id="sheetStatusText">📍 Taksi chaqirish</div>
 
-        <!-- Haydovchi haqida info panel -->
         <div class="driver-card" id="driverInfoBox">
-            <h4><span id="cardDriverName">Ali Valiyev</span> <span id="cardEta">⏱ ~4 daqiqa</span></h4>
-            <p>🚘 Mashina: <b id="cardCar">Cobalt (70 N 079 NN)</b></p>
-            <p>📞 Aloqa: <b id="cardPhone">+998 90 123 45 67</b></p>
+            <h4><span id="cardDriverName">Haydovchi</span> <span id="cardEta">⏱ Yetib kelmoqda...</span></h4>
+            <p>🚘 Mashina: <b id="cardCar">...</b></p>
+            <p>📞 Aloqa: <b id="cardPhone">...</b></p>
         </div>
 
-        <button class="btn" id="orderBtn" onclick="handleOrder()">🚖 Shu yerdan taksi chaqirish</button>
+        <button class="btn" id="orderBtn" onclick="sendOrderAndTrack()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
+        const ADMIN_ID = "8726943857";
 
         let myMap, userPlacemark;
         let driverPlacemark = null;
@@ -116,7 +121,8 @@
                 });
             }
 
-            setInterval(trackLiveDriver, 3000);
+            // Haydovchining jonli harakatini xaritada uzluksiz kuzatib borish
+            setInterval(trackLiveDriver, 2500);
         }
 
         function trackLiveDriver() {
@@ -125,10 +131,11 @@
                 const driverData = JSON.parse(rawData);
                 const coords = [driverData.lat, driverData.lon];
 
-                // Kartochkani ko'rsatish
                 document.getElementById('driverInfoBox').style.display = 'block';
                 document.getElementById('cardDriverName').innerText = driverData.name || 'Haydovchi';
                 document.getElementById('cardCar').innerText = driverData.car || 'Mashina';
+                document.getElementById('cardPhone').innerText = driverData.phone || '+998...';
+                document.getElementById('sheetStatusText').innerText = "🚖 Haydovchi harakatlanmoqda (Bosing)";
                 document.getElementById('orderBtn').style.display = 'none';
 
                 if (!driverPlacemark) {
@@ -144,6 +151,44 @@
             }
         }
 
+        // Buyurtma berish: Mini App yopilmaydi, buyurtma haydovchiga/adminga yuboriladi
+        function sendOrderAndTrack() {
+            const coords = userPlacemark.geometry.getCoordinates();
+            const client = tg.initDataUnsafe?.user;
+            const clientName = client?.first_name ? `${client.first_name} ${client.last_name || ''}` : "Mijoz";
+            const clientTag = client?.username ? `@${client.username}` : `ID: ${client?.id || 'Nomaʼlum'}`;
+
+            // Panelni holatini o'zgartirish va yig'ish
+            document.getElementById('sheetStatusText').innerText = "⏳ Haydovchiga yuborildi, kutilmoqda...";
+            document.getElementById('bottomSheet').classList.add('collapsed');
+
+            const yandexNavi = `https://yandex.uz/maps/?rtext=~${coords[0]},${coords[1]}&rtt=auto`;
+
+            const orderText = `🔔 <b>Yangi buyurtma!</b>\n\n👤 Mijoz: ${clientName} (${clientTag})\n📍 Manzil: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}\n🧭 <a href='${yandexNavi}'>Yandex Navigatorda ochish</a>`;
+
+            const replyMarkup = {
+                inline_keyboard: [
+                    [{ text: "🧭 Yandex Navigatorda ochish", url: yandexNavi }],
+                    [
+                        { text: "✅ Qabul qilish", callback_data: `accept_${client?.id || 0}` },
+                        { text: "❌ Rad etish", callback_data: `reject_${client?.id || 0}` }
+                    ]
+                ]
+            };
+
+            // To'g'ridan-to'g'ri Telegram orqali yuborish (Ilova aslo yopilmaydi)
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: ADMIN_ID,
+                    text: orderText,
+                    parse_mode: "HTML",
+                    reply_markup: replyMarkup
+                })
+            }).catch(e => console.error(e));
+        }
+
         function toggleMenu() { document.getElementById('sideMenu').classList.toggle('active'); }
         function toggleTheme() {
             const isDark = document.body.classList.toggle('dark-theme');
@@ -151,14 +196,6 @@
         }
         function changeMapType() { myMap.setType(document.getElementById('mapTypeSelect').value); }
         function toggleSheet() { document.getElementById('bottomSheet').classList.toggle('collapsed'); }
-
-        function handleOrder() {
-            const coords = userPlacemark.geometry.getCoordinates();
-            tg.sendData(JSON.stringify({
-                latitude: coords[0],
-                longitude: coords[1]
-            }));
-        }
     </script>
 </body>
 </html>
