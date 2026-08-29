@@ -13,6 +13,7 @@
         
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
 
+        /* 3 ta chiziqli Menyu tugmasi */
         .menu-btn {
             position: absolute;
             top: 15px;
@@ -39,19 +40,21 @@
             border-radius: 2px;
         }
 
+        /* Yon menyu */
         .side-menu {
             position: absolute;
             top: 0;
-            right: -60vw;
-            width: 60vw;
+            right: -75vw;
+            width: 75vw;
             height: 100%;
             background: #ffffff;
             z-index: 20;
             transition: right 0.3s ease;
             box-shadow: -4px 0 15px rgba(0,0,0,0.2);
-            padding: 25px 15px;
+            padding: 20px 15px;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
         }
         .side-menu.active {
             right: 0;
@@ -63,15 +66,31 @@
             border: none;
             cursor: pointer;
             color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
-        .menu-item {
-            padding: 12px 10px;
-            font-size: 15px;
+        .menu-title {
+            font-size: 18px;
             font-weight: bold;
+            color: #111;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ffcc00;
+            padding-bottom: 5px;
+        }
+        
+        /* Buyurtmalar ro'yxati */
+        .order-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
             color: #333;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
+        }
+        .order-item strong {
+            color: #000;
+            display: block;
+            margin-bottom: 3px;
         }
 
         .bottom-container {
@@ -103,12 +122,13 @@
         <span></span>
     </button>
 
+    <!-- Yon menyu va Saqlangan buyurtmalar -->
     <div class="side-menu" id="sideMenu">
         <button class="close-btn" onclick="toggleMenu()">&times;</button>
-        <div class="menu-item">🚖 Buyurtmalarim</div>
-        <div class="menu-item">👤 Profil</div>
-        <div class="menu-item">⚙️ Sozlamalar</div>
-        <div class="menu-item">📞 Yordam</div>
+        <div class="menu-title">🚖 Buyurtmalarim</div>
+        <div id="ordersList">
+            <p style="color: #777; font-size: 14px;">Hozircha buyurtmalar yo'q.</p>
+        </div>
     </div>
 
     <div id="map"></div>
@@ -133,7 +153,6 @@
                 controls: []
             });
 
-            // Rasmdagi qizil nuqta va halqali marker aynan shu yerga o'rnatildi:
             userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
                 draggable: true,
                 preset: 'islands#redCircleDotIcon'
@@ -150,6 +169,7 @@
             }
 
             loadOnlineDrivers();
+            renderOrders(); // Saqlangan buyurtmalarni yuklash
         }
 
         function loadOnlineDrivers() {
@@ -173,13 +193,49 @@
             menu.classList.toggle('active');
         }
 
+        // Buyurtmani xotiraga saqlash va yuborish
         function sendLocation() {
             const coords = userPlacemark.geometry.getCoordinates();
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + now.toLocaleDateString();
+
+            const newOrder = {
+                time: timeString,
+                lat: coords[0].toFixed(5),
+                lon: coords[1].toFixed(5)
+            };
+
+            // Eski buyurtmalarni olish va yangisini qo'shish
+            let orders = JSON.parse(localStorage.getItem('my_taxi_orders') || '[]');
+            orders.unshift(newOrder);
+            localStorage.setItem('my_taxi_orders', JSON.stringify(orders));
+
+            renderOrders();
+
             const data = {
                 latitude: coords[0],
                 longitude: coords[1]
             };
             tg.sendData(JSON.stringify(data));
+        }
+
+        // Buyurtmalarni menyuda ko'rsatish funksiyasi
+        function renderOrders() {
+            const orders = JSON.parse(localStorage.getItem('my_taxi_orders') || '[]');
+            const container = document.getElementById('ordersList');
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p style="color: #777; font-size: 14px;">Hozircha buyurtmalar yo\'q.</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map((order, index) => `
+                <div class="order-item">
+                    <strong>Buyurtma #${orders.length - index}</strong>
+                    📅 Vaqt: ${order.time}<br>
+                    📍 Joylashuv: ${order.lat}, ${order.lon}
+                </div>
+            `).join('');
         }
     </script>
 </body>
