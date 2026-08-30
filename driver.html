@@ -4,19 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RideYellow - Driver Partner</title>
-    <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase Realtime SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fb; color: #111; }
-
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* HAYDOVCHI RO'YXATDAN O'TISH MODALI */
         .auth-overlay {
             position: fixed;
             top: 0;
@@ -96,7 +92,6 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.08);
             border: 1px solid #eee;
         }
-
         .brand-section { display: flex; align-items: center; gap: 12px; }
         .yellow-badge {
             width: 40px;
@@ -199,7 +194,6 @@
             color: #666;
         }
 
-        /* FAOL SAFAR BOSHQARUV PANELI */
         .active-trip-panel {
             display: none;
             flex-direction: column;
@@ -257,7 +251,6 @@
             box-shadow: 0 4px 14px rgba(0,0,0,0.2);
         }
 
-        /* YANGI BUYURTMA POPUP */
         .order-sheet {
             position: absolute;
             bottom: 0;
@@ -342,17 +335,16 @@
 </head>
 <body>
 
-    <!-- HAYDOVCHI RO'YXATDAN O'TISH MODALI -->
     <div class="auth-overlay" id="driverAuthModal">
         <div class="auth-card">
             <div class="auth-badge">🚖</div>
             <div class="auth-title">Haydovchi Ro'yxatdan o'tish</div>
-            <div class="auth-desc">RideYellow hamkori bo'lish uchun ma'lumotlaringizni to'ldiring:</div>
+            <div class="auth-desc">Hamkor bo'lish uchun ma'lumotlaringizni to'ldiring:</div>
             
             <input type="text" id="regDriverName" class="auth-input" placeholder="Ism va Familiyangiz">
             <input type="tel" id="regDriverPhone" class="auth-input" placeholder="+998 90 123 45 67">
-            <input type="text" id="regDriverCar" class="auth-input" placeholder="Mashina rusumi va rangi (masalan: Oq Onix)">
-            <input type="text" id="regDriverPlate" class="auth-input" placeholder="Davlat raqami (masalan: 70 A 777 AA)">
+            <input type="text" id="regDriverCar" class="auth-input" placeholder="Mashina rusumi va rangi (Oq Onix)">
+            <input type="text" id="regDriverPlate" class="auth-input" placeholder="Davlat raqami (70 A 777 AA)">
             
             <select id="regDriverTariff" class="auth-select">
                 <option value="standart">Standart tarif</option>
@@ -403,7 +395,6 @@
             Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
         </div>
 
-        <!-- SAFAR BOSHQARISH BOSQICHLARI -->
         <div class="active-trip-panel" id="activeTripPanel">
             <div class="client-info-strip">
                 <div class="client-meta">
@@ -416,7 +407,6 @@
         </div>
     </div>
 
-    <!-- YANGI BUYURTMA EKRANI -->
     <div class="order-sheet" id="orderSheet">
         <div class="order-top">
             <div>
@@ -433,7 +423,7 @@
         <div class="route-info">
             <div class="route-row">
                 <div class="dot-icon" style="background: #ffcc00;"></div>
-                <span id="ordStart">Mijozgacha: 750 m</span>
+                <span id="ordStart">Mijoz: 750 m</span>
             </div>
             <div class="route-row">
                 <div class="dot-icon" style="background: #ff3333;"></div>
@@ -446,11 +436,9 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.enableClosingConfirmation();
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.expand(); tg.enableClosingConfirmation(); }
 
-        // REALTIME FIREBASE DATABASE
         const firebaseConfig = {
             databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
         };
@@ -463,7 +451,7 @@
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
         let currentOrderData = null;
-        let tripStep = 'to_client'; // 'to_client' -> 'waiting' -> 'in_trip'
+        let tripStep = 'to_client';
         
         let completedRides = parseInt(localStorage.getItem('ry_driver_trips') || '0');
         let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings') || '0');
@@ -472,27 +460,20 @@
         document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
 
         let driverId = "driver_1";
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        if (tg?.initDataUnsafe?.user) {
             driverId = "driver_" + tg.initDataUnsafe.user.id;
         }
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64">
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
-                </filter>
-                <g filter="url(#shadow)">
-                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
-                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
-                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
-                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
-                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
-                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
-                </g>
+                <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
+                <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
             </svg>
         `);
 
@@ -509,7 +490,6 @@
             listenForIncomingOrders();
         });
 
-        // HAYDOVCHI AVTORIZATSIYASINI TEKSHIRISH
         function checkDriverAuth() {
             const savedName = localStorage.getItem("ry_driver_name");
             const savedPhone = localStorage.getItem("ry_driver_phone");
@@ -521,7 +501,7 @@
                 document.getElementById("dCar").innerText = `${savedCar} • ${savedPlate}`;
                 document.getElementById("driverAuthModal").style.display = "none";
             } else {
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                if (tg?.initDataUnsafe?.user) {
                     const u = tg.initDataUnsafe.user;
                     document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
                 }
@@ -529,7 +509,6 @@
             }
         }
 
-        // HAYDOVCHI MA'LUMOTLARINI SAQLASH
         function saveDriverRegistration() {
             const name = document.getElementById("regDriverName").value.trim();
             const phone = document.getElementById("regDriverPhone").value.trim();
@@ -552,7 +531,6 @@
             document.getElementById("dCar").innerText = `${car} • ${plate}`;
             document.getElementById("driverAuthModal").style.display = "none";
 
-            // BAZAGA RO'YXATDAN O'TGAN HAYDOVCHINI SAQLASH
             db.ref('registered_drivers/' + driverId).set({
                 name: name,
                 phone: phone,
@@ -562,7 +540,7 @@
                 registered_at: Date.now()
             });
 
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
 
         function playBeepSound() {
@@ -584,7 +562,6 @@
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
                     currentPos = [pos.coords.latitude, pos.coords.longitude];
-                    
                     if (!driverPlacemark) {
                         driverPlacemark = new ymaps.Placemark(currentPos, {}, {
                             iconLayout: 'default#image',
@@ -637,7 +614,7 @@
             document.getElementById("ordDest").innerText = `Manzil: ${order.destination || "Belgilangan nuqta"}`;
 
             playBeepSound();
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
 
             let timeLeft = 15;
             document.getElementById("timerBar").style.width = "100%";
@@ -668,7 +645,7 @@
                 btn.classList.add("online");
                 lbl.innerText = "Online";
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Mijozlarga ko'rinmoqdasiz";
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
                 const dTariff = localStorage.getItem("ry_driver_tariff") || "standart";
                 db.ref('drivers/' + driverId).set({
@@ -685,7 +662,7 @@
                 btn.classList.remove("online");
                 lbl.innerText = "Offline";
                 banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
                 
                 db.ref('drivers/' + driverId).remove();
                 dismissOrder();
@@ -728,7 +705,7 @@
                 document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
             }
 
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
             const driverPhone = localStorage.getItem("ry_driver_phone") || "+998883893379";
 
@@ -749,24 +726,21 @@
 
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
-
             if (tripStep === 'to_client') {
                 tripStep = 'waiting';
                 btn.className = "btn-step-action";
                 btn.innerText = "🚀 SAFARNI BOSHLASH";
                 document.getElementById("gpsStatus").innerHTML = "⏳ Mijoz kutilmoqda...";
-
                 db.ref('orders/current_status').update({ step: 'arrived' });
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
             } else if (tripStep === 'waiting') {
                 tripStep = 'in_trip';
                 btn.className = "btn-finish-trip";
                 btn.innerText = "🏁 SAFARNI YAKUNLASH";
                 document.getElementById("gpsStatus").innerHTML = "🚗 Safar davom etmoqda...";
-
                 db.ref('orders/current_status').update({ step: 'in_trip' });
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
                 if (currentOrderData.dest_lat && currentOrderData.dest_lon) {
                     drawRoute(currentPos, [currentOrderData.dest_lat, currentOrderData.dest_lon]);
@@ -796,7 +770,7 @@
             currentOrderData = null;
             tripStep = 'to_client';
 
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             alert("✅ Safar muvaffaqiyatli yakunlandi!");
         }
 
