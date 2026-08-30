@@ -4,17 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RideYellow - Admin Dispatcher</title>
-    <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase Realtime SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body, html { width: 100%; height: 100%; background: #0f1117; color: #f1f2f6; overflow-x: hidden; }
 
-        /* HEADER */
         .admin-header {
             background: #181b24;
             padding: 14px 18px;
@@ -42,7 +39,6 @@
         .header-title { font-size: 16px; font-weight: 800; color: #fff; }
         .header-sub { font-size: 11px; color: #8a8f9d; }
 
-        /* STATISTIKA KARTALARI */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -61,7 +57,6 @@
         .stat-num { font-size: 22px; font-weight: 900; color: #ffcc00; }
         .stat-title { font-size: 11px; font-weight: 700; color: #8a8f9d; text-transform: uppercase; }
 
-        /* NAVIGATION TABS */
         .tab-bar {
             display: flex;
             background: #181b24;
@@ -87,11 +82,9 @@
             color: #111;
         }
 
-        /* VIEW CONTAINERLAR */
         .tab-view { display: none; padding: 0 16px 30px 16px; }
         .tab-view.active { display: block; }
 
-        /* JONLI XARITA */
         #adminMap {
             width: 100%;
             height: 380px;
@@ -101,7 +94,6 @@
             margin-bottom: 14px;
         }
 
-        /* HAYDOVCHILAR RO'YXATI */
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -196,7 +188,6 @@
             cursor: pointer;
         }
 
-        /* FAOL BUYURTMA KARTASI */
         .order-card {
             background: #181b24;
             border: 1px solid #282c38;
@@ -237,7 +228,6 @@
             cursor: pointer;
         }
 
-        /* QO'SHISH MODALI */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -307,7 +297,6 @@
         <button class="btn-add-driver" onclick="openAddModal()">+ Haydovchi</button>
     </div>
 
-    <!-- STATISTIKA -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-num" id="statOnlineCount">0</div>
@@ -327,21 +316,18 @@
         </div>
     </div>
 
-    <!-- TAB TUGMALARI -->
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
         <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
         <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Buyurtmalar</button>
     </div>
 
-    <!-- TAB 1: JONLI XARITA -->
     <div class="tab-view active" id="mapTab">
         <div id="adminMap"></div>
         <div class="section-title" style="margin-bottom: 8px;">🟢 Xaritada ko'rinayotgan faol mashinalar</div>
         <div id="mapDriversSummary" style="font-size: 13px; color: #8a8f9d;">Yuklanmoqda...</div>
     </div>
 
-    <!-- TAB 2: HAYDOVCHILARNI BOSHQARISH -->
     <div class="tab-view" id="driversTab">
         <div class="section-header">
             <div class="section-title">Ro'yxatdan o'tgan haydovchilar</div>
@@ -351,7 +337,6 @@
         </div>
     </div>
 
-    <!-- TAB 3: BUYURTMALAR -->
     <div class="tab-view" id="ordersTab">
         <div class="section-header">
             <div class="section-title">Jonli va Faol Buyurtmalar</div>
@@ -361,32 +346,27 @@
         </div>
     </div>
 
-    <!-- HAYDOVCHI QO'SHISH MODALI -->
     <div class="modal-overlay" id="addDriverModal">
         <div class="modal-box">
             <div class="modal-title">Yangi Haydovchi Qo'shish</div>
-            
             <input type="text" id="newDName" class="adm-input" placeholder="Ism va Familiya">
             <input type="tel" id="newDPhone" class="adm-input" placeholder="+998 90 123 45 67">
             <input type="text" id="newDCar" class="adm-input" placeholder="Mashina rusumi va rangi">
             <input type="text" id="newDPlate" class="adm-input" placeholder="Davlat raqami (70 A 777 AA)">
-            
             <select id="newDTariff" class="adm-select">
                 <option value="standart">Standart</option>
                 <option value="komfort">Komfort</option>
                 <option value="komfort_plus">Komfort+</option>
             </select>
-            
             <button class="btn-save-adm" onclick="saveNewDriver()">Bazaga saqlash</button>
             <button class="btn-close-adm" onclick="closeAddModal()">Bekor qilish</button>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        const tg = window.Telegram?.WebApp;
         if (tg) { tg.expand(); }
 
-        // FIREBASE DATABASE
         const firebaseConfig = {
             databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
         };
@@ -400,57 +380,44 @@
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
-                </filter>
-                <g filter="url(#shadow)">
-                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
-                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
-                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
-                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#111"/>
-                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
-                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
-                </g>
+                <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
+                <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                <rect x="18" y="27" width="28" height="18" rx="4" fill="#111"/>
             </svg>
         `);
 
         ymaps.ready(() => {
             adminMap = new ymaps.Map("adminMap", {
-                center: [39.0560, 66.8300], // Shahrisabz
+                center: [39.0560, 66.8300],
                 zoom: 14,
                 type: 'yandex#map',
                 controls: ['zoomControl']
             });
-
             initAdminSync();
         });
 
         function switchTab(tabId, btn) {
             document.querySelectorAll(".tab-view").forEach(el => el.classList.remove("active"));
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
-            
             document.getElementById(tabId).classList.add("active");
             btn.classList.add("active");
-
             if (tabId === 'mapTab' && adminMap) {
                 adminMap.container.fitToViewport();
             }
         }
 
-        // BAZADAN MA'LUMOTLARNI REAL VAQTDA SINXRON QILISH
         function initAdminSync() {
-            // 1. Ro'yxatdan o'tgan haydovchilar
             db.ref('registered_drivers').on('value', snap => {
                 registeredDriversData = snap.val() || {};
                 renderDriversList();
                 updateStats();
             });
 
-            // 2. Online haydovchilar & Xaritadagi harakat
             db.ref('drivers').on('value', snap => {
                 onlineDriversData = snap.val() || {};
                 updateMapMarkers(onlineDriversData);
@@ -458,7 +425,6 @@
                 updateStats();
             });
 
-            // 3. Faol Buyurtmalar
             db.ref('orders').on('value', snap => {
                 const orders = snap.val() || {};
                 renderOrdersList(orders);
@@ -515,7 +481,6 @@
                 const reg = registeredDriversData[id] || {};
                 const onl = onlineDriversData[id] || {};
                 const isOnline = onl.is_online ? true : false;
-
                 const name = reg.name || onl.name || "Haydovchi";
                 const phone = reg.phone || onl.phone || "+998900000000";
                 const car = reg.car || onl.car || "Chevrolet";
@@ -537,12 +502,10 @@
                             ${isOnline ? '● Online' : '○ Offline'}
                         </span>
                     </div>
-
                     <div class="driver-meta-row">
                         <span>🚗 ${car} (${plate})</span>
                         <span style="color:#ffcc00; font-weight:700;">${tariff.toUpperCase()}</span>
                     </div>
-
                     <div class="driver-actions">
                         <a href="tel:${phone}" class="btn-action-call">📞 Qo'ng'iroq</a>
                         <button class="btn-action-delete" onclick="deleteDriverFromDatabase('${id}', '${name}')">🗑️ Bazadan o'chirish</button>
@@ -555,58 +518,46 @@
         function renderOrdersList(orders) {
             const container = document.getElementById("ordersListContainer");
             const currentOrder = orders.current_order;
-            const currentStatus = orders.current_status;
-
-            if (!currentOrder && !currentStatus) {
+            if (!currentOrder) {
                 container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha faol buyurtmalar yo'q</div>`;
                 return;
             }
-
             container.innerHTML = "";
-            if (currentOrder) {
-                const card = document.createElement("div");
-                card.className = "order-card";
-                card.innerHTML = `
-                    <div class="order-head">
-                        <div class="order-price">${currentOrder.price || '0 UZS'}</div>
-                        <span class="order-badge">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
-                    </div>
-                    <div class="order-details">
-                        <div>👤 <b>Mijoz:</b> ${currentOrder.client_name || 'Noma\'lum'} (${currentOrder.client_phone || ''})</div>
-                        <div>📍 <b>Borish manzili:</b> ${currentOrder.destination || 'Belgilanmagan'}</div>
-                        <div>📏 <b>Masofa:</b> ${currentOrder.distance || '0 km'} • <b>Tarif:</b> ${currentOrder.tariff || 'Standart'}</div>
-                    </div>
-                    <button class="btn-cancel-adm" onclick="forceCancelOrder()">❌ Buyurtmani bekor qilish</button>
-                `;
-                container.appendChild(card);
-            }
+            const card = document.createElement("div");
+            card.className = "order-card";
+            card.innerHTML = `
+                <div class="order-head">
+                    <div class="order-price">${currentOrder.price || '0 UZS'}</div>
+                    <span class="order-badge">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
+                </div>
+                <div class="order-details">
+                    <div>👤 <b>Mijoz:</b> ${currentOrder.client_name || 'Noma\'lum'} (${currentOrder.client_phone || ''})</div>
+                    <div>📍 <b>Borish manzili:</b> ${currentOrder.destination || 'Belgilanmagan'}</div>
+                    <div>📏 <b>Masofa:</b> ${currentOrder.distance || '0 km'} • <b>Tarif:</b> ${currentOrder.tariff || 'Standart'}</div>
+                </div>
+                <button class="btn-cancel-adm" onclick="forceCancelOrder()">❌ Buyurtmani bekor qilish</button>
+            `;
+            container.appendChild(card);
         }
 
         function updateStats() {
             const onlineCount = Object.keys(onlineDriversData).filter(id => onlineDriversData[id].is_online).length;
             const totalDrivers = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)])).length;
-            
             document.getElementById("statOnlineCount").innerText = onlineCount;
             document.getElementById("statTotalDrivers").innerText = totalDrivers;
-            document.getElementById("statActiveOrders").innerText = Object.keys(onlineDriversData).length > 0 ? (onlineCount > 0 ? "1" : "0") : "0";
+            document.getElementById("statActiveOrders").innerText = onlineCount > 0 ? "1" : "0";
             document.getElementById("statSystemIncome").innerText = (totalDrivers * 18500).toLocaleString() + " UZS";
         }
 
-        // HAYDOVCHINI BAZADAN TO'LIQ O'CHIRISH (DELETE)
         function deleteDriverFromDatabase(id, name) {
             if (confirm(`Haqiqatan ham ${name} haydovchisini bazadan butunlay o'chirib tashlamoqchimisiz?`)) {
-                // 1. Ro'yxatdan o'tganlar bazasidan o'chirish
                 db.ref('registered_drivers/' + id).remove();
-                
-                // 2. Online lokatsiyasini o'chirish
                 db.ref('drivers/' + id).remove();
-
-                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 alert(`✅ ${name} bazadan muvaffaqiyatli o'chirildi!`);
             }
         }
 
-        // BUYURTMANI MAJBURIY TO'XTATISH
         function forceCancelOrder() {
             if (confirm("Ushbu faol buyurtmani majburiy bekor qilib, bazadan o'chirmoqchimisiz?")) {
                 db.ref('orders/current_status').remove();
@@ -615,7 +566,6 @@
             }
         }
 
-        // YANGI HAYDOVCHI QO'SHISH
         function openAddModal() { document.getElementById("addDriverModal").style.display = "flex"; }
         function closeAddModal() { document.getElementById("addDriverModal").style.display = "none"; }
 
