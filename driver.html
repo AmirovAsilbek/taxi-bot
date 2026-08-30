@@ -3,295 +3,376 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Haydovchi Paneli</title>
+    <title>RideYellow - Driver Partner</title>
+    <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background: #121212; 
-            color: #ffffff; 
-            min-height: 100%;
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fb; color: #111; }
 
-        .container {
-            padding: 12px;
+        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* RIDEYELLOW BRANDED TOP BAR */
+        .top-bar {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 12px 18px;
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            min-height: 100vh;
-        }
-        
-        .card { 
-            background: #1e1e1e; 
-            border: 2px solid #ffcc00; 
-            border-radius: 16px; 
-            padding: 16px; 
-            text-align: center; 
+            align-items: center;
+            justify-content: space-between;
+            z-index: 30;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
         }
 
-        .status-badge { 
-            display: inline-block; 
-            padding: 8px 18px; 
-            border-radius: 20px; 
-            font-weight: bold; 
-            font-size: 15px; 
-            margin-bottom: 8px; 
-            transition: all 0.3s ease;
-        }
-        .active-status { background: #28a745; color: white; box-shadow: 0 0 12px rgba(40, 167, 69, 0.4); }
-        .inactive-status { background: #dc3545; color: white; }
-
-        .btn { 
-            border: none; 
-            padding: 14px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            border-radius: 12px; 
-            width: 100%; 
-            cursor: pointer; 
-            transition: 0.2s;
-        }
-        .btn-online { background: #28a745; color: #fff; }
-        .btn-offline { background: #dc3545; color: #fff; }
-        .btn-navi { 
-            background: #ffcc00; 
-            color: #000; 
-            text-decoration: none; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 8px;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .map-card {
-            background: #1e1e1e;
-            border: 2px solid #ffcc00;
-            border-radius: 16px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 25px;
-        }
-
-        #driverMap {
-            width: 100%;
-            height: 520px; 
+        .brand-section { display: flex; align-items: center; gap: 12px; }
+        .yellow-badge {
+            width: 38px;
+            height: 38px;
+            background: #ffcc00;
             border-radius: 12px;
-            margin-top: 8px;
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+            color: #111;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.4);
         }
+        .driver-name { font-weight: 800; font-size: 15px; color: #111; }
+        .driver-car { font-size: 12px; color: #777; }
+
+        /* RIDEYELLOW STATUS TOGGLE */
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f1f2f6;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: 1.5px solid #e1e2e6;
+        }
+        .status-pill.online {
+            background: #111111;
+            border-color: #111111;
+            color: #ffcc00;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        .status-pill.online .status-indicator {
+            background: #2ed573;
+            box-shadow: 0 0 8px #2ed573;
+        }
+
+        /* QAYTA MARKAZLASH TUGMASI */
+        .btn-recenter {
+            position: absolute;
+            right: 16px;
+            bottom: 210px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 25;
+        }
+
+        /* RIDEYELLOW PASTKI STATISTIKA VA DASHBOARD */
+        .bottom-card {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 18px 20px;
+            z-index: 30;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+            divide-x: 1px solid #f0f0f0;
+        }
+        .stat-item { padding: 0 4px; }
+        .stat-value { font-size: 18px; font-weight: 900; color: #111; }
+        .stat-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; margin-top: 2px; }
+
+        .status-banner {
+            background: #fbfbfc;
+            border: 1.5px dashed #e1e2e6;
+            border-radius: 14px;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        /* RIDEYELLOW POPUP: YANGI BUYURTMA TAKLIFI */
+        .order-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px 28px 0 0;
+            z-index: 50;
+            padding: 24px 20px 20px 20px;
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.18);
+            border-top: 3px solid #ffcc00;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .order-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .price-tag { font-size: 24px; font-weight: 900; color: #111; }
+        .badge-tariff { background: #fffbe6; color: #b78103; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 1px solid #ffe58f; }
 
         .route-info {
-            font-size: 13px;
-            color: #ddd;
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 14px;
             display: flex;
-            justify-content: space-between;
-            margin-top: 4px;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .route-row { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #222; }
+        .dot-icon { width: 10px; height: 10px; border-radius: 50%; }
+
+        .btn-yellow-main {
+            background: #ffcc00;
+            color: #111;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 16px rgba(255, 204, 0, 0.4);
+        }
+        .btn-yellow-main:active { transform: scale(0.98); }
+
+        .btn-pass {
+            background: transparent;
+            color: #888;
+            border: none;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Haydovchi Holati -->
-        <div class="card">
-            <h3 style="margin: 0 0 6px 0;">👨‍✈️ Haydovchi Kabineti</h3>
-            <div id="statusBadge" class="status-badge inactive-status">🔴 Nofaol (Offline)</div>
-            <p id="statusDesc" style="font-size: 13px; color: #aaa; margin: 0 0 12px 0;">Buyurtmalarni qabul qilish uchun liniyaga chiqing.</p>
-            <button id="toggleBtn" class="btn btn-online" onclick="toggleWork()">🟢 Liniyaga chiqish</button>
+    <div id="map"></div>
+
+    <!-- Yuqori Brand Paneli -->
+    <div class="top-bar">
+        <div class="brand-section">
+            <div class="yellow-badge">Y</div>
+            <div>
+                <div class="driver-name" id="dName">Haydovchi</div>
+                <div class="driver-car" id="dCar">Chevrolet Onix (70 N 079 NN)</div>
+            </div>
         </div>
 
-        <!-- Xarita va Yo'nalish -->
-        <div class="map-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <b style="color: #ffcc00; font-size: 15px;">🧭 Xaritadagi joylashuv</b>
-                <span id="routeStatus" style="font-size: 12px; color: #aaa;">Mijoz kutilmoqda...</span>
-            </div>
-            <div class="route-info" id="routeDetails" style="display: none;">
-                <span>📏 Masofa: <b id="routeDist">0 km</b></span>
-                <span>⏱ Vaqt: <b id="routeTime">0 daq</b></span>
-            </div>
-
-            <div id="driverMap"></div>
-
-            <a id="openYandexNaviBtn" href="#" target="_blank" class="btn btn-navi" style="display: none;">
-                🧭 Yandex Navigatorda ochish
-            </a>
+        <div class="status-pill" id="toggleBtn" onclick="toggleDriverOnline()">
+            <div class="status-indicator"></div>
+            <span id="statusLabel">Offline</span>
         </div>
+    </div>
+
+    <!-- Qayta joylashuvga qaytish tugmasi -->
+    <button class="btn-recenter" onclick="centerDriverLocation()">🎯</button>
+
+    <!-- Pastki Dashboard -->
+    <div class="bottom-card">
+        <div class="dashboard-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="tripsCount">0</div>
+                <div class="stat-label">Buyurtma</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="todayEarnings">0 UZS</div>
+                <div class="stat-label">Daromad</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">5.0 ★</div>
+                <div class="stat-label">Reyting</div>
+            </div>
+        </div>
+
+        <div class="status-banner" id="gpsStatus">
+            Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
+        </div>
+    </div>
+
+    <!-- Yangi Buyurtma Qabul Qilish Modali -->
+    <div class="order-sheet" id="orderSheet">
+        <div class="order-top">
+            <div>
+                <div style="font-size: 12px; color: #888; font-weight: 600;">YANGI BUYURTMA</div>
+                <div class="price-tag" id="ordPrice">18 500 UZS</div>
+            </div>
+            <span class="badge-tariff" id="ordTariff">STANDART</span>
+        </div>
+
+        <div class="route-info">
+            <div class="route-row">
+                <div class="dot-icon" style="background: #ffcc00;"></div>
+                <span id="ordStart">Mijoz joylashuvi (1.2 km)</span>
+            </div>
+            <div class="route-row">
+                <div class="dot-icon" style="background: #ff4757;"></div>
+                <span id="ordDest">Temirchi mahallasi</span>
+            </div>
+        </div>
+
+        <button class="btn-yellow-main" onclick="acceptDriverOrder()">🚖 BUYURTMANI QABUL QILISH</button>
+        <button class="btn-pass" onclick="dismissOrder()">Keyingisi (O'tkazib yuborish)</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        let map;
+        let driverPlacemark = null;
         let isOnline = false;
+        let currentPos = [39.0560, 66.8300];
         let watchId = null;
-        let map, multiRoute;
-        let driverMarker = null;
-        let driverCoords = [39.6542, 66.9597];
-        let lastClientCoords = null;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('d_online') === 'true') {
-                setOnlineUI();
-                startTracking();
-            }
-        });
+        // RIDEYELLOW AVTOMOBIL MARKERI (TEPADAN QARALGAN KO'K AVTO)
+        const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
+                </filter>
+                <g filter="url(#shadow)">
+                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
+                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
+                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
+                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
+                </g>
+            </svg>
+        `);
 
         ymaps.ready(() => {
-            map = new ymaps.Map("driverMap", { 
-                center: driverCoords, 
-                zoom: 16, 
-                controls: ['zoomControl'] 
+            map = new ymaps.Map("map", {
+                center: currentPos,
+                zoom: 16,
+                type: 'yandex#map',
+                controls: []
             });
 
-            driverMarker = new ymaps.Placemark(driverCoords, {
-                hintContent: "Sizning mashinangiz"
-            }, { 
-                preset: 'islands#yellowTaxiIcon' 
-            });
-            map.geoObjects.add(driverMarker);
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
-                    map.setCenter(driverCoords, 16);
-                    driverMarker.geometry.setCoordinates(driverCoords);
-                }, null, { enableHighAccuracy: true });
+            // Haydovchi profilini sozlash
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                document.getElementById("dName").innerText = `${u.first_name || 'Haydovchi'}`;
             }
 
-            setInterval(checkLiveClientOrder, 2500);
+            initLocationTracker();
         });
 
-        function setOnlineUI() {
-            isOnline = true;
-            localStorage.setItem('d_online', 'true');
-            document.getElementById("statusBadge").className = "status-badge active-status";
-            document.getElementById("statusBadge").innerText = "🟢 Faol (Online)";
-            document.getElementById("toggleBtn").className = "btn btn-offline";
-            document.getElementById("toggleBtn").innerText = "🔴 Liniyadan chiqish (Offline)";
-            document.getElementById("statusDesc").innerText = "Jonli geolokatsiya uzatilmoqda. Yangi buyurtmalar qabul qilinadi.";
-        }
-
-        function setOfflineUI() {
-            isOnline = false;
-            localStorage.setItem('d_online', 'false');
-            document.getElementById("statusBadge").className = "status-badge inactive-status";
-            document.getElementById("statusBadge").innerText = "🔴 Nofaol (Offline)";
-            document.getElementById("toggleBtn").className = "btn btn-online";
-            document.getElementById("toggleBtn").innerText = "🟢 Liniyaga chiqish";
-            document.getElementById("statusDesc").innerText = "Liniyadan chiqdingiz. Buyurtmalar kelmaydi.";
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            syncDriverStatus(false);
-        }
-
-        function toggleWork() {
-            if (!isOnline) {
-                setOnlineUI();
-                startTracking();
-                syncDriverStatus(true);
-            } else {
-                setOfflineUI();
-            }
-        }
-
-        function syncDriverStatus(status) {
-            const user = tg.initDataUnsafe?.user;
-            const currentDriverId = user?.id || null;
-
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-            })
-            .then(r => r.json())
-            .then(r => {
-                let record = r.record || {};
-                let activeDrivers = record.active_drivers || [];
-
-                if (currentDriverId) {
-                    activeDrivers = activeDrivers.filter(id => id !== currentDriverId);
-                    if (status) activeDrivers.push(currentDriverId);
-                }
-
-                record.active_drivers = activeDrivers;
-                record.lat = driverCoords[0];
-                record.lon = driverCoords[1];
-
-                return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' },
-                    body: JSON.stringify(record)
-                });
-            }).catch(e => console.log(e));
-        }
-
-        function startTracking() {
+        function initLocationTracker() {
             if (navigator.geolocation) {
                 watchId = navigator.geolocation.watchPosition(pos => {
-                    driverCoords = [pos.coords.latitude, pos.coords.longitude];
-                    if (driverMarker) driverMarker.geometry.setCoordinates(driverCoords);
-
-                    if (lastClientCoords) {
-                        buildRoute(driverCoords, lastClientCoords);
+                    currentPos = [pos.coords.latitude, pos.coords.longitude];
+                    
+                    if (!driverPlacemark) {
+                        driverPlacemark = new ymaps.Placemark(currentPos, {}, {
+                            iconLayout: 'default#image',
+                            iconImageHref: topViewCarSvg,
+                            iconImageSize: [38, 38],
+                            iconImageOffset: [-19, -19]
+                        });
+                        map.geoObjects.add(driverPlacemark);
+                        map.setCenter(currentPos, 16);
+                    } else {
+                        driverPlacemark.geometry.setCoordinates(currentPos);
                     }
-                }, null, { enableHighAccuracy: true, maximumAge: 2000, timeout: 5000 });
+
+                    if (isOnline) {
+                        document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+                    }
+                }, null, { enableHighAccuracy: true });
             }
         }
 
-        function checkLiveClientOrder() {
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                const data = res.record;
-                if (data && data.client_lat && data.client_lon) {
-                    const newCoords = [data.client_lat, data.client_lon];
-                    if (!lastClientCoords || lastClientCoords[0] !== newCoords[0] || lastClientCoords[1] !== newCoords[1]) {
-                        lastClientCoords = newCoords;
-                        buildRoute(driverCoords, newCoords);
-                    }
-                }
-            }).catch(e => console.log(e));
+        function toggleDriverOnline() {
+            isOnline = !isOnline;
+            const btn = document.getElementById("toggleBtn");
+            const lbl = document.getElementById("statusLabel");
+            const banner = document.getElementById("gpsStatus");
+
+            if (isOnline) {
+                btn.classList.add("online");
+                lbl.innerText = "Online";
+                banner.innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                btn.classList.remove("online");
+                lbl.innerText = "Offline";
+                banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            }
         }
 
-        function buildRoute(fromCoords, toCoords) {
-            if (multiRoute) map.geoObjects.remove(multiRoute);
+        function centerDriverLocation() {
+            if (currentPos) {
+                map.setCenter(currentPos, 16, { duration: 300 });
+            }
+        }
 
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [fromCoords, toCoords],
-                params: { routingMode: 'auto' }
-            }, {
-                boundsAutoApply: true,
-                wayPointStartIconColor: "#28a745",
-                wayPointFinishIconColor: "#ffcc00",
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 5
-            });
+        function dismissOrder() {
+            document.getElementById("orderSheet").style.display = "none";
+        }
 
-            map.geoObjects.add(multiRoute);
-
-            multiRoute.model.events.add('requestsuccess', function () {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    document.getElementById('routeDetails').style.display = 'flex';
-                    document.getElementById('routeDist').innerText = activeRoute.properties.get("distance").text;
-                    document.getElementById('routeTime').innerText = activeRoute.properties.get("duration").text;
-                    document.getElementById('routeStatus').innerText = "🟢 Mijoz topildi";
-
-                    const naviUrl = `https://yandex.uz/maps/?rtext=${fromCoords[0]},${fromCoords[1]}~${toCoords[0]},${toCoords[1]}&rtt=auto`;
-                    const naviBtn = document.getElementById('openYandexNaviBtn');
-                    naviBtn.href = naviUrl;
-                    naviBtn.style.display = 'flex';
-                }
-            });
+        function acceptDriverOrder() {
+            alert("✅ Buyurtma qabul qilindi! Mijoz tomon yo'nalish tuzilmoqda.");
+            document.getElementById("orderSheet").style.display = "none";
+            document.getElementById("tripsCount").innerText = "1";
+            document.getElementById("todayEarnings").innerText = document.getElementById("ordPrice").innerText;
         }
     </script>
 </body>
