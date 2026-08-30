@@ -32,7 +32,56 @@
         .btn-menu { top: 16px; left: 16px; }
         .btn-locate { bottom: 42vh; right: 16px; font-size: 20px; }
 
-        /* YON MENYU (SIDEBAR) */
+        /* RO'YXATDAN O'TISH MODALI */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .auth-title { font-size: 20px; font-weight: 800; color: #111; text-align: center; }
+        .auth-desc { font-size: 13px; color: #666; text-align: center; margin-bottom: 5px; }
+        .auth-input {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            background: #f8f9fa;
+        }
+        .auth-input:focus { border-color: #ffcc00; background: #fff; }
+        .btn-auth-submit {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        /* YON MENYU */
         .side-menu-overlay {
             position: fixed;
             top: 0;
@@ -91,7 +140,6 @@
             font-size: 15px;
             color: #222;
             cursor: pointer;
-            transition: 0.15s;
         }
         .menu-item:active { background: #f5f5f5; }
         .menu-left { display: flex; align-items: center; gap: 14px; }
@@ -160,7 +208,7 @@
             cursor: pointer;
         }
 
-        /* MODAL OYNALAR (Menyu ichi) */
+        /* MODAL OYNA */
         .modal-view {
             position: fixed;
             top: 0;
@@ -177,12 +225,27 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
-        .modal-content { font-size: 14px; color: #444; line-height: 1.6; }
-        
+        .modal-content { font-size: 15px; color: #333; line-height: 1.6; }
+
+        .contact-box { display: flex; flex-direction: column; gap: 14px; margin-top: 15px; }
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #f8f9fa;
+            border: 1.5px solid #ececec;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #111;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
         .lang-btn {
             width: 100%;
             padding: 14px;
@@ -202,15 +265,28 @@
 </head>
 <body>
 
+    <!-- RO'YXATDAN O'TISH OYNASI (BIRINCHI KIRGANDA CHIQADI) -->
+    <div class="auth-overlay" id="authModal">
+        <div class="auth-card">
+            <div class="auth-title">Xush kelibsiz! 👋</div>
+            <div class="auth-desc">Taksidan foydalanish uchun ma'lumotlaringizni kiriting:</div>
+            
+            <input type="text" id="regName" class="auth-input" placeholder="Ismingiz">
+            <input type="tel" id="regPhone" class="auth-input" placeholder="+998 90 123 45 67">
+            
+            <button class="btn-auth-submit" onclick="saveUserRegistration()">Ro'yxatdan o'tish va Kirish</button>
+        </div>
+    </div>
+
     <!-- Xarita -->
     <div id="map"></div>
     <button class="map-btn btn-menu" id="topBtn" onclick="toggleSideMenu()">☰</button>
     <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
-    <!-- QORONG'ULASHTIRISH QATLAMI -->
+    <!-- Qorong'ulashtirish qatlami -->
     <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
 
-    <!-- YON MENYU (RASMDAGI BARCHA SOZLAMALAR) -->
+    <!-- Yon Menyu -->
     <div class="side-menu" id="sideMenu">
         <div class="user-profile">
             <div class="user-avatar" id="uAvatar">U</div>
@@ -252,16 +328,16 @@
         </ul>
     </div>
 
-    <!-- HAR BIR MENYU UCHUN OCHILADIGAN MODAL OYNA -->
+    <!-- MODAL VIEW -->
     <div class="modal-view" id="modalView">
         <div class="modal-header">
-            <button class="map-btn" style="position:static; width:36px; height:36px;" onclick="closeModal()">←</button>
+            <button class="map-btn" style="position:static; width:40px; height:40px;" onclick="closeModal()">←</button>
             <span id="modalTitle">Sarlavha</span>
         </div>
         <div class="modal-content" id="modalContent"></div>
     </div>
 
-    <!-- 1-EKRAN: Qidiruv paneli -->
+    <!-- 1-EKRAN -->
     <div class="screen-sheet" id="screen1">
         <div class="search-title" id="txt_where">Qayerga borasiz?</div>
         <div class="search-input-box" onclick="showOverviewScreen()">
@@ -270,7 +346,7 @@
         </div>
     </div>
 
-    <!-- 2-EKRAN: Safar ma'lumotlari -->
+    <!-- 2-EKRAN -->
     <div class="screen-sheet" id="screen2">
         <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
@@ -278,7 +354,7 @@
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-start"></div>
-                    <span class="point-name" id="startLocation">Tanlangan manzil</span>
+                    <span class="point-name">Tanlangan manzil</span>
                 </div>
             </div>
             <div class="point-item">
@@ -297,7 +373,7 @@
                     <div class="tariff-seats" id="txt_seats">4 kishilik</div>
                 </div>
             </div>
-            <div class="price-val" id="totalPrice">25 000 UZS</div>
+            <div class="price-val">25 000 UZS</div>
         </div>
 
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
@@ -310,61 +386,79 @@
         let map, userPlacemark;
         let userCoords = [39.6542, 66.9597];
 
-        // TILLAR BAZASI (UZ, RU, EN)
         let currentLang = "uz";
         const langData = {
             uz: {
-                biz: "Biznes-hisob",
-                sec: "Xavfsizlik",
-                addr: "Mening manzillarim",
-                hist: "Buyurtmalar tarixi",
-                set: "Sozlamalar (Til)",
-                supp: "Qo'llab-quvvatlash",
-                info: "Ma'lumot",
-                where: "Qayerga borasiz?",
-                search_ph: "Manzil yoki joy nomini qidiring...",
-                overview: "Safaringiz ma'lumotlari",
-                tariff: "Standart",
-                seats: "4 kishilik",
-                btn_order: "🚖 Taksi chaqirish"
+                biz: "Biznes-hisob", sec: "Xavfsizlik", addr: "Mening manzillarim", hist: "Buyurtmalar tarixi",
+                set: "Sozlamalar (Til)", supp: "Qo'llab-quvvatlash", info: "Ma'lumot", where: "Qayerga borasiz?",
+                search_ph: "Manzil yoki joy nomini qidiring...", overview: "Safaringiz ma'lumotlari",
+                tariff: "Standart", seats: "4 kishilik", btn_order: "🚖 Taksi chaqirish"
             },
             ru: {
-                biz: "Бизнес-аккаунт",
-                sec: "Безопасность",
-                addr: "Мои адреса",
-                hist: "История заказов",
-                set: "Настройки (Язык)",
-                supp: "Служба поддержки",
-                info: "Информация",
-                where: "Куда поедем?",
-                search_ph: "Поиск места или адреса...",
-                overview: "Детали поездки",
-                tariff: "Стандарт",
-                seats: "4 места",
-                btn_order: "🚖 Заказать такси"
+                biz: "Бизнес-аккаунт", sec: "Безопасность", addr: "Мои адреса", hist: "История заказов",
+                set: "Настройки (Язык)", supp: "Служба поддержки", info: "Информация", where: "Куда поедем?",
+                search_ph: "Поиск места или адреса...", overview: "Детали поездки",
+                tariff: "Стандарт", seats: "4 места", btn_order: "🚖 Заказать такси"
             },
             en: {
-                biz: "Business Account",
-                sec: "Safety",
-                addr: "My Addresses",
-                hist: "Ride History",
-                set: "Settings (Language)",
-                supp: "Support",
-                info: "Information",
-                where: "Where to?",
-                search_ph: "Search place or address...",
-                overview: "Ride Overview",
-                tariff: "Standard",
-                seats: "4 seats",
-                btn_order: "🚖 Request Taxi"
+                biz: "Business Account", sec: "Safety", addr: "My Addresses", hist: "Ride History",
+                set: "Settings (Language)", supp: "Support", info: "Information", where: "Where to?",
+                search_ph: "Search place or address...", overview: "Ride Overview",
+                tariff: "Standard", seats: "4 seats", btn_order: "🚖 Request Taxi"
             }
         };
+
+        // RO'YXATDAN O'TISHNI TEKSHIRISH VA SAQLASH
+        function checkUserAuth() {
+            const savedName = localStorage.getItem("taxi_user_name");
+            const savedPhone = localStorage.getItem("taxi_user_phone");
+
+            if (savedName && savedPhone) {
+                updateProfileUI(savedName, savedPhone);
+            } else {
+                // Agar avval saqlanmagan bo'lsa, Telegramdan ismini oladi yoki modal chiqaradi
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    const tgFullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                    document.getElementById("regName").value = tgFullName;
+                }
+                document.getElementById("authModal").style.display = "flex";
+            }
+        }
+
+        function saveUserRegistration() {
+            const name = document.getElementById("regName").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+
+            if (!name) {
+                alert("Iltimos, ismingizni kiriting!");
+                return;
+            }
+            if (!phone || phone.length < 7) {
+                alert("Iltimos, telefon raqamingizni to'liq kiriting!");
+                return;
+            }
+
+            // Umrbod brauzer xotirasida saqlash
+            localStorage.setItem("taxi_user_name", name);
+            localStorage.setItem("taxi_user_phone", phone);
+
+            updateProfileUI(name, phone);
+            document.getElementById("authModal").style.display = "none";
+        }
+
+        function updateProfileUI(name, phone) {
+            document.getElementById("uName").innerText = name;
+            document.getElementById("uPhone").innerText = phone;
+            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
+        }
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", { center: userCoords, zoom: 15, controls: [] });
             userPlacemark = new ymaps.Placemark(userCoords, {}, { preset: 'islands#yellowDotIcon' });
             map.geoObjects.add(userPlacemark);
             locateMe();
+            checkUserAuth();
         });
 
         function locateMe() {
@@ -377,7 +471,6 @@
             }
         }
 
-        // YON MENYU ISHLASHI
         function toggleSideMenu() {
             const menu = document.getElementById("sideMenu");
             const overlay = document.getElementById("menuOverlay");
@@ -390,7 +483,6 @@
             }
         }
 
-        // MODALLARNI OCHISH VA ISHLATISH
         function openModal(type) {
             toggleSideMenu();
             const modal = document.getElementById("modalView");
@@ -398,18 +490,42 @@
             const content = document.getElementById("modalContent");
             modal.style.display = "flex";
 
-            if (type === 'biznes') {
-                title.innerText = langData[currentLang].biz;
-                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali kompaniya xodimlari uchun korporativ taksi safarlarini tashkil qilishingiz va to'lovlarni shartnoma orqali amalga oshirishingiz mumkin.<br><br>Bog'lanish uchun: +998 71 200 00 00</p>";
-            } else if (type === 'xavfsizlik') {
+            if (type === 'xavfsizlik') {
                 title.innerText = langData[currentLang].sec;
-                content.innerHTML = "<p>🛡️ <b>Xavfsizlik markazi:</b><br><br>• Barcha haydovchilar maxsus tekshiruvdan o'tgan.<br>• Safar davomida jonli geolokatsiyangiz himoyalangan.<br>• Tezkor yordam: 102 yoki admin orqali bog'laning.</p>";
+                content.innerHTML = `
+                    <div style="font-weight: 700; margin-bottom: 15px;">🛡️ Xavfsizlik markazi:</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; line-height: 2;">
+                        <li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li>
+                        <li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li>
+                        <li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li>
+                    </ul>
+                `;
+            } else if (type === 'yordam') {
+                title.innerText = langData[currentLang].supp;
+                content.innerHTML = `
+                    <div style="font-size: 15px; margin-bottom: 20px; color: #444;">
+                        🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.
+                    </div>
+                    <div class="contact-box">
+                        <a href="tel:+998500527977" class="contact-link">
+                            <span style="font-size: 20px;">📞</span>
+                            <span>Telefon: <b>+998 50 052 79 77</b></span>
+                        </a>
+                        <a href="https://t.me/Amirovffff" target="_blank" class="contact-link">
+                            <span style="font-size: 20px;">💬</span>
+                            <span>Telegram: <b>@Amirovffff</b></span>
+                        </a>
+                    </div>
+                `;
+            } else if (type === 'biznes') {
+                title.innerText = langData[currentLang].biz;
+                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali korporativ taksi xizmatlaridan foydalanishingiz mumkin.<br><br>Aloqa uchun: <a href='tel:+998500527977' style='color:#0088cc; font-weight:bold;'>+998 50 052 79 77</a></p>";
             } else if (type === 'manzillar') {
                 title.innerText = langData[currentLang].addr;
-                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 <b>Uy:</b> Kiritilmagan<br>💼 <b>Ish:</b> Kiritilmagan<br><br><button style='padding:10px; border:none; background:#ffcc00; border-radius:8px; font-weight:bold; cursor:pointer;'>+ Yangi manzil qo'shish</button></p>";
+                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 Uy: Kiritilmagan<br>💼 Ish: Kiritilmagan</p>";
             } else if (type === 'tarix') {
                 title.innerText = langData[currentLang].hist;
-                content.innerHTML = "<p>🕒 <b>Oxirgi safarlaringiz:</b><br><br>1. Toshkent Markaz → Aeroport (25 000 UZS) • ✅ Bajarilgan<br>2. Registon → Vokzal (15 000 UZS) • ✅ Bajarilgan</p>";
+                content.innerHTML = "<p>🕒 Hozircha buyurtmalar tarixi mavjud emas.</p>";
             } else if (type === 'sozlamalar') {
                 title.innerText = langData[currentLang].set;
                 content.innerHTML = `
@@ -418,12 +534,9 @@
                     <button class="lang-btn ${currentLang==='ru'?'active':''}" onclick="setLanguage('ru')">🇷🇺 Русский</button>
                     <button class="lang-btn ${currentLang==='en'?'active':''}" onclick="setLanguage('en')">🇬🇧 English</button>
                 `;
-            } else if (type === 'yordam') {
-                title.innerText = langData[currentLang].supp;
-                content.innerHTML = "<p>🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.<br><br>📞 Telefon: +998 90 123 45 67<br>💬 Telegram: @amirovasilbek</p>";
             } else if (type === 'info') {
                 title.innerText = langData[currentLang].info;
-                content.innerHTML = "<p>🚖 <b>Express Taxi v2.0</b><br><br>Ushbu ilova Telegram WebApp asosida yo'lovchilarga qulay va tezkor taksi chaqirish uchun ishlab chiqilgan.</p>";
+                content.innerHTML = "<p>🚖 <b>Express Taxi Bot v2.0</b><br><br>Dasturchi va ma'muriyat: <a href='https://t.me/Amirovffff' style='color:#0088cc; font-weight:bold;'>@Amirovffff</a></p>";
             }
         }
 
@@ -431,11 +544,9 @@
             document.getElementById("modalView").style.display = "none";
         }
 
-        // TILNI O'ZGARTIRISH
         function setLanguage(lang) {
             currentLang = lang;
             const l = langData[lang];
-            
             document.getElementById("txt_biz").innerText = l.biz;
             document.getElementById("txt_sec").innerText = l.sec;
             document.getElementById("txt_addr").innerText = l.addr;
@@ -449,7 +560,6 @@
             document.getElementById("txt_tariff").innerText = l.tariff;
             document.getElementById("txt_seats").innerText = l.seats;
             document.getElementById("submitOrderBtn").innerText = l.btn_order;
-
             closeModal();
         }
 
@@ -463,10 +573,15 @@
             btn.innerText = "Yuborilmoqda...";
             btn.disabled = true;
 
+            const uName = localStorage.getItem("taxi_user_name") || "Mijoz";
+            const uPhone = localStorage.getItem("taxi_user_phone") || "";
+
             const payload = {
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
+                client_name: uName,
+                client_phone: uPhone,
                 price: "25 000 UZS"
             };
 
