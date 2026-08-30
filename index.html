@@ -401,7 +401,7 @@
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
 
-        /* 3-EKRAN: HAYDOVCHI QIDIRISH (SEARCHING) */
+        /* 3-EKRAN: HAYDOVCHI QIDIRISH */
         .search-status-sheet {
             position: absolute;
             bottom: 0;
@@ -707,7 +707,7 @@
 
     <div class="driver-accepted-sheet" id="driverAcceptedSheet">
         <div class="accepted-top">
-            <div style="font-size: 14px; font-weight: 800; color: #111;">🚖 HAYDOVCHI YO'LGA CHIQDI</div>
+            <div style="font-size: 14px; font-weight: 800; color: #111;" id="tripStatusHeader">🚖 HAYDOVCHI YO'LGA CHIQDI</div>
             <div class="arrival-pill" id="driverArrivalTimer">3 min</div>
         </div>
 
@@ -833,6 +833,22 @@
             });
         });
 
+        function playSoundChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {}
+        }
+
         // JONLI HAYDOVCHILARNI REAL VAQTDA KUZATISH VA XARITADA SILJITISH
         function listenToLiveDrivers() {
             db.ref('drivers').on('value', snapshot => {
@@ -867,7 +883,7 @@
             });
         }
 
-        // HAYDOVCHI BUYURTMANI QABUL QILGANINI VA SAFAR YAKUNLANGANINI KUZATISH
+        // HAYDOVCHI BILAN REAL VAQTDA SAFAR BOSQICHLARINI KUZATISH
         function listenToOrderAcceptance() {
             db.ref('orders/current_status').on('value', snapshot => {
                 const data = snapshot.val();
@@ -883,46 +899,82 @@
                         document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
                     }
 
-                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                    // BOSQICHLARNI YANGILASH (to_client -> arrived -> in_trip)
+                    const header = document.getElementById("tripStatusHeader");
+                    const timerPill = document.getElementById("driverArrivalTimer");
 
-                    // Haydovchi pozitsiyasidan mijozgacha bo'lgan yo'lni chizish (ETA)
-                    db.ref('drivers').once('value', dSnap => {
-                        const drivers = dSnap.val() || {};
-                        let driverPos = [startCoords[0] + 0.003, startCoords[1] + 0.003];
-                        for (let id in drivers) {
-                            if (drivers[id].is_online && drivers[id].lat && drivers[id].lon) {
-                                driverPos = [drivers[id].lat, drivers[id].lon];
-                                break;
-                            }
-                        }
+                    if (data.step === 'arrived') {
+                        header.innerText = "📍 HAYDOVCHI YETIB KELDI!";
+                        timerPill.innerText = "Chiqing";
+                        timerPill.style.background = "#2ed573";
+                        timerPill.style.color = "#fff";
+                        playSoundChime();
+                        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                    } else if (data.step === 'in_trip') {
+                        header.innerText = "🚀 SAFAR BOSHLANDI";
+                        timerPill.innerText = "Ketmoqda";
+                        timerPill.style.background = "#111";
+                        timerPill.style.color = "#ffcc00";
 
+                        // Manzilgacha bo'lgan marshrutni xaritaga chizish
                         if (multiRoute) map.geoObjects.remove(multiRoute);
                         multiRoute = new ymaps.multiRouter.MultiRoute({
-                            referencePoints: [driverPos, startCoords],
+                            referencePoints: [startCoords, targetCoords],
                             params: { routingMode: 'auto', results: 1 }
                         }, {
                             boundsAutoApply: true,
-                            routeActiveStrokeColor: "#ffcc00",
+                            routeActiveStrokeColor: "#ff4757",
                             routeActiveStrokeWidth: 6
                         });
                         map.geoObjects.add(multiRoute);
 
-                        multiRoute.model.events.add('requestsuccess', () => {
-                            const activeRoute = multiRoute.getActiveRoute();
-                            if (activeRoute) {
-                                const durationSec = activeRoute.properties.get('duration').value;
-                                const minutes = Math.ceil(durationSec / 60);
-                                document.getElementById("driverArrivalTimer").innerText = minutes + " min";
+                        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                    } else {
+                        // to_client (haydovchi yo'lda)
+                        header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
+                        timerPill.style.background = "#111";
+                        timerPill.style.color = "#ffcc00";
+
+                        db.ref('drivers').once('value', dSnap => {
+                            const drivers = dSnap.val() || {};
+                            let driverPos = [startCoords[0] + 0.003, startCoords[1] + 0.003];
+                            for (let id in drivers) {
+                                if (drivers[id].is_online && drivers[id].lat && drivers[id].lon) {
+                                    driverPos = [drivers[id].lat, drivers[id].lon];
+                                    break;
+                                }
                             }
+
+                            if (multiRoute) map.geoObjects.remove(multiRoute);
+                            multiRoute = new ymaps.multiRouter.MultiRoute({
+                                referencePoints: [driverPos, startCoords],
+                                params: { routingMode: 'auto', results: 1 }
+                            }, {
+                                boundsAutoApply: true,
+                                routeActiveStrokeColor: "#ffcc00",
+                                routeActiveStrokeWidth: 6
+                            });
+                            map.geoObjects.add(multiRoute);
+
+                            multiRoute.model.events.add('requestsuccess', () => {
+                                const activeRoute = multiRoute.getActiveRoute();
+                                if (activeRoute) {
+                                    const durationSec = activeRoute.properties.get('duration').value;
+                                    const minutes = Math.ceil(durationSec / 60);
+                                    timerPill.innerText = minutes + " min";
+                                }
+                            });
                         });
-                    });
+                    }
+
                 } else if (!data) {
-                    // Agar status o'chirilsa (safar yakunlansa) baholash oynasini chiqarish
+                    // Haydovchi safarni yakunlaganda baholash oynasini ochish
                     if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
                         document.getElementById("driverAcceptedSheet").style.display = "none";
                         document.getElementById("ratingSheet").style.display = "flex";
                         document.getElementById("locBtn").style.bottom = "32vh";
                         if (multiRoute) map.geoObjects.remove(multiRoute);
+                        playSoundChime();
                     }
                 }
             });
