@@ -53,7 +53,7 @@
             margin-top: 2px;
         }
 
-        /* Navigatsiya tugmalari */
+        /* Tugmalar */
         .map-btn {
             position: absolute;
             z-index: 20;
@@ -167,7 +167,7 @@
         }
         .btn-go-action:active { transform: scale(0.98); background: #e02424; }
 
-        /* 2-EKRAN (3-RASM): SAFAR TAFSILOTLARI */
+        /* 2-EKRAN: SAFAR TAFSILOTLARI */
         .overview-sheet {
             position: absolute;
             bottom: 0;
@@ -307,7 +307,7 @@
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
-    <!-- 2-EKRAN (3-RASM): Safar tafsilotlari -->
+    <!-- 2-EKRAN: Safar tafsilotlari -->
     <div class="overview-sheet" id="overviewSheet">
         <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
 
@@ -351,7 +351,7 @@
         tg.expand();
 
         let map, multiRoute;
-        let userCoords = [39.0833, 66.8333]; // Standart Miroqi / Shahrisabz hududi
+        let userCoords = [39.0833, 66.8333];
         let selectedTarget = null;
         let startAddress = "Tanlangan joy";
         let finalTripPrice = "15 000 UZS";
@@ -384,13 +384,7 @@
 
             map.events.add('actionend', () => {
                 userCoords = map.getCenter();
-                ymaps.geocode(userCoords).then(res => {
-                    const firstGeo = res.geoObjects.get(0);
-                    if (firstGeo) {
-                        startAddress = firstGeo.getAddressLine();
-                        document.getElementById("sheetTitle").innerText = "📍 " + (firstGeo.getName() || "Tanlangan joy");
-                    }
-                });
+                document.getElementById("sheetTitle").innerText = "📍 Tanlangan joy";
             });
 
             map.events.add('click', () => {
@@ -434,7 +428,7 @@
             }
         }
 
-        // Qidiruvni to'g'ridan-to'g'ri Geokoder orqali amalga oshirish
+        // Bepul va cheklovsiz qidiruv (Photon/OSM API)
         function handleSearchInput(query) {
             clearTimeout(searchTimer);
             if (query.trim().length < 2) {
@@ -444,70 +438,66 @@
             }
 
             searchTimer = setTimeout(() => {
-                performGeocodeSearch(query.trim());
+                performOpenSearch(query.trim());
             }, 300);
         }
 
-        function performGeocodeSearch(query) {
+        function performOpenSearch(query) {
             const container = document.getElementById("searchResults");
             container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
 
-            ymaps.geocode(query, {
-                boundedBy: [
-                    [userCoords[0] - 0.4, userCoords[1] - 0.4],
-                    [userCoords[0] + 0.4, userCoords[1] + 0.4]
-                ],
-                results: 7
-            }).then(res => {
-                container.innerHTML = "";
-                const geoObjects = res.geoObjects.toArray();
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${userCoords[0]}&lon=${userCoords[1]}&limit=6`;
 
-                if (geoObjects.length === 0) {
-                    container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
-                    return;
-                }
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = "";
+                    if (!data.features || data.features.length === 0) {
+                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                        return;
+                    }
 
-                geoObjects.forEach((geo, index) => {
-                    const coords = geo.geometry.getCoordinates();
-                    const name = geo.getName() || query;
-                    const desc = geo.getDescription() || geo.getAddressLine();
-                    const dist = getDistanceKm(userCoords[0], userCoords[1], coords[0], coords[1]);
+                    data.features.forEach((feat, index) => {
+                        const coords = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
+                        const p = feat.properties;
+                        const name = p.name || query;
+                        const desc = [p.street, p.district, p.city, p.state, p.country].filter(Boolean).join(", ");
+                        const dist = getDistanceKm(userCoords[0], userCoords[1], coords[0], coords[1]);
 
-                    const div = document.createElement("div");
-                    div.className = "result-item";
-                    div.id = "item_" + index;
-                    div.innerHTML = `
-                        <div>
-                            <div class="result-title">${name}</div>
-                            <div class="result-sub">${desc}</div>
-                        </div>
-                        <div class="result-dist">${dist.toFixed(1)} km</div>
-                    `;
+                        const div = document.createElement("div");
+                        div.className = "result-item";
+                        div.id = "item_" + index;
+                        div.innerHTML = `
+                            <div>
+                                <div class="result-title">${name}</div>
+                                <div class="result-sub">${desc || 'O\'zbekiston'}</div>
+                            </div>
+                            <div class="result-dist">${dist.toFixed(1)} km</div>
+                        `;
 
-                    div.onclick = () => {
-                        // Tanlangan elementni belgilash
-                        document.querySelectorAll(".result-item").forEach(el => el.classList.remove("selected"));
-                        div.classList.add("selected");
+                        div.onclick = () => {
+                            document.querySelectorAll(".result-item").forEach(el => el.classList.remove("selected"));
+                            div.classList.add("selected");
 
-                        selectedTarget = {
-                            coords: coords,
-                            name: name,
-                            address: desc,
-                            dist: dist
+                            selectedTarget = {
+                                coords: coords,
+                                name: name,
+                                address: desc || name,
+                                dist: dist
+                            };
+
+                            map.setCenter(coords, 16, { duration: 300 });
+                            document.getElementById("goActionBtn").style.display = "block";
                         };
 
-                        map.setCenter(coords, 16, { duration: 300 });
-                        document.getElementById("goActionBtn").style.display = "block"; // Qizil tugmani chiqarish
-                    };
-
-                    container.appendChild(div);
+                        container.appendChild(div);
+                    });
+                })
+                .catch(() => {
+                    container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
                 });
-            }).catch(err => {
-                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Xatolik yuz berdi</div>";
-            });
         }
 
-        // QIZIL BORISH TUGMASI BOSILGANDA 3-EKRANGA O'TISH
         function goToOverview() {
             if (!selectedTarget) return;
 
@@ -518,10 +508,9 @@
             document.getElementById("locBtn").style.bottom = "50vh";
 
             document.getElementById("overviewStart").innerText = startAddress;
-            document.getElementById("overviewDest").innerText = selectedTarget.name + " (" + selectedTarget.address + ")";
+            document.getElementById("overviewDest").innerText = selectedTarget.name;
             document.getElementById("seatsDist").innerText = `4 kishilik • ${selectedTarget.dist.toFixed(1)} km`;
 
-            // Narx hisoblash
             const baseCalc = Math.round((5000 + (selectedTarget.dist * 2000)) / 500) * 500;
             const totalCalc = baseCalc + 2000;
             
@@ -529,7 +518,6 @@
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
 
-            // Xaritada yo'l chizish
             if (multiRoute) map.geoObjects.remove(multiRoute);
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [userCoords, selectedTarget.coords],
