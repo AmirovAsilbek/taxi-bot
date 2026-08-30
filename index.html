@@ -168,39 +168,26 @@
             color: #111;
         }
 
-        /* Asosiy tugmalar */
+        /* Bitta yagona Buyurtma berish tugmasi */
         .action-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 4px;
+            width: 100%;
+            margin-top: 6px;
         }
         .btn-request {
-            flex: 2;
+            width: 100%;
             background: #e91e63;
             color: #fff;
             border: none;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 15px;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.35);
             transition: 0.2s;
         }
         .btn-request:active {
             transform: scale(0.98);
-        }
-        .btn-code {
-            flex: 1;
-            background: #e91e63;
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
         }
     </style>
 </head>
@@ -234,7 +221,6 @@
         <!-- Tarif bloki -->
         <div class="tariff-card">
             <div class="tariff-left">
-                <!-- Sariq taksi mashina rasmi -->
                 <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
                 <div>
                     <div class="tariff-name">Standard Taxi ⌵</div>
@@ -253,10 +239,9 @@
             <div class="total-badge">Total: 27 000 UZS</div>
         </div>
 
-        <!-- Buyurtma tugmalari -->
+        <!-- Bitta to'liq Buyurtma tugmasi -->
         <div class="action-row">
-            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">Request Standard Taxi</button>
-            <button class="btn-code">Trip Code</button>
+            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Buyurtma berish</button>
         </div>
     </div>
 
@@ -265,7 +250,7 @@
         tg.expand();
 
         let map, userPlacemark;
-        let userCoords = [41.311081, 69.240562]; // Standart koordinata (Toshkent)
+        let userCoords = [41.311081, 69.240562];
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
@@ -281,7 +266,6 @@
 
             locateMe();
 
-            // Xarita siljiganda koordinatani olish
             map.events.add('actionend', () => {
                 const newCoords = map.getCenter();
                 userCoords = newCoords;
@@ -310,7 +294,6 @@
                 lon: userCoords[1]
             };
 
-            // Telegram botga to'g'ridan-to'g'ri koordinatani jo'natish
             tg.sendData(JSON.stringify(payload));
             setTimeout(() => {
                 tg.close();
