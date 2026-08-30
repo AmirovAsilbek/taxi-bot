@@ -435,7 +435,7 @@
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
 
-        /* 3-EKRAN: QIDIRUV (SEARCHING) VASTATUS PANELI */
+        /* 3-EKRAN: QIDIRUV (SEARCHING) HOLATI */
         .search-status-sheet {
             position: absolute;
             bottom: 0;
@@ -648,7 +648,7 @@
         <div class="radar-spinner"></div>
         <div>
             <div style="font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px;">Haydovchi qidirilmoqda...</div>
-            <div style="font-size: 13px; color: #666;" id="searchStatusSub">Eng yaqin bo'sh haydovchilarga so'rov yuborildi</div>
+            <div style="font-size: 13px; color: #666;" id="searchStatusSub">Eng yaqin faol haydovchilarga so'rov yuborildi</div>
         </div>
         <button class="btn-cancel-order" onclick="cancelTaxiOrder()">Buyurtmani bekor qilish</button>
     </div>
@@ -660,7 +660,7 @@
         let map, multiRoute;
         let startPlacemark = null;
         let destPlacemark = null;
-        let nearbyCars = [];
+        let driverPlacemarks = [];
 
         let startCoords = [39.0560, 66.8300];
         let targetCoords = [39.0560, 66.8300];
@@ -669,6 +669,38 @@
         let currentTariff = "Standart";
         let finalTripPrice = "13 000 UZS";
         let searchTimer = null;
+
+        // HAQIQIY ONLINE HAYDOVCHILAR RO'YXATI (OFFLINE BO'LSA KO'RINMAYDI)
+        let activeDrivers = [
+            // { id: 1, lat: 39.0580, lon: 66.8320, is_online: true, angle: 45 }
+        ];
+
+        // TEPADAN QARALGAN KO'K RANGDA AVTOMOBIL SVG IKONKASI
+        const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
+                </filter>
+                <g filter="url(#shadow)">
+                    <!-- G'ildiraklar -->
+                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <!-- Kuzov (Ko'k rang) -->
+                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
+                    <!-- Old oyna -->
+                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                    <!-- Orqa oyna -->
+                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                    <!-- Tom qismi -->
+                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
+                    <!-- Old chiroqlar -->
+                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
+                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
+                </g>
+            </svg>
+        `);
 
         const tariffAvailability = {
             standart: true,
@@ -725,7 +757,7 @@
 
             locateMe();
             checkUserAuth();
-            renderNearbyCars();
+            renderActiveDriversOnly();
 
             map.events.add('actionbegin', () => {
                 collapseSheet();
@@ -761,26 +793,22 @@
             });
         });
 
-        // Xaritadagi taksi mashinalarini ko'rsatish
-        function renderNearbyCars() {
-            nearbyCars.forEach(car => map.geoObjects.remove(car));
-            nearbyCars = [];
+        // FAQAT FAOL (ONLINE) HAYDOVCHILARNI TEPADAN KO'K RANGDA CHIQARISH
+        function renderActiveDriversOnly() {
+            driverPlacemarks.forEach(p => map.geoObjects.remove(p));
+            driverPlacemarks = [];
 
-            const offsets = [
-                [0.003, 0.004], [-0.004, 0.003], [0.005, -0.003],
-                [-0.002, -0.005], [0.006, 0.002]
-            ];
-
-            offsets.forEach(off => {
-                const carPos = [startCoords[0] + off[0], startCoords[1] + off[1]];
-                const carMarker = new ymaps.Placemark(carPos, {}, {
-                    iconLayout: 'default#image',
-                    iconImageHref: 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png',
-                    iconImageSize: [28, 28],
-                    iconImageOffset: [-14, -14]
-                });
-                nearbyCars.push(carMarker);
-                map.geoObjects.add(carMarker);
+            activeDrivers.forEach(driver => {
+                if (driver.is_online) {
+                    const carPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {}, {
+                        iconLayout: 'default#image',
+                        iconImageHref: topViewBlueCarSvg,
+                        iconImageSize: [32, 32],
+                        iconImageOffset: [-16, -16]
+                    });
+                    driverPlacemarks.push(carPlacemark);
+                    map.geoObjects.add(carPlacemark);
+                }
             });
         }
 
@@ -851,7 +879,6 @@
                     startCoords = [pos.coords.latitude, pos.coords.longitude];
                     targetCoords = startCoords;
                     map.setCenter(startCoords, 16, { duration: 300 });
-                    renderNearbyCars();
                 }, null, { enableHighAccuracy: true });
             }
         }
@@ -1009,7 +1036,7 @@
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
             if (destPlacemark) map.geoObjects.remove(destPlacemark);
 
-            // A NUQTA: ODAMCHA VA KUTISH VAQTI (BADJ)
+            // A NUQTA: ODAMCHA VA KUTISH VAQTI
             startPlacemark = new ymaps.Placemark(startCoords, {
                 iconContent: '<div style="background:#fff; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2); margin-top:-35px; margin-left:-15px;">Kutish: 3 min</div>',
                 hintContent: 'Sizning joylashuvingiz'
@@ -1046,12 +1073,10 @@
 
         // TAXI CHAQIRISH (MINI APP YOPILMAYDI)
         function sendTaxiOrder() {
-            // Mini app yopilmaydi, qidiruv ekraniga o'tadi
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
 
-            // Botga fonda ma'lumot jo'natish (agar kerak bo'lsa)
             const payload = {
                 type: "client_order_searching",
                 lat: startCoords[0],
@@ -1066,13 +1091,11 @@
                 client_phone: document.getElementById("uPhone").innerText
             };
 
-            // Haptic tebranish
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('medium');
             }
         }
 
-        // BUYURTMANI BEKOR QILISH
         function cancelTaxiOrder() {
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
