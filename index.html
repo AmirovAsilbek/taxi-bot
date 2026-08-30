@@ -28,7 +28,7 @@
         .center-pin {
             width: 38px;
             height: 38px;
-            background: #ff3333; /* QIZIL RANG */
+            background: #ff3333;
             border: 3px solid #111;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
@@ -70,10 +70,10 @@
             font-size: 20px;
         }
         .btn-menu { top: 18px; left: 18px; }
-        .btn-layers { top: 18px; right: 18px; } /* O'ng tarafdagi xarita qatlami */
+        .btn-layers { top: 18px; right: 18px; font-size: 18px; }
         .btn-locate { bottom: 220px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
-        /* SURILUVCHI PASTKI PANEL */
+        /* 1-EKRAN: SURILUVCHI PASTKI PANEL */
         .bottom-sheet {
             position: absolute;
             bottom: 0;
@@ -120,7 +120,7 @@
             outline: none;
         }
 
-        /* 20 KM Natijalar */
+        /* 20 KM Qidiruv natijalari */
         .search-results {
             display: none;
             flex-direction: column;
@@ -143,24 +143,80 @@
         .result-sub { font-size: 12px; color: #777; }
         .result-dist { font-size: 12px; font-weight: 700; color: #ff3333; }
 
-        /* SARIQ HOSHIYALI BORISH TUGMASI */
-        .btn-go-destination {
-            display: none;
+        /* 2-EKRAN (3-RASM BO'YICHA): SAFAR TAFSILOTLARI */
+        .overview-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
             width: 100%;
+            height: 48vh;
             background: #ffffff;
+            border-radius: 28px 28px 0 0;
+            z-index: 30;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+            padding: 18px 20px 24px 20px;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .route-points { display: flex; flex-direction: column; gap: 10px; }
+        .point-item { display: flex; align-items: center; justify-content: space-between; }
+        .point-left { display: flex; align-items: center; gap: 10px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-start { background: #ffcc00; }
+        .dot-end { background: #ff3333; }
+        .point-name { font-size: 14px; font-weight: 600; color: #222; }
+
+        .btn-note {
+            background: #f4f4f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .tariff-card {
+            background: #ffffff;
+            border: 1.5px solid #ececec;
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tariff-left { display: flex; align-items: center; gap: 12px; }
+        .car-img { width: 48px; height: auto; }
+        .tariff-name { font-size: 15px; font-weight: 700; }
+        .tariff-seats { font-size: 12px; color: #888; }
+        .price-val { font-size: 16px; font-weight: 800; }
+
+        .pricing-row { display: flex; align-items: center; justify-content: space-between; }
+        .tip-selector { font-size: 13px; color: #444; font-weight: 600; }
+        .total-badge {
+            border: 1.5px solid #ffcc00;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
             color: #111;
-            border: 3px solid #ffcc00;
+        }
+
+        .btn-request {
+            width: 100%;
+            background: #ffcc00;
+            color: #000;
+            border: none;
             padding: 15px;
             border-radius: 16px;
             font-size: 16px;
-            font-weight: 800;
-            text-align: center;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: auto;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2);
-            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
-        .btn-go-destination:active { background: #ffcc00; color: #000; }
 
         /* Yon Menyu */
         .side-menu-overlay {
@@ -184,13 +240,13 @@
     <div id="map"></div>
 
     <!-- Markazdagi Qizil Pin -->
-    <div class="center-pin-container">
+    <div class="center-pin-container" id="centerPin">
         <div class="center-pin"></div>
         <div class="pin-shadow"></div>
     </div>
 
     <!-- Tugmalar -->
-    <button class="map-btn btn-menu" onclick="toggleSideMenu()">☰</button>
+    <button class="map-btn btn-menu" id="topBtn" onclick="handleTopBtnClick()">☰</button>
     <button class="map-btn btn-layers" onclick="changeMapType()">🗺️</button>
     <button class="map-btn btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
 
@@ -210,11 +266,9 @@
         </div>
     </div>
 
-    <!-- Suriluvchi Pastki Panel -->
+    <!-- 1-EKRAN: Qidiruv paneli -->
     <div class="bottom-sheet" id="bottomSheet">
-        <!-- Tutqich: Bosilganda pastga/tepaga tushadi -->
         <div class="sheet-handle-bar" onclick="toggleSheetExpand()"></div>
-        
         <div class="title-text" id="sheetTitle">Qayerga borasiz?</div>
 
         <div class="search-box">
@@ -222,24 +276,62 @@
             <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="searchNearby20Km(this.value)">
         </div>
 
-        <!-- 20 km Natijalar ro'yxati -->
         <div class="search-results" id="searchResults"></div>
+    </div>
 
-        <!-- Sariq hoshiyali Borish tugmasi -->
-        <button class="btn-go-destination" id="goDestBtn" onclick="sendTaxiOrder()">shu manzilga borish</button>
+    <!-- 2-EKRAN (3-RASM): Safar tafsilotlari -->
+    <div class="overview-sheet" id="overviewSheet">
+        <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
+
+        <div class="route-points">
+            <div class="point-item">
+                <div class="point-left">
+                    <div class="dot dot-start"></div>
+                    <span class="point-name" id="overviewStart">Chiqish joyingiz</span>
+                </div>
+                <button class="btn-note" onclick="addNote()">📝 Izoh</button>
+            </div>
+            <div class="point-item">
+                <div class="point-left">
+                    <div class="dot dot-end"></div>
+                    <span class="point-name" id="overviewDest">Borish manzili</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tariff-card">
+            <div class="tariff-left">
+                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
+                <div>
+                    <div class="tariff-name">Standart</div>
+                    <div class="tariff-seats" id="seatsDist">4 kishilik • -- km</div>
+                </div>
+            </div>
+            <div class="price-val" id="basePrice">15 000 UZS</div>
+        </div>
+
+        <div class="pricing-row">
+            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
+            <div class="total-badge" id="totalPrice">Jami: 17 000 UZS</div>
+        </div>
+
+        <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let map;
-        let userCoords = [39.6542, 66.9597]; // Joylashuvingiz
-        let selectedDestName = "";
+        let map, multiRoute;
+        let userCoords = [39.6542, 66.9597]; // Chiqish nuqtasi
+        let destCoords = null; // Borish nuqtasi
+        let startAddress = "Tanlangan joy";
+        let destAddress = "";
+        let finalTripPrice = "15 000 UZS";
+
         let mapTypeIndex = 0;
         const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
 
-        // Masofani hisoblash (km)
         function getDistanceKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -262,25 +354,22 @@
             locateMe();
             loadUserData();
 
-            // Xarita siljib to'xtaganda
             map.events.add('actionend', () => {
                 userCoords = map.getCenter();
                 ymaps.geocode(userCoords).then(res => {
                     const firstGeo = res.geoObjects.get(0);
                     if (firstGeo) {
-                        selectedDestName = firstGeo.getAddressLine();
+                        startAddress = firstGeo.getAddressLine();
                         document.getElementById("sheetTitle").innerText = "📍 " + (firstGeo.getName() || "Tanlangan joy");
                     }
                 });
             });
 
-            // Xarita bo'sh joyi bosilganda panel pastga tushadi
             map.events.add('click', () => {
                 collapseSheet();
             });
         });
 
-        // Xarita turlarini almashtirish
         function changeMapType() {
             mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
             map.setType(mapTypes[mapTypeIndex]);
@@ -295,7 +384,6 @@
             }
         }
 
-        // Panelni boshqarish
         function expandSheet() {
             document.getElementById("bottomSheet").classList.add("expanded");
             document.getElementById("searchResults").style.display = "flex";
@@ -318,7 +406,7 @@
             }
         }
 
-        // 20 km masofadagi joylarni qidirish
+        // 20 KM ICHIDA MANZIL QIDIRISH
         function searchNearby20Km(query) {
             if (query.length < 2) return;
 
@@ -339,7 +427,6 @@
                         const targetCoords = geoObj.geometry.getCoordinates();
                         const dist = getDistanceKm(userCoords[0], userCoords[1], targetCoords[0], targetCoords[1]);
 
-                        // Faqat 20 km ichidagi joylarni chiqarish
                         if (dist <= 20) {
                             const div = document.createElement("div");
                             div.className = "result-item";
@@ -350,19 +437,69 @@
                                 </div>
                                 <div class="result-dist">${dist.toFixed(1)} km</div>
                             `;
+                            // MANZIL TANLANGANDA TO'G'RIDAN-TO'G'RI 3-EKRANGA O'TISH
                             div.onclick = () => {
-                                map.setCenter(targetCoords, 17, { duration: 400 });
-                                selectedDestName = item.value;
-                                document.getElementById("sheetTitle").innerText = "📍 " + item.displayName.split(',')[0];
-                                document.getElementById("searchInput").value = item.displayName.split(',')[0];
-                                collapseSheet();
-                                document.getElementById("goDestBtn").style.display = "block";
+                                destCoords = targetCoords;
+                                destAddress = item.value;
+                                switchToOverview(dist);
                             };
                             container.appendChild(div);
                         }
                     });
                 });
             });
+        }
+
+        // 3-EKRAN: SAFAR TAFSILOTLARIGA O'TISH VA MARSHRUT CHIZISH
+        function switchToOverview(distanceKm) {
+            document.getElementById("bottomSheet").style.display = "none";
+            document.getElementById("overviewSheet").style.display = "flex";
+            document.getElementById("centerPin").style.display = "none"; // Markaziy pinni yashirish
+            document.getElementById("topBtn").innerText = "←";
+            document.getElementById("locBtn").style.bottom = "50vh";
+
+            document.getElementById("overviewStart").innerText = startAddress;
+            document.getElementById("overviewDest").innerText = destAddress;
+            document.getElementById("seatsDist").innerText = `4 kishilik • ${distanceKm.toFixed(1)} km`;
+
+            // Narxni hisoblash (5 000 min + 2 000/km + 2 000 tip)
+            const baseCalc = Math.round((5000 + (distanceKm * 2000)) / 500) * 500;
+            const totalCalc = baseCalc + 2000;
+            
+            document.getElementById("basePrice").innerText = baseCalc.toLocaleString() + " UZS";
+            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
+            finalTripPrice = totalCalc.toLocaleString() + " UZS";
+
+            // Xaritada yo'nalish chizish (Yandex MultiRoute)
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [userCoords, destCoords],
+                params: { results: 1 }
+            }, {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: "#ff3333",
+                routeActiveStrokeWidth: 5
+            });
+            map.geoObjects.add(multiRoute);
+        }
+
+        function handleTopBtnClick() {
+            if (document.getElementById("overviewSheet").style.display === "flex") {
+                // Orqaga qaytish
+                document.getElementById("overviewSheet").style.display = "none";
+                document.getElementById("bottomSheet").style.display = "flex";
+                document.getElementById("centerPin").style.display = "flex";
+                document.getElementById("topBtn").innerText = "☰";
+                document.getElementById("locBtn").style.bottom = "220px";
+                if (multiRoute) map.geoObjects.remove(multiRoute);
+                collapseSheet();
+            } else {
+                toggleSideMenu();
+            }
+        }
+
+        function addNote() {
+            prompt("Haydovchi uchun izoh (masalan: Dom oldida kuting):");
         }
 
         function toggleSideMenu() {
@@ -385,7 +522,7 @@
         }
 
         function sendTaxiOrder() {
-            const btn = document.getElementById("goDestBtn");
+            const btn = document.getElementById("submitOrderBtn");
             btn.innerText = "Buyurtma yuborilmoqda...";
             btn.disabled = true;
 
@@ -393,7 +530,8 @@
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                destination: selectedDestName || "Tanlangan manzil",
+                destination: destAddress,
+                price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
             };
