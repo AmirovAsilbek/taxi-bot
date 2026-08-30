@@ -32,15 +32,15 @@
 
         .brand-section { display: flex; align-items: center; gap: 12px; }
         .yellow-badge {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: #ffcc00;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 900;
-            font-size: 20px;
+            font-size: 22px;
             color: #111;
             box-shadow: 0 4px 10px rgba(255, 204, 0, 0.4);
         }
@@ -83,7 +83,7 @@
         .btn-recenter {
             position: absolute;
             right: 16px;
-            bottom: 210px;
+            bottom: 225px;
             width: 46px;
             height: 46px;
             border-radius: 50%;
@@ -112,14 +112,13 @@
             border: 1px solid #f0f0f0;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             text-align: center;
-            divide-x: 1px solid #f0f0f0;
         }
         .stat-item { padding: 0 4px; }
         .stat-value { font-size: 18px; font-weight: 900; color: #111; }
@@ -129,12 +128,32 @@
             background: #fbfbfc;
             border: 1.5px dashed #e1e2e6;
             border-radius: 14px;
-            padding: 10px;
+            padding: 11px;
             text-align: center;
             font-size: 12px;
             font-weight: 600;
             color: #666;
         }
+
+        /* SAFARNI YAKUNLASH REJIMI */
+        .active-trip-panel {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-finish-trip {
+            background: #111111;
+            color: #ffcc00;
+            border: none;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+        }
+        .btn-finish-trip:active { transform: scale(0.98); }
 
         /* RIDEYELLOW POPUP: YANGI BUYURTMA TAKLIFI */
         .order-sheet {
@@ -144,30 +163,55 @@
             width: 100%;
             background: #ffffff;
             border-radius: 28px 28px 0 0;
-            z-index: 50;
+            z-index: 100;
             padding: 24px 20px 20px 20px;
             display: none;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.18);
-            border-top: 3px solid #ffcc00;
-            animation: slideUp 0.3s ease;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.25);
+            border-top: 4px solid #ff3333;
+            animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .order-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        .price-tag { font-size: 24px; font-weight: 900; color: #111; }
-        .badge-tariff { background: #fffbe6; color: #b78103; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 8px; border: 1px solid #ffe58f; }
+        .order-top { display: flex; justify-content: space-between; align-items: center; }
+        .price-tag { font-size: 26px; font-weight: 900; color: #111; }
+        .badge-tariff {
+            background: #fff5f5;
+            color: #ff3333;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 10px;
+            border: 1.5px solid #ffcccc;
+        }
+
+        /* QIZIL TAYMER PROGRESS BARI */
+        .timer-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #f1f2f6;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .timer-bar {
+            width: 100%;
+            height: 100%;
+            background: #ff3333;
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+            transition: width 1s linear;
+        }
 
         .route-info {
             background: #f8f9fa;
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 14px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            border: 1px solid #ebebeb;
         }
-        .route-row { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #222; }
+        .route-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; color: #222; }
         .dot-icon { width: 10px; height: 10px; border-radius: 50%; }
 
         .btn-yellow-main {
@@ -224,63 +268,77 @@
         <div class="dashboard-grid">
             <div class="stat-item">
                 <div class="stat-value" id="tripsCount">0</div>
-                <div class="stat-label">Buyurtma</div>
+                <div class="stat-label">BUYURTMA</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="todayEarnings">0 UZS</div>
-                <div class="stat-label">Daromad</div>
+                <div class="stat-label">DAROMAD</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">5.0 ★</div>
-                <div class="stat-label">Reyting</div>
+                <div class="stat-label">REYTING</div>
             </div>
         </div>
 
         <div class="status-banner" id="gpsStatus">
             Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
         </div>
+
+        <!-- Faol safarni yakunlash tugmasi -->
+        <div class="active-trip-panel" id="activeTripPanel">
+            <button class="btn-finish-trip" onclick="completeCurrentTrip()">🏁 SAFARNI YAKUNLASH</button>
+        </div>
     </div>
 
-    <!-- Yangi Buyurtma Qabul Qilish Modali -->
+    <!-- Yangi Buyurtma Qabul Qilish Modali (POPUP) -->
     <div class="order-sheet" id="orderSheet">
         <div class="order-top">
             <div>
-                <div style="font-size: 12px; color: #888; font-weight: 600;">YANGI BUYURTMA</div>
+                <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase;">Yangi Buyurtma</div>
                 <div class="price-tag" id="ordPrice">18 500 UZS</div>
             </div>
             <span class="badge-tariff" id="ordTariff">STANDART</span>
         </div>
 
+        <!-- QIZIL PROGRESS BAR -->
+        <div class="timer-bar-container">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
+
         <div class="route-info">
             <div class="route-row">
                 <div class="dot-icon" style="background: #ffcc00;"></div>
-                <span id="ordStart">Mijoz joylashuvi (1.2 km)</span>
+                <span id="ordStart">Mijozgacha: 750 m (2 min)</span>
             </div>
             <div class="route-row">
-                <div class="dot-icon" style="background: #ff4757;"></div>
-                <span id="ordDest">Temirchi mahallasi</span>
+                <div class="dot-icon" style="background: #ff3333;"></div>
+                <span id="ordDest">Manzil: Temirchi mahallasi</span>
             </div>
         </div>
 
         <button class="btn-yellow-main" onclick="acceptDriverOrder()">🚖 BUYURTMANI QABUL QILISH</button>
-        <button class="btn-pass" onclick="dismissOrder()">Keyingisi (O'tkazib yuborish)</button>
+        <button class="btn-pass" onclick="dismissOrder()">O'tkazib yuborish</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let map;
+        let map, multiRoute;
         let driverPlacemark = null;
         let isOnline = false;
         let currentPos = [39.0560, 66.8300];
         let watchId = null;
+        let offerTimer = null;
+        let timeLeft = 15;
+        let totalIncome = 0;
+        let completedRides = 0;
 
-        // RIDEYELLOW AVTOMOBIL MARKERI (TEPADAN QARALGAN KO'K AVTO)
+        // RIDEYELLOW AVTOMOBIL MARKERI
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64">
                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
                 </filter>
                 <g filter="url(#shadow)">
                     <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
@@ -305,7 +363,6 @@
                 controls: []
             });
 
-            // Haydovchi profilini sozlash
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const u = tg.initDataUnsafe.user;
                 document.getElementById("dName").innerText = `${u.first_name || 'Haydovchi'}`;
@@ -323,17 +380,13 @@
                         driverPlacemark = new ymaps.Placemark(currentPos, {}, {
                             iconLayout: 'default#image',
                             iconImageHref: topViewCarSvg,
-                            iconImageSize: [38, 38],
-                            iconImageOffset: [-19, -19]
+                            iconImageSize: [40, 40],
+                            iconImageOffset: [-20, -20]
                         });
                         map.geoObjects.add(driverPlacemark);
                         map.setCenter(currentPos, 16);
                     } else {
                         driverPlacemark.geometry.setCoordinates(currentPos);
-                    }
-
-                    if (isOnline) {
-                        document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
                     }
                 }, null, { enableHighAccuracy: true });
             }
@@ -350,29 +403,82 @@
                 lbl.innerText = "Online";
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                setTimeout(() => {
+                    if (isOnline) triggerIncomingOrder();
+                }, 3000);
             } else {
                 btn.classList.remove("online");
                 lbl.innerText = "Offline";
                 banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                dismissOrder();
             }
+        }
+
+        function triggerIncomingOrder() {
+            const sheet = document.getElementById("orderSheet");
+            sheet.style.display = "flex";
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+
+            // 15 soniyalik qizil taymer
+            timeLeft = 15;
+            document.getElementById("timerBar").style.width = "100%";
+            clearInterval(offerTimer);
+            offerTimer = setInterval(() => {
+                timeLeft--;
+                const percent = (timeLeft / 15) * 100;
+                document.getElementById("timerBar").style.width = percent + "%";
+                if (timeLeft <= 0) {
+                    clearInterval(offerTimer);
+                    dismissOrder();
+                }
+            }, 1000);
+        }
+
+        function acceptDriverOrder() {
+            clearInterval(offerTimer);
+            document.getElementById("orderSheet").style.display = "none";
+            document.getElementById("activeTripPanel").style.display = "flex";
+            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
+
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            const clientPos = [currentPos[0] + 0.005, currentPos[1] + 0.004];
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [currentPos, clientPos],
+                params: { routingMode: 'auto', results: 1 }
+            }, {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 6
+            });
+            map.geoObjects.add(multiRoute);
+        }
+
+        function completeCurrentTrip() {
+            completedRides++;
+            totalIncome += 18500;
+            document.getElementById("tripsCount").innerText = completedRides;
+            document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
+            document.getElementById("activeTripPanel").style.display = "none";
+            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            alert("✅ Safar muvaffaqiyatli yakunlandi! 18 500 UZS hisobingizga qo'shildi.");
+        }
+
+        function dismissOrder() {
+            clearInterval(offerTimer);
+            document.getElementById("orderSheet").style.display = "none";
         }
 
         function centerDriverLocation() {
             if (currentPos) {
                 map.setCenter(currentPos, 16, { duration: 300 });
             }
-        }
-
-        function dismissOrder() {
-            document.getElementById("orderSheet").style.display = "none";
-        }
-
-        function acceptDriverOrder() {
-            alert("✅ Buyurtma qabul qilindi! Mijoz tomon yo'nalish tuzilmoqda.");
-            document.getElementById("orderSheet").style.display = "none";
-            document.getElementById("tripsCount").innerText = "1";
-            document.getElementById("todayEarnings").innerText = document.getElementById("ordPrice").innerText;
         }
     </script>
 </body>
