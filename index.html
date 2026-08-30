@@ -563,8 +563,8 @@
         let startPlacemark = null;
         let destPlacemark = null;
 
-        let startCoords = [39.0560, 66.8300]; // Foydalanuvchi joylashuvi
-        let targetCoords = [39.0560, 66.8300]; // Boriladigan manzil
+        let startCoords = [39.0560, 66.8300];
+        let targetCoords = [39.0560, 66.8300];
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
         let finalTripPrice = "15 000 UZS";
@@ -805,7 +805,7 @@
             });
         }
 
-        // 3-EKRAN: TOMCHI PINLAR (A VA B) BILAN MARSHRUTGA O'TISH
+        // 3-EKRAN: SIZNING JOYINGIZ UCHUN ODAMCHA I把它 (islands#yellowPersonIcon) VA BORISH UCHUN QIZIL PIN
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -829,14 +829,14 @@
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
             if (destPlacemark) map.geoObjects.remove(destPlacemark);
 
-            // A nuqta: Sariq tomchi pin
+            // A NUQTA: ODAMCHA BELGISI (islands#yellowPersonIcon)
             startPlacemark = new ymaps.Placemark(startCoords, {
                 hintContent: 'Sizning joylashuvingiz'
             }, {
-                preset: 'islands#yellowDotIcon'
+                preset: 'islands#yellowPersonIcon'
             });
 
-            // B nuqta: Qizil tomchi pin (Tanlangan manzil)
+            // B NUQTA: BORADIGAN MANZIL (Qizil tomchi pin)
             destPlacemark = new ymaps.Placemark(targetCoords, {
                 hintContent: targetName
             }, {
