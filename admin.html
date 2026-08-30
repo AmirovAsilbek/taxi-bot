@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RideYellow - Admin Dispatcher</title>
+    <!-- Yandex Xarita API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Firebase Realtime SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; background: #0f1117; color: #f1f2f6; overflow-x: hidden; }
+
+        /* HEADER */
+        .admin-header {
+            background: #181b24;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #282c38;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-brand { display: flex; align-items: center; gap: 10px; }
+        .admin-badge {
+            width: 38px;
+            height: 38px;
+            background: #ffcc00;
+            color: #111;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 20px;
+        }
+        .header-title { font-size: 16px; font-weight: 800; color: #fff; }
+        .header-sub { font-size: 11px; color: #8a8f9d; }
+
+        /* STATISTIKA KARTALARI */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 14px 16px;
+        }
+        .stat-card {
+            background: #181b24;
+            border: 1px solid #282c38;
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .stat-num { font-size: 22px; font-weight: 900; color: #ffcc00; }
+        .stat-title { font-size: 11px; font-weight: 700; color: #8a8f9d; text-transform: uppercase; }
+
+        /* NAVIGATION TABS */
+        .tab-bar {
+            display: flex;
+            background: #181b24;
+            margin: 0 16px 14px 16px;
+            border-radius: 14px;
+            padding: 4px;
+            border: 1px solid #282c38;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #8a8f9d;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #ffcc00;
+            color: #111;
+        }
+
+        /* VIEW CONTAINERLAR */
+        .tab-view { display: none; padding: 0 16px 30px 16px; }
+        .tab-view.active { display: block; }
+
+        /* JONLI XARITA */
+        #adminMap {
+            width: 100%;
+            height: 380px;
+            border-radius: 20px;
+            border: 1px solid #282c38;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        /* HAYDOVCHILAR RO'YXATI */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .section-title { font-size: 15px; font-weight: 800; color: #fff; }
+        .btn-add-driver {
+            background: #ffcc00;
+            color: #111;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .driver-card {
+            background: #181b24;
+            border: 1px solid #282c38;
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .driver-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .driver-info-main { display: flex; align-items: center; gap: 10px; }
+        .driver-avatar {
+            width: 40px;
+            height: 40px;
+            background: #282c38;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #ffcc00;
+            font-size: 16px;
+        }
+        .driver-name { font-weight: 800; font-size: 14px; color: #fff; }
+        .driver-phone { font-size: 12px; color: #8a8f9d; }
+        .status-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .status-badge.online { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+        .status-badge.offline { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+
+        .driver-meta-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            background: #13151c;
+            padding: 8px 12px;
+            border-radius: 10px;
+            color: #ccc;
+        }
+
+        .driver-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-action-call {
+            flex: 1;
+            background: #282c38;
+            color: #2ed573;
+            text-align: center;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .btn-action-delete {
+            flex: 1;
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* FAOL BUYURTMA KARTASI */
+        .order-card {
+            background: #181b24;
+            border: 1px solid #282c38;
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .order-head { display: flex; justify-content: space-between; align-items: center; }
+        .order-price { font-size: 20px; font-weight: 900; color: #ffcc00; }
+        .order-badge {
+            background: rgba(255, 204, 0, 0.15);
+            color: #ffcc00;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .order-details {
+            background: #13151c;
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .btn-cancel-adm {
+            background: #ff4757;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* QO'SHISH MODALI */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-box {
+            background: #181b24;
+            border: 1px solid #282c38;
+            border-radius: 20px;
+            padding: 22px;
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-title { font-size: 17px; font-weight: 800; color: #fff; }
+        .adm-input, .adm-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #282c38;
+            background: #13151c;
+            color: #fff;
+            outline: none;
+            font-size: 14px;
+        }
+        .adm-input:focus { border-color: #ffcc00; }
+        .btn-save-adm {
+            background: #ffcc00;
+            color: #111;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .btn-close-adm {
+            background: transparent;
+            color: #8a8f9d;
+            border: none;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header">
+        <div class="header-brand">
+            <div class="admin-badge">Y</div>
+            <div>
+                <div class="header-title">RideYellow Admin</div>
+                <div class="header-sub">Dispetcherlik va Boshqaruv</div>
+            </div>
+        </div>
+        <button class="btn-add-driver" onclick="openAddModal()">+ Haydovchi</button>
+    </div>
+
+    <!-- STATISTIKA -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-num" id="statOnlineCount">0</div>
+            <div class="stat-title">Online Haydovchilar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="statTotalDrivers">0</div>
+            <div class="stat-title">Jami Haydovchilar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="statActiveOrders">0</div>
+            <div class="stat-title">Faol Buyurtmalar</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" id="statSystemIncome">0 UZS</div>
+            <div class="stat-title">Umumiy Tushum</div>
+        </div>
+    </div>
+
+    <!-- TAB TUGMALARI -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
+        <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
+        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Buyurtmalar</button>
+    </div>
+
+    <!-- TAB 1: JONLI XARITA -->
+    <div class="tab-view active" id="mapTab">
+        <div id="adminMap"></div>
+        <div class="section-title" style="margin-bottom: 8px;">🟢 Xaritada ko'rinayotgan faol mashinalar</div>
+        <div id="mapDriversSummary" style="font-size: 13px; color: #8a8f9d;">Yuklanmoqda...</div>
+    </div>
+
+    <!-- TAB 2: HAYDOVCHILARNI BOSHQARISH -->
+    <div class="tab-view" id="driversTab">
+        <div class="section-header">
+            <div class="section-title">Ro'yxatdan o'tgan haydovchilar</div>
+        </div>
+        <div id="driversListContainer">
+            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Yuklanmoqda...</div>
+        </div>
+    </div>
+
+    <!-- TAB 3: BUYURTMALAR -->
+    <div class="tab-view" id="ordersTab">
+        <div class="section-header">
+            <div class="section-title">Jonli va Faol Buyurtmalar</div>
+        </div>
+        <div id="ordersListContainer">
+            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Hozircha faol buyurtmalar yo'q</div>
+        </div>
+    </div>
+
+    <!-- HAYDOVCHI QO'SHISH MODALI -->
+    <div class="modal-overlay" id="addDriverModal">
+        <div class="modal-box">
+            <div class="modal-title">Yangi Haydovchi Qo'shish</div>
+            
+            <input type="text" id="newDName" class="adm-input" placeholder="Ism va Familiya">
+            <input type="tel" id="newDPhone" class="adm-input" placeholder="+998 90 123 45 67">
+            <input type="text" id="newDCar" class="adm-input" placeholder="Mashina rusumi va rangi">
+            <input type="text" id="newDPlate" class="adm-input" placeholder="Davlat raqami (70 A 777 AA)">
+            
+            <select id="newDTariff" class="adm-select">
+                <option value="standart">Standart</option>
+                <option value="komfort">Komfort</option>
+                <option value="komfort_plus">Komfort+</option>
+            </select>
+            
+            <button class="btn-save-adm" onclick="saveNewDriver()">Bazaga saqlash</button>
+            <button class="btn-close-adm" onclick="closeAddModal()">Bekor qilish</button>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) { tg.expand(); }
+
+        // FIREBASE DATABASE
+        const firebaseConfig = {
+            databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let adminMap;
+        let driverMarkers = {};
+        let registeredDriversData = {};
+        let onlineDriversData = {};
+
+        const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
+                </filter>
+                <g filter="url(#shadow)">
+                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
+                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#111"/>
+                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
+                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
+                </g>
+            </svg>
+        `);
+
+        ymaps.ready(() => {
+            adminMap = new ymaps.Map("adminMap", {
+                center: [39.0560, 66.8300], // Shahrisabz
+                zoom: 14,
+                type: 'yandex#map',
+                controls: ['zoomControl']
+            });
+
+            initAdminSync();
+        });
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll(".tab-view").forEach(el => el.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+            
+            document.getElementById(tabId).classList.add("active");
+            btn.classList.add("active");
+
+            if (tabId === 'mapTab' && adminMap) {
+                adminMap.container.fitToViewport();
+            }
+        }
+
+        // BAZADAN MA'LUMOTLARNI REAL VAQTDA SINXRON QILISH
+        function initAdminSync() {
+            // 1. Ro'yxatdan o'tgan haydovchilar
+            db.ref('registered_drivers').on('value', snap => {
+                registeredDriversData = snap.val() || {};
+                renderDriversList();
+                updateStats();
+            });
+
+            // 2. Online haydovchilar & Xaritadagi harakat
+            db.ref('drivers').on('value', snap => {
+                onlineDriversData = snap.val() || {};
+                updateMapMarkers(onlineDriversData);
+                renderDriversList();
+                updateStats();
+            });
+
+            // 3. Faol Buyurtmalar
+            db.ref('orders').on('value', snap => {
+                const orders = snap.val() || {};
+                renderOrdersList(orders);
+                updateStats();
+            });
+        }
+
+        function updateMapMarkers(drivers) {
+            for (let id in driverMarkers) {
+                if (!drivers[id]) {
+                    adminMap.geoObjects.remove(driverMarkers[id]);
+                    delete driverMarkers[id];
+                }
+            }
+
+            let summaryText = [];
+            for (let id in drivers) {
+                const d = drivers[id];
+                if (d.is_online && d.lat && d.lon) {
+                    summaryText.push(`🚖 ${d.name} (${d.car})`);
+                    if (!driverMarkers[id]) {
+                        const marker = new ymaps.Placemark([d.lat, d.lon], {
+                            hintContent: `${d.name} • ${d.car}`
+                        }, {
+                            iconLayout: 'default#image',
+                            iconImageHref: topViewCarSvg,
+                            iconImageSize: [36, 36],
+                            iconImageOffset: [-18, -18]
+                        });
+                        driverMarkers[id] = marker;
+                        adminMap.geoObjects.add(marker);
+                    } else {
+                        driverMarkers[id].geometry.setCoordinates([d.lat, d.lon]);
+                    }
+                }
+            }
+
+            document.getElementById("mapDriversSummary").innerHTML = summaryText.length > 0 
+                ? summaryText.join("<br>") 
+                : "Ayni damda online haydovchilar yo'q";
+        }
+
+        function renderDriversList() {
+            const container = document.getElementById("driversListContainer");
+            const allIds = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)]));
+
+            if (allIds.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha ro'yxatdan o'tgan haydovchilar mavjud emas</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            allIds.forEach(id => {
+                const reg = registeredDriversData[id] || {};
+                const onl = onlineDriversData[id] || {};
+                const isOnline = onl.is_online ? true : false;
+
+                const name = reg.name || onl.name || "Haydovchi";
+                const phone = reg.phone || onl.phone || "+998900000000";
+                const car = reg.car || onl.car || "Chevrolet";
+                const plate = reg.plate || "70 N 079 NN";
+                const tariff = reg.tariff || onl.tariff || "standart";
+
+                const card = document.createElement("div");
+                card.className = "driver-card";
+                card.innerHTML = `
+                    <div class="driver-top">
+                        <div class="driver-info-main">
+                            <div class="driver-avatar">${name.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="driver-name">${name}</div>
+                                <div class="driver-phone">${phone}</div>
+                            </div>
+                        </div>
+                        <span class="status-badge ${isOnline ? 'online' : 'offline'}">
+                            ${isOnline ? '● Online' : '○ Offline'}
+                        </span>
+                    </div>
+
+                    <div class="driver-meta-row">
+                        <span>🚗 ${car} (${plate})</span>
+                        <span style="color:#ffcc00; font-weight:700;">${tariff.toUpperCase()}</span>
+                    </div>
+
+                    <div class="driver-actions">
+                        <a href="tel:${phone}" class="btn-action-call">📞 Qo'ng'iroq</a>
+                        <button class="btn-action-delete" onclick="deleteDriverFromDatabase('${id}', '${name}')">🗑️ Bazadan o'chirish</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderOrdersList(orders) {
+            const container = document.getElementById("ordersListContainer");
+            const currentOrder = orders.current_order;
+            const currentStatus = orders.current_status;
+
+            if (!currentOrder && !currentStatus) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha faol buyurtmalar yo'q</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            if (currentOrder) {
+                const card = document.createElement("div");
+                card.className = "order-card";
+                card.innerHTML = `
+                    <div class="order-head">
+                        <div class="order-price">${currentOrder.price || '0 UZS'}</div>
+                        <span class="order-badge">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
+                    </div>
+                    <div class="order-details">
+                        <div>👤 <b>Mijoz:</b> ${currentOrder.client_name || 'Noma\'lum'} (${currentOrder.client_phone || ''})</div>
+                        <div>📍 <b>Borish manzili:</b> ${currentOrder.destination || 'Belgilanmagan'}</div>
+                        <div>📏 <b>Masofa:</b> ${currentOrder.distance || '0 km'} • <b>Tarif:</b> ${currentOrder.tariff || 'Standart'}</div>
+                    </div>
+                    <button class="btn-cancel-adm" onclick="forceCancelOrder()">❌ Buyurtmani bekor qilish</button>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        function updateStats() {
+            const onlineCount = Object.keys(onlineDriversData).filter(id => onlineDriversData[id].is_online).length;
+            const totalDrivers = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)])).length;
+            
+            document.getElementById("statOnlineCount").innerText = onlineCount;
+            document.getElementById("statTotalDrivers").innerText = totalDrivers;
+            document.getElementById("statActiveOrders").innerText = Object.keys(onlineDriversData).length > 0 ? (onlineCount > 0 ? "1" : "0") : "0";
+            document.getElementById("statSystemIncome").innerText = (totalDrivers * 18500).toLocaleString() + " UZS";
+        }
+
+        // HAYDOVCHINI BAZADAN TO'LIQ O'CHIRISH (DELETE)
+        function deleteDriverFromDatabase(id, name) {
+            if (confirm(`Haqiqatan ham ${name} haydovchisini bazadan butunlay o'chirib tashlamoqchimisiz?`)) {
+                // 1. Ro'yxatdan o'tganlar bazasidan o'chirish
+                db.ref('registered_drivers/' + id).remove();
+                
+                // 2. Online lokatsiyasini o'chirish
+                db.ref('drivers/' + id).remove();
+
+                if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                alert(`✅ ${name} bazadan muvaffaqiyatli o'chirildi!`);
+            }
+        }
+
+        // BUYURTMANI MAJBURIY TO'XTATISH
+        function forceCancelOrder() {
+            if (confirm("Ushbu faol buyurtmani majburiy bekor qilib, bazadan o'chirmoqchimisiz?")) {
+                db.ref('orders/current_status').remove();
+                db.ref('orders/current_order').remove();
+                alert("✅ Buyurtma bekor qilindi!");
+            }
+        }
+
+        // YANGI HAYDOVCHI QO'SHISH
+        function openAddModal() { document.getElementById("addDriverModal").style.display = "flex"; }
+        function closeAddModal() { document.getElementById("addDriverModal").style.display = "none"; }
+
+        function saveNewDriver() {
+            const name = document.getElementById("newDName").value.trim();
+            const phone = document.getElementById("newDPhone").value.trim();
+            const car = document.getElementById("newDCar").value.trim();
+            const plate = document.getElementById("newDPlate").value.trim();
+            const tariff = document.getElementById("newDTariff").value;
+
+            if (!name || !phone || !car || !plate) {
+                alert("Iltimos, barcha maydonlarni to'ldiring!");
+                return;
+            }
+
+            const driverId = "driver_" + Date.now();
+            db.ref('registered_drivers/' + driverId).set({
+                name: name,
+                phone: phone,
+                car: car,
+                plate: plate,
+                tariff: tariff,
+                registered_at: Date.now()
+            });
+
+            closeAddModal();
+            alert("✅ Yangi haydovchi bazaga qo'shildi!");
+        }
+    </script>
+</body>
+</html>
