@@ -670,32 +670,23 @@
         let finalTripPrice = "13 000 UZS";
         let searchTimer = null;
 
-        // HAQIQIY ONLINE HAYDOVCHILAR RO'YXATI (OFFLINE BO'LSA KO'RINMAYDI)
-        let activeDrivers = [
-            // { id: 1, lat: 39.0580, lon: 66.8320, is_online: true, angle: 45 }
-        ];
+        let activeDrivers = [];
 
-        // TEPADAN QARALGAN KO'K RANGDA AVTOMOBIL SVG IKONKASI
+        // TEPADAN QARALGAN KO'K AVTO SVG
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.35"/>
                 </filter>
                 <g filter="url(#shadow)">
-                    <!-- G'ildiraklar -->
                     <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
                     <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
                     <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
                     <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <!-- Kuzov (Ko'k rang) -->
                     <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
-                    <!-- Old oyna -->
                     <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
-                    <!-- Orqa oyna -->
                     <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
-                    <!-- Tom qismi -->
                     <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
-                    <!-- Old chiroqlar -->
                     <circle cx="18" cy="8" r="2.5" fill="#fff"/>
                     <circle cx="46" cy="8" r="2.5" fill="#fff"/>
                 </g>
@@ -793,7 +784,6 @@
             });
         });
 
-        // FAQAT FAOL (ONLINE) HAYDOVCHILARNI TEPADAN KO'K RANGDA CHIQARISH
         function renderActiveDriversOnly() {
             driverPlacemarks.forEach(p => map.geoObjects.remove(p));
             driverPlacemarks = [];
@@ -1009,6 +999,7 @@
             }
         }
 
+        // 3-EKRAN: KO'CHALAR VA AVTOMOBIL YO'LLARI BO'YLAB ANIQ MARSHRUT CHIZISH
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -1038,20 +1029,20 @@
 
             // A NUQTA: ODAMCHA VA KUTISH VAQTI
             startPlacemark = new ymaps.Placemark(startCoords, {
-                iconContent: '<div style="background:#fff; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2); margin-top:-35px; margin-left:-15px;">Kutish: 3 min</div>',
+                iconContent: '<div style="background:#fff; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:800; color:#111; box-shadow:0 3px 8px rgba(0,0,0,0.25); margin-top:-38px; margin-left:-18px; border:1.5px solid #ffcc00;">Kutish: 3 min</div>',
                 hintContent: 'Sizning joylashuvingiz'
             }, {
                 preset: 'islands#yellowPersonIcon'
             });
 
-            // B NUQTA: BORISH MANZILI VA YETIB BORISH VAQTI
+            // B NUQTA: BORISH MANZILI VA KELISH VAQTI
             const now = new Date();
             const arrivalMinutes = Math.round(targetDist * 2.2) + 3;
             now.setMinutes(now.getMinutes() + arrivalMinutes);
             const arrivalTime = now.toTimeString().substring(0, 5);
 
             destPlacemark = new ymaps.Placemark(targetCoords, {
-                iconContent: `<div style="background:#fff; padding:3px 8px; border-radius:10px; font-size:11px; font-weight:bold; box-shadow:0 2px 6px rgba(0,0,0,0.2); margin-top:-35px; margin-left:-15px;">Kelish: ${arrivalTime}</div>`,
+                iconContent: `<div style="background:#fff; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:800; color:#ff3333; box-shadow:0 3px 8px rgba(0,0,0,0.25); margin-top:-38px; margin-left:-18px; border:1.5px solid #ff3333;">Kelish: ${arrivalTime}</div>`,
                 hintContent: targetName
             }, {
                 preset: 'islands#redDotIcon'
@@ -1060,14 +1051,43 @@
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
+            // AVTOMOBIL KO'CHALARI VA BURILIShLARI BO'YLAB HAQIQIY YO'L CHIZIG'I (ROUTINGMODE: 'AUTO')
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [startCoords, targetCoords],
-                params: { results: 1 }
+                params: {
+                    routingMode: 'auto',
+                    results: 1
+                }
             }, {
                 boundsAutoApply: true,
-                routeActiveStrokeColor: "#ff9900",
-                routeActiveStrokeWidth: 5
+                wayPointVisible: false,
+                // Avtomobil ko'chasi chizig'i: Qalin, aniq va yorqin uslubda
+                routeActiveStrokeColor: "#ff4757",
+                routeActiveStrokeWidth: 6,
+                routeActiveStrokeStyle: 'solid',
+                routeActiveOpacity: 0.95
             });
+
+            // Marshrut tuzilganda haqiqiy masofa va vaqtni yangilash
+            multiRoute.model.events.add('requestsuccess', () => {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    const actualDistanceKm = activeRoute.properties.get('distance').value / 1000;
+                    targetDist = actualDistanceKm;
+                    document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+
+                    prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
+                    prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
+                    prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
+
+                    document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
+                    document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
+                    document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
+
+                    selectTariff('standart');
+                }
+            });
+
             map.geoObjects.add(multiRoute);
         }
 
