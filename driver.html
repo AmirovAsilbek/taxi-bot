@@ -16,6 +16,71 @@
 
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
+        /* HAYDOVCHI RO'YXATDAN O'TISH MODALI */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.88);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .auth-badge {
+            width: 50px;
+            height: 50px;
+            background: #ffcc00;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 900;
+            margin: 0 auto 4px auto;
+        }
+        .auth-title { font-size: 20px; font-weight: 800; color: #111; text-align: center; }
+        .auth-desc { font-size: 13px; color: #666; text-align: center; margin-bottom: 6px; }
+        .auth-input, .auth-select {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1.5px solid #e2e4e8;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            background: #f8f9fa;
+            color: #111;
+        }
+        .auth-input:focus, .auth-select:focus { border-color: #ffcc00; background: #fff; }
+        .btn-auth-submit {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 4px 14px rgba(255, 204, 0, 0.4);
+        }
+
         .top-bar {
             position: absolute;
             top: 16px;
@@ -277,14 +342,36 @@
 </head>
 <body>
 
+    <!-- HAYDOVCHI RO'YXATDAN O'TISH MODALI -->
+    <div class="auth-overlay" id="driverAuthModal">
+        <div class="auth-card">
+            <div class="auth-badge">🚖</div>
+            <div class="auth-title">Haydovchi Ro'yxatdan o'tish</div>
+            <div class="auth-desc">RideYellow hamkori bo'lish uchun ma'lumotlaringizni to'ldiring:</div>
+            
+            <input type="text" id="regDriverName" class="auth-input" placeholder="Ism va Familiyangiz">
+            <input type="tel" id="regDriverPhone" class="auth-input" placeholder="+998 90 123 45 67">
+            <input type="text" id="regDriverCar" class="auth-input" placeholder="Mashina rusumi va rangi (masalan: Oq Onix)">
+            <input type="text" id="regDriverPlate" class="auth-input" placeholder="Davlat raqami (masalan: 70 A 777 AA)">
+            
+            <select id="regDriverTariff" class="auth-select">
+                <option value="standart">Standart tarif</option>
+                <option value="komfort">Komfort tarif</option>
+                <option value="komfort_plus">Komfort+ tarif</option>
+            </select>
+            
+            <button class="btn-auth-submit" onclick="saveDriverRegistration()">Ro'yxatdan o'tish va Boshlash</button>
+        </div>
+    </div>
+
     <div id="map"></div>
 
     <div class="top-bar">
         <div class="brand-section">
             <div class="yellow-badge">Y</div>
             <div>
-                <div class="driver-name" id="dName">Asilbek Amirov</div>
-                <div class="driver-car" id="dCar">Oq Onix • 70 N 079 NN</div>
+                <div class="driver-name" id="dName">Haydovchi</div>
+                <div class="driver-car" id="dCar">Mashina ma'lumoti</div>
             </div>
         </div>
 
@@ -387,8 +474,6 @@
         let driverId = "driver_1";
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             driverId = "driver_" + tg.initDataUnsafe.user.id;
-            const u = tg.initDataUnsafe.user;
-            document.getElementById("dName").innerText = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Asilbek Amirov';
         }
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
@@ -419,9 +504,66 @@
                 controls: []
             });
 
+            checkDriverAuth();
             initLocationTracker();
             listenForIncomingOrders();
         });
+
+        // HAYDOVCHI AVTORIZATSIYASINI TEKSHIRISH
+        function checkDriverAuth() {
+            const savedName = localStorage.getItem("ry_driver_name");
+            const savedPhone = localStorage.getItem("ry_driver_phone");
+            const savedCar = localStorage.getItem("ry_driver_car");
+            const savedPlate = localStorage.getItem("ry_driver_plate");
+
+            if (savedName && savedPhone && savedCar && savedPlate) {
+                document.getElementById("dName").innerText = savedName;
+                document.getElementById("dCar").innerText = `${savedCar} • ${savedPlate}`;
+                document.getElementById("driverAuthModal").style.display = "none";
+            } else {
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                }
+                document.getElementById("driverAuthModal").style.display = "flex";
+            }
+        }
+
+        // HAYDOVCHI MA'LUMOTLARINI SAQLASH
+        function saveDriverRegistration() {
+            const name = document.getElementById("regDriverName").value.trim();
+            const phone = document.getElementById("regDriverPhone").value.trim();
+            const car = document.getElementById("regDriverCar").value.trim();
+            const plate = document.getElementById("regDriverPlate").value.trim();
+            const tariff = document.getElementById("regDriverTariff").value;
+
+            if (!name || !phone || !car || !plate) {
+                alert("Iltimos, barcha maydonlarni to'liq to'ldiring!");
+                return;
+            }
+
+            localStorage.setItem("ry_driver_name", name);
+            localStorage.setItem("ry_driver_phone", phone);
+            localStorage.setItem("ry_driver_car", car);
+            localStorage.setItem("ry_driver_plate", plate);
+            localStorage.setItem("ry_driver_tariff", tariff);
+
+            document.getElementById("dName").innerText = name;
+            document.getElementById("dCar").innerText = `${car} • ${plate}`;
+            document.getElementById("driverAuthModal").style.display = "none";
+
+            // BAZAGA RO'YXATDAN O'TGAN HAYDOVCHINI SAQLASH
+            db.ref('registered_drivers/' + driverId).set({
+                name: name,
+                phone: phone,
+                car: car,
+                plate: plate,
+                tariff: tariff,
+                registered_at: Date.now()
+            });
+
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
 
         function playBeepSound() {
             try {
@@ -457,12 +599,14 @@
                     }
 
                     if (isOnline) {
+                        const dTariff = localStorage.getItem("ry_driver_tariff") || "standart";
                         db.ref('drivers/' + driverId).set({
                             lat: currentPos[0],
                             lon: currentPos[1],
                             name: document.getElementById("dName").innerText,
                             car: document.getElementById("dCar").innerText,
-                            tariff: "standart",
+                            phone: localStorage.getItem("ry_driver_phone") || "+998900000000",
+                            tariff: dTariff,
                             is_online: true,
                             updated_at: Date.now()
                         });
@@ -510,6 +654,11 @@
         }
 
         function toggleDriverOnline() {
+            if (!localStorage.getItem("ry_driver_name")) {
+                document.getElementById("driverAuthModal").style.display = "flex";
+                return;
+            }
+
             isOnline = !isOnline;
             const btn = document.getElementById("toggleBtn");
             const lbl = document.getElementById("statusLabel");
@@ -521,12 +670,14 @@
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Mijozlarga ko'rinmoqdasiz";
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
+                const dTariff = localStorage.getItem("ry_driver_tariff") || "standart";
                 db.ref('drivers/' + driverId).set({
                     lat: currentPos[0],
                     lon: currentPos[1],
                     name: document.getElementById("dName").innerText,
                     car: document.getElementById("dCar").innerText,
-                    tariff: "standart",
+                    phone: localStorage.getItem("ry_driver_phone") || "+998900000000",
+                    tariff: dTariff,
                     is_online: true,
                     updated_at: Date.now()
                 });
@@ -579,12 +730,14 @@
 
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
+            const driverPhone = localStorage.getItem("ry_driver_phone") || "+998883893379";
+
             db.ref('orders/current_status').set({
                 status: 'accepted',
                 step: 'to_client',
                 driver_name: document.getElementById("dName").innerText,
                 driver_car: document.getElementById("dCar").innerText,
-                driver_phone: "+998883893379"
+                driver_phone: driverPhone
             });
 
             db.ref('orders/current_order').update({ status: 'accepted' });
