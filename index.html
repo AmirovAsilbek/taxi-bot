@@ -310,7 +310,7 @@
         }
         .btn-go-action:active { transform: scale(0.98); background: #e02424; }
 
-        /* 2-EKRAN: SAFAR TAFSILOTLARI (Barcha tariflar ko'rinishi uchun moslashtirildi) */
+        /* 2-EKRAN: SAFAR TAFSILOTLARI */
         .overview-sheet {
             position: absolute;
             bottom: 0;
@@ -521,6 +521,23 @@
             font-weight: 700;
             font-size: 14px;
         }
+
+        /* 5-EKRAN: BAHOLASH OYNASI */
+        .rating-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px 28px 0 0;
+            z-index: 40;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
+            padding: 24px 20px;
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -615,7 +632,7 @@
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
-    <!-- SAFAR TAFSILOTLARI (Barcha tariflar ko'rinadigan qilib to'g'irlandi) -->
+    <!-- SAFAR TAFSILOTLARI -->
     <div class="overview-sheet" id="overviewSheet">
         <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
@@ -710,6 +727,20 @@
             <span style="color: #666;">Safar narxi:</span>
             <span style="color: #111;" id="accTripPrice">18 500 UZS</span>
         </div>
+    </div>
+
+    <!-- SAFAR YAKUNI VA BAHOLASH OYNASI -->
+    <div class="rating-sheet" id="ratingSheet">
+        <div style="font-size: 20px; font-weight: 800; color: #111;">Safar yakunlandi! 🎉</div>
+        <div style="font-size: 14px; color: #666;">Haydovchining ishini baholang:</div>
+        <div style="font-size: 32px; display: flex; justify-content: center; gap: 10px; cursor: pointer; color: #ffcc00;">
+            <span onclick="rateDriver(1)">★</span>
+            <span onclick="rateDriver(2)">★</span>
+            <span onclick="rateDriver(3)">★</span>
+            <span onclick="rateDriver(4)">★</span>
+            <span onclick="rateDriver(5)">★</span>
+        </div>
+        <button class="btn-request" onclick="closeRatingSheet()">Yopish</button>
     </div>
 
     <script>
@@ -836,7 +867,7 @@
             });
         }
 
-        // HAYDOVCHI BUYURTMANI QABUL QILGANINI REAL VAQTDA ANIQLASH
+        // HAYDOVCHI BUYURTMANI QABUL QILGANINI VA SAFAR YAKUNLANGANINI KUZATISH
         function listenToOrderAcceptance() {
             db.ref('orders/current_status').on('value', snapshot => {
                 const data = snapshot.val();
@@ -853,8 +884,62 @@
                     }
 
                     if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                    // Haydovchi pozitsiyasidan mijozgacha bo'lgan yo'lni chizish (ETA)
+                    db.ref('drivers').once('value', dSnap => {
+                        const drivers = dSnap.val() || {};
+                        let driverPos = [startCoords[0] + 0.003, startCoords[1] + 0.003];
+                        for (let id in drivers) {
+                            if (drivers[id].is_online && drivers[id].lat && drivers[id].lon) {
+                                driverPos = [drivers[id].lat, drivers[id].lon];
+                                break;
+                            }
+                        }
+
+                        if (multiRoute) map.geoObjects.remove(multiRoute);
+                        multiRoute = new ymaps.multiRouter.MultiRoute({
+                            referencePoints: [driverPos, startCoords],
+                            params: { routingMode: 'auto', results: 1 }
+                        }, {
+                            boundsAutoApply: true,
+                            routeActiveStrokeColor: "#ffcc00",
+                            routeActiveStrokeWidth: 6
+                        });
+                        map.geoObjects.add(multiRoute);
+
+                        multiRoute.model.events.add('requestsuccess', () => {
+                            const activeRoute = multiRoute.getActiveRoute();
+                            if (activeRoute) {
+                                const durationSec = activeRoute.properties.get('duration').value;
+                                const minutes = Math.ceil(durationSec / 60);
+                                document.getElementById("driverArrivalTimer").innerText = minutes + " min";
+                            }
+                        });
+                    });
+                } else if (!data) {
+                    // Agar status o'chirilsa (safar yakunlansa) baholash oynasini chiqarish
+                    if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
+                        document.getElementById("driverAcceptedSheet").style.display = "none";
+                        document.getElementById("ratingSheet").style.display = "flex";
+                        document.getElementById("locBtn").style.bottom = "32vh";
+                        if (multiRoute) map.geoObjects.remove(multiRoute);
+                    }
                 }
             });
+        }
+
+        function rateDriver(stars) {
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            alert(`Rahmat! Haydovchiga ${stars} yulduz berildi ⭐`);
+            closeRatingSheet();
+        }
+
+        function closeRatingSheet() {
+            document.getElementById("ratingSheet").style.display = "none";
+            document.getElementById("bottomSheet").style.display = "flex";
+            document.getElementById("centerPin").style.display = "flex";
+            document.getElementById("topBtn").innerText = "☰";
+            document.getElementById("locBtn").style.bottom = "230px";
         }
 
         function getDistanceKm(lat1, lon1, lat2, lon2) {
@@ -984,6 +1069,12 @@
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
         }
 
+        let prices = {
+            standart: 5500,
+            komfort: 9000,
+            komfort_plus: 14000
+        };
+
         function updateTariffsAvailabilityUI() {
             document.getElementById("tariff_standart").classList.remove("disabled");
             document.getElementById("tariff_komfort").classList.remove("disabled");
@@ -1062,7 +1153,6 @@
                 client_phone: document.getElementById("uPhone").innerText
             };
 
-            // FIREBASE'GA BUYURTMANI YOZISH (Haydovchiga popup chiqishi uchun)
             db.ref('orders/current_order').set({
                 ...payload,
                 status: "searching",
