@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi</title>
-    <!-- Yandex Xarita API -->
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <!-- Yandex Xarita va Qidiruv API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&suggest_apikey=YOUR_KEY" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -13,462 +13,339 @@
 
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Suzuvchi tugmalar */
-        .map-btn {
+        /* MARKAZIY QOTIB TURGAN SARIQ NISHON (PIN) */
+        .center-pin-container {
             position: absolute;
-            z-index: 10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .center-pin {
+            width: 38px;
+            height: 38px;
+            background: #ffcc00;
+            border: 3px solid #111;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .center-pin::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: #111;
+            border-radius: 50%;
+            transform: rotate(45deg);
+        }
+        .pin-shadow {
+            width: 14px;
+            height: 6px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+
+        /* Navigatsiya tugmalari */
+        .btn-menu {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            z-index: 20;
             background: #ffffff;
             border: none;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
         }
-        .btn-menu { top: 16px; left: 16px; }
-        .btn-locate { bottom: 42vh; right: 16px; font-size: 20px; }
-
-        /* RO'YXATDAN O'TISH MODALI */
-        .auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 500;
-            display: none;
+        .btn-locate {
+            position: absolute;
+            bottom: 220px;
+            right: 18px;
+            z-index: 20;
+            background: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+            cursor: pointer;
+            font-size: 22px;
+            transition: bottom 0.3s ease;
         }
-        .auth-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 24px 20px;
+
+        /* SURILUVCHI PASTKI PANEL */
+        .bottom-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
             width: 100%;
-            max-width: 360px;
+            height: 200px;
+            background: #ffffff;
+            border-radius: 28px 28px 0 0;
+            z-index: 30;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
+            padding: 12px 20px 25px 20px;
             display: flex;
             flex-direction: column;
             gap: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        .auth-title { font-size: 20px; font-weight: 800; color: #111; text-align: center; }
-        .auth-desc { font-size: 13px; color: #666; text-align: center; margin-bottom: 5px; }
-        .auth-input {
+        .bottom-sheet.expanded {
+            height: 80vh;
+        }
+
+        .sheet-handle-bar {
+            width: 44px;
+            height: 5px;
+            background: #dcdde1;
+            border-radius: 5px;
+            margin: 0 auto 6px auto;
+            cursor: grab;
+        }
+
+        .title-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: #111;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #f1f2f6;
+            border-radius: 16px;
+            padding: 14px 16px;
+            gap: 12px;
+        }
+        .search-input {
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            color: #111;
             width: 100%;
-            padding: 14px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
             outline: none;
-            background: #f8f9fa;
         }
-        .auth-input:focus { border-color: #ffcc00; background: #fff; }
-        .btn-auth-submit {
+
+        /* Qidiruv natijalari ro'yxati */
+        .search-results {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            max-height: calc(80vh - 170px);
+            padding-top: 8px;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        .result-item:active { background: #e9ecef; }
+        .result-title { font-weight: 600; font-size: 15px; color: #222; }
+        .result-sub { font-size: 12px; color: #777; }
+
+        /* Buyurtma berish tugmasi */
+        .btn-order-now {
+            display: none;
+            width: 100%;
             background: #ffcc00;
             color: #000;
             border: none;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 16px;
             font-size: 16px;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: auto;
         }
 
-        /* YON MENYU */
+        /* Yon Menyu */
         .side-menu-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.4);
             z-index: 99;
             display: none;
         }
         .side-menu {
             position: fixed;
-            top: 0;
-            left: -80%;
-            width: 75%;
-            height: 100%;
+            top: 0; left: -80%; width: 75%; height: 100%;
             background: #ffffff;
             z-index: 100;
             transition: left 0.3s ease;
             box-shadow: 2px 0 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 0 16px 0;
-            overflow-y: auto;
+            padding: 24px 0;
         }
         .side-menu.open { left: 0; }
-
-        .user-profile {
-            padding: 0 20px 16px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .user-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #ffcc00;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            color: #000;
-        }
-        .user-name { font-weight: 700; font-size: 16px; color: #111; }
-        .user-phone { font-size: 12px; color: #888; }
-
-        .menu-list { list-style: none; padding: 10px 0; }
-        .menu-item {
-            padding: 13px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 15px;
-            color: #222;
-            cursor: pointer;
-        }
-        .menu-item:active { background: #f5f5f5; }
-        .menu-left { display: flex; align-items: center; gap: 14px; }
-        .menu-icon { font-size: 18px; }
-
-        /* PASTKI EKRANLAR */
-        .screen-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 26px 26px 0 0;
-            z-index: 20;
-            box-shadow: 0 -4px 25px rgba(0,0,0,0.15);
-            padding: 20px;
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-        }
-        #screen1 { display: flex; }
-        .search-title { font-size: 20px; font-weight: 800; color: #111; }
-        .search-input-box {
-            display: flex;
-            align-items: center;
-            background: #f1f2f6;
-            border-radius: 14px;
-            padding: 12px 16px;
-            gap: 10px;
-            cursor: pointer;
-        }
-        .search-input-box input { border: none; background: transparent; font-size: 15px; width: 100%; outline: none; }
-
-        .route-points { display: flex; flex-direction: column; gap: 10px; }
-        .point-item { display: flex; align-items: center; justify-content: space-between; }
-        .point-left { display: flex; align-items: center; gap: 10px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .dot-start { background: #ffcc00; }
-        .dot-end { background: #e91e63; }
-        .point-name { font-size: 14px; font-weight: 600; color: #222; }
-
-        .tariff-card {
-            background: #ffffff;
-            border: 1.5px solid #ececec;
-            border-radius: 16px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .tariff-left { display: flex; align-items: center; gap: 12px; }
-        .car-img { width: 48px; height: auto; }
-        .tariff-name { font-size: 15px; font-weight: 700; }
-        .tariff-seats { font-size: 12px; color: #888; }
-        .price-val { font-size: 16px; font-weight: 800; }
-
-        .btn-request {
-            width: 100%;
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* MODAL OYNA */
-        .modal-view {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #ffffff;
-            z-index: 200;
-            display: none;
-            flex-direction: column;
-            padding: 20px;
-        }
-        .modal-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 24px;
-        }
-        .modal-content { font-size: 15px; color: #333; line-height: 1.6; }
-
-        .contact-box { display: flex; flex-direction: column; gap: 14px; margin-top: 15px; }
-        .contact-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px;
-            background: #f8f9fa;
-            border: 1.5px solid #ececec;
-            border-radius: 14px;
-            text-decoration: none;
-            color: #111;
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        .lang-btn {
-            width: 100%;
-            padding: 14px;
-            border: 1.5px solid #ececec;
-            border-radius: 12px;
-            background: #f9f9f9;
-            margin-bottom: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-        }
-        .lang-btn.active { border-color: #ffcc00; background: #fffbe6; }
+        .user-profile { padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 44px; height: 44px; border-radius: 50%; background: #ffcc00; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
+        .menu-item { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- RO'YXATDAN O'TISH OYNASI (BIRINCHI KIRGANDA CHIQADI) -->
-    <div class="auth-overlay" id="authModal">
-        <div class="auth-card">
-            <div class="auth-title">Xush kelibsiz! 👋</div>
-            <div class="auth-desc">Taksidan foydalanish uchun ma'lumotlaringizni kiriting:</div>
-            
-            <input type="text" id="regName" class="auth-input" placeholder="Ismingiz">
-            <input type="tel" id="regPhone" class="auth-input" placeholder="+998 90 123 45 67">
-            
-            <button class="btn-auth-submit" onclick="saveUserRegistration()">Ro'yxatdan o'tish va Kirish</button>
-        </div>
-    </div>
-
     <!-- Xarita -->
     <div id="map"></div>
-    <button class="map-btn btn-menu" id="topBtn" onclick="toggleSideMenu()">☰</button>
-    <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
-    <!-- Qorong'ulashtirish qatlami -->
-    <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
+    <!-- Markazda qotib turuvchi pin -->
+    <div class="center-pin-container">
+        <div class="center-pin"></div>
+        <div class="pin-shadow"></div>
+    </div>
+
+    <!-- Tugmalar -->
+    <button class="btn-menu" onclick="toggleSideMenu()">☰</button>
+    <button class="btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
 
     <!-- Yon Menyu -->
+    <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
     <div class="side-menu" id="sideMenu">
         <div class="user-profile">
-            <div class="user-avatar" id="uAvatar">U</div>
+            <div class="user-avatar" id="uAvatar">A</div>
             <div>
-                <div class="user-name" id="uName">Foydalanuvchi</div>
-                <div class="user-phone" id="uPhone">+998 90 000 00 00</div>
+                <div style="font-weight: 700; font-size: 16px;" id="uName">Foydalanuvchi</div>
+                <div style="font-size: 12px; color: #888;" id="uPhone">+998 50 052 79 77</div>
             </div>
         </div>
-
-        <ul class="menu-list">
-            <li class="menu-item" onclick="openModal('biznes')">
-                <div class="menu-left"><span class="menu-icon">💼</span><span id="txt_biz">Biznes-hisob</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('xavfsizlik')">
-                <div class="menu-left"><span class="menu-icon">🛡️</span><span id="txt_sec">Xavfsizlik</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('manzillar')">
-                <div class="menu-left"><span class="menu-icon">📍</span><span id="txt_addr">Mening manzillarim</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('tarix')">
-                <div class="menu-left"><span class="menu-icon">🕒</span><span id="txt_hist">Buyurtmalar tarixi</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('sozlamalar')">
-                <div class="menu-left"><span class="menu-icon">⚙️</span><span id="txt_set">Sozlamalar (Til)</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('yordam')">
-                <div class="menu-left"><span class="menu-icon">🎧</span><span id="txt_supp">Qo'llab-quvvatlash</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('info')">
-                <div class="menu-left"><span class="menu-icon">ℹ️</span><span id="txt_info">Ma'lumot</span></div>
-                <span>›</span>
-            </li>
-        </ul>
-    </div>
-
-    <!-- MODAL VIEW -->
-    <div class="modal-view" id="modalView">
-        <div class="modal-header">
-            <button class="map-btn" style="position:static; width:40px; height:40px;" onclick="closeModal()">←</button>
-            <span id="modalTitle">Sarlavha</span>
+        <div style="padding: 10px 0;">
+            <div class="menu-item" onclick="alert('Xavfsizlik: Barcha haydovchilar maxsus tekshiruvdan o\'tgan.')"><span>🛡️ Xavfsizlik</span><span>›</span></div>
+            <div class="menu-item" onclick="window.location.href='https://t.me/Amirovffff'"><span>🎧 Qo\'llab-quvvatlash</span><span>›</span></div>
         </div>
-        <div class="modal-content" id="modalContent"></div>
     </div>
 
-    <!-- 1-EKRAN -->
-    <div class="screen-sheet" id="screen1">
-        <div class="search-title" id="txt_where">Qayerga borasiz?</div>
-        <div class="search-input-box" onclick="showOverviewScreen()">
+    <!-- Suriluvchi Panel -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle-bar" onclick="toggleSheetExpand()"></div>
+        
+        <div class="title-text" id="sheetTitle">Qayerga borasiz?</div>
+
+        <div class="search-box">
             <span>🔍</span>
-            <input type="text" id="txt_search_ph" placeholder="Manzil yoki joy nomini qidiring..." readonly>
-        </div>
-    </div>
-
-    <!-- 2-EKRAN -->
-    <div class="screen-sheet" id="screen2">
-        <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
-
-        <div class="route-points">
-            <div class="point-item">
-                <div class="point-left">
-                    <div class="dot dot-start"></div>
-                    <span class="point-name">Tanlangan manzil</span>
-                </div>
-            </div>
-            <div class="point-item">
-                <div class="point-left">
-                    <div class="dot dot-end"></div>
-                    <span class="point-name">Shahar markazi</span>
-                </div>
-            </div>
+            <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="searchLocation(this.value)">
         </div>
 
-        <div class="tariff-card">
-            <div class="tariff-left">
-                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
-                <div>
-                    <div class="tariff-name" id="txt_tariff">Standart</div>
-                    <div class="tariff-seats" id="txt_seats">4 kishilik</div>
-                </div>
-            </div>
-            <div class="price-val">25 000 UZS</div>
-        </div>
+        <!-- Shahardagi joylar ro'yxati -->
+        <div class="search-results" id="searchResults"></div>
 
-        <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
+        <button class="btn-order-now" id="orderBtn" onclick="sendTaxiOrder()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let map, userPlacemark;
+        let map;
+        let currentCity = "Samarqand";
         let userCoords = [39.6542, 66.9597];
-
-        let currentLang = "uz";
-        const langData = {
-            uz: {
-                biz: "Biznes-hisob", sec: "Xavfsizlik", addr: "Mening manzillarim", hist: "Buyurtmalar tarixi",
-                set: "Sozlamalar (Til)", supp: "Qo'llab-quvvatlash", info: "Ma'lumot", where: "Qayerga borasiz?",
-                search_ph: "Manzil yoki joy nomini qidiring...", overview: "Safaringiz ma'lumotlari",
-                tariff: "Standart", seats: "4 kishilik", btn_order: "🚖 Taksi chaqirish"
-            },
-            ru: {
-                biz: "Бизнес-аккаунт", sec: "Безопасность", addr: "Мои адреса", hist: "История заказов",
-                set: "Настройки (Язык)", supp: "Служба поддержки", info: "Информация", where: "Куда поедем?",
-                search_ph: "Поиск места или адреса...", overview: "Детали поездки",
-                tariff: "Стандарт", seats: "4 места", btn_order: "🚖 Заказать такси"
-            },
-            en: {
-                biz: "Business Account", sec: "Safety", addr: "My Addresses", hist: "Ride History",
-                set: "Settings (Language)", supp: "Support", info: "Information", where: "Where to?",
-                search_ph: "Search place or address...", overview: "Ride Overview",
-                tariff: "Standard", seats: "4 seats", btn_order: "🚖 Request Taxi"
-            }
-        };
-
-        // RO'YXATDAN O'TISHNI TEKSHIRISH VA SAQLASH
-        function checkUserAuth() {
-            const savedName = localStorage.getItem("taxi_user_name");
-            const savedPhone = localStorage.getItem("taxi_user_phone");
-
-            if (savedName && savedPhone) {
-                updateProfileUI(savedName, savedPhone);
-            } else {
-                // Agar avval saqlanmagan bo'lsa, Telegramdan ismini oladi yoki modal chiqaradi
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                    const u = tg.initDataUnsafe.user;
-                    const tgFullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                    document.getElementById("regName").value = tgFullName;
-                }
-                document.getElementById("authModal").style.display = "flex";
-            }
-        }
-
-        function saveUserRegistration() {
-            const name = document.getElementById("regName").value.trim();
-            const phone = document.getElementById("regPhone").value.trim();
-
-            if (!name) {
-                alert("Iltimos, ismingizni kiriting!");
-                return;
-            }
-            if (!phone || phone.length < 7) {
-                alert("Iltimos, telefon raqamingizni to'liq kiriting!");
-                return;
-            }
-
-            // Umrbod brauzer xotirasida saqlash
-            localStorage.setItem("taxi_user_name", name);
-            localStorage.setItem("taxi_user_phone", phone);
-
-            updateProfileUI(name, phone);
-            document.getElementById("authModal").style.display = "none";
-        }
-
-        function updateProfileUI(name, phone) {
-            document.getElementById("uName").innerText = name;
-            document.getElementById("uPhone").innerText = phone;
-            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
-        }
+        let selectedAddress = "Tanlangan joy";
 
         ymaps.ready(() => {
-            map = new ymaps.Map("map", { center: userCoords, zoom: 15, controls: [] });
-            userPlacemark = new ymaps.Placemark(userCoords, {}, { preset: 'islands#yellowDotIcon' });
-            map.geoObjects.add(userPlacemark);
+            map = new ymaps.Map("map", {
+                center: userCoords,
+                zoom: 16,
+                controls: []
+            });
+
             locateMe();
-            checkUserAuth();
+            loadUserData();
+
+            // Xarita surilib to'xtaganda markazdagi manzilni aniqlash
+            map.events.add('actionend', () => {
+                userCoords = map.getCenter();
+                ymaps.geocode(userCoords).then(res => {
+                    const firstGeo = res.geoObjects.get(0);
+                    if (firstGeo) {
+                        selectedAddress = firstGeo.getAddressLine();
+                        document.getElementById("sheetTitle").innerText = "📍 " + (firstGeo.getName() || "Tanlangan manzil");
+                    }
+                });
+            });
         });
 
         function locateMe() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     userCoords = [pos.coords.latitude, pos.coords.longitude];
-                    map.setCenter(userCoords, 16);
-                    userPlacemark.geometry.setCoordinates(userCoords);
+                    map.setCenter(userCoords, 16, { duration: 300 });
                 }, null, { enableHighAccuracy: true });
             }
+        }
+
+        // Panelni surish va kattalashtirish
+        function expandSheet() {
+            document.getElementById("bottomSheet").classList.add("expanded");
+            document.getElementById("searchResults").style.display = "flex";
+            document.getElementById("locBtn").style.bottom = "82vh";
+        }
+
+        function collapseSheet() {
+            document.getElementById("bottomSheet").classList.remove("expanded");
+            document.getElementById("searchResults").style.display = "none";
+            document.getElementById("locBtn").style.bottom = "220px";
+        }
+
+        function toggleSheetExpand() {
+            const sheet = document.getElementById("bottomSheet");
+            if (sheet.classList.contains("expanded")) {
+                collapseSheet();
+            } else {
+                expandSheet();
+            }
+        }
+
+        // Shahar doirasida manzil qidirish
+        function searchLocation(query) {
+            if (query.length < 2) return;
+
+            ymaps.suggest(currentCity + ", " + query).then(items => {
+                const resultsContainer = document.getElementById("searchResults");
+                resultsContainer.innerHTML = "";
+
+                items.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "result-item";
+                    div.innerHTML = `
+                        <span style="font-size: 20px;">📍</span>
+                        <div>
+                            <div class="result-title">${item.displayName.split(',')[0]}</div>
+                            <div class="result-sub">${item.value}</div>
+                        </div>
+                    `;
+                    div.onclick = () => {
+                        ymaps.geocode(item.value).then(res => {
+                            const coords = res.geoObjects.get(0).geometry.getCoordinates();
+                            map.setCenter(coords, 17, { duration: 400 });
+                            selectedAddress = item.value;
+                            document.getElementById("sheetTitle").innerText = "📍 " + item.displayName.split(',')[0];
+                            document.getElementById("searchInput").value = item.displayName.split(',')[0];
+                            collapseSheet();
+                            document.getElementById("orderBtn").style.display = "block";
+                        });
+                    };
+                    resultsContainer.appendChild(div);
+                });
+            });
         }
 
         function toggleSideMenu() {
@@ -483,106 +360,26 @@
             }
         }
 
-        function openModal(type) {
-            toggleSideMenu();
-            const modal = document.getElementById("modalView");
-            const title = document.getElementById("modalTitle");
-            const content = document.getElementById("modalContent");
-            modal.style.display = "flex";
-
-            if (type === 'xavfsizlik') {
-                title.innerText = langData[currentLang].sec;
-                content.innerHTML = `
-                    <div style="font-weight: 700; margin-bottom: 15px;">🛡️ Xavfsizlik markazi:</div>
-                    <ul style="list-style-type: disc; padding-left: 20px; line-height: 2;">
-                        <li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li>
-                        <li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li>
-                        <li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li>
-                    </ul>
-                `;
-            } else if (type === 'yordam') {
-                title.innerText = langData[currentLang].supp;
-                content.innerHTML = `
-                    <div style="font-size: 15px; margin-bottom: 20px; color: #444;">
-                        🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.
-                    </div>
-                    <div class="contact-box">
-                        <a href="tel:+998500527977" class="contact-link">
-                            <span style="font-size: 20px;">📞</span>
-                            <span>Telefon: <b>+998 50 052 79 77</b></span>
-                        </a>
-                        <a href="https://t.me/Amirovffff" target="_blank" class="contact-link">
-                            <span style="font-size: 20px;">💬</span>
-                            <span>Telegram: <b>@Amirovffff</b></span>
-                        </a>
-                    </div>
-                `;
-            } else if (type === 'biznes') {
-                title.innerText = langData[currentLang].biz;
-                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali korporativ taksi xizmatlaridan foydalanishingiz mumkin.<br><br>Aloqa uchun: <a href='tel:+998500527977' style='color:#0088cc; font-weight:bold;'>+998 50 052 79 77</a></p>";
-            } else if (type === 'manzillar') {
-                title.innerText = langData[currentLang].addr;
-                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 Uy: Kiritilmagan<br>💼 Ish: Kiritilmagan</p>";
-            } else if (type === 'tarix') {
-                title.innerText = langData[currentLang].hist;
-                content.innerHTML = "<p>🕒 Hozircha buyurtmalar tarixi mavjud emas.</p>";
-            } else if (type === 'sozlamalar') {
-                title.innerText = langData[currentLang].set;
-                content.innerHTML = `
-                    <div style="margin-bottom:15px; font-weight:bold;">Tilni tanlang / Выберите язык / Select language:</div>
-                    <button class="lang-btn ${currentLang==='uz'?'active':''}" onclick="setLanguage('uz')">🇺🇿 O'zbekcha</button>
-                    <button class="lang-btn ${currentLang==='ru'?'active':''}" onclick="setLanguage('ru')">🇷🇺 Русский</button>
-                    <button class="lang-btn ${currentLang==='en'?'active':''}" onclick="setLanguage('en')">🇬🇧 English</button>
-                `;
-            } else if (type === 'info') {
-                title.innerText = langData[currentLang].info;
-                content.innerHTML = "<p>🚖 <b>Express Taxi Bot v2.0</b><br><br>Dasturchi va ma'muriyat: <a href='https://t.me/Amirovffff' style='color:#0088cc; font-weight:bold;'>@Amirovffff</a></p>";
-            }
-        }
-
-        function closeModal() {
-            document.getElementById("modalView").style.display = "none";
-        }
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            const l = langData[lang];
-            document.getElementById("txt_biz").innerText = l.biz;
-            document.getElementById("txt_sec").innerText = l.sec;
-            document.getElementById("txt_addr").innerText = l.addr;
-            document.getElementById("txt_hist").innerText = l.hist;
-            document.getElementById("txt_set").innerText = l.set;
-            document.getElementById("txt_supp").innerText = l.supp;
-            document.getElementById("txt_info").innerText = l.info;
-            document.getElementById("txt_where").innerText = l.where;
-            document.getElementById("txt_search_ph").placeholder = l.search_ph;
-            document.getElementById("txt_overview").innerText = l.overview;
-            document.getElementById("txt_tariff").innerText = l.tariff;
-            document.getElementById("txt_seats").innerText = l.seats;
-            document.getElementById("submitOrderBtn").innerText = l.btn_order;
-            closeModal();
-        }
-
-        function showOverviewScreen() {
-            document.getElementById("screen1").style.display = "none";
-            document.getElementById("screen2").style.display = "flex";
+        function loadUserData() {
+            const name = localStorage.getItem("taxi_user_name") || "Foydalanuvchi";
+            const phone = localStorage.getItem("taxi_user_phone") || "+998 50 052 79 77";
+            document.getElementById("uName").innerText = name;
+            document.getElementById("uPhone").innerText = phone;
+            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
         }
 
         function sendTaxiOrder() {
-            const btn = document.getElementById("submitOrderBtn");
-            btn.innerText = "Yuborilmoqda...";
+            const btn = document.getElementById("orderBtn");
+            btn.innerText = "Buyurtma yuborilmoqda...";
             btn.disabled = true;
-
-            const uName = localStorage.getItem("taxi_user_name") || "Mijoz";
-            const uPhone = localStorage.getItem("taxi_user_phone") || "";
 
             const payload = {
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                client_name: uName,
-                client_phone: uPhone,
-                price: "25 000 UZS"
+                address: selectedAddress,
+                client_name: document.getElementById("uName").innerText,
+                client_phone: document.getElementById("uPhone").innerText
             };
 
             tg.sendData(JSON.stringify(payload));
