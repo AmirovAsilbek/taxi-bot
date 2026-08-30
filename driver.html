@@ -311,6 +311,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.enableClosingConfirmation();
 
         // REALTIME FIREBASE DATABASE
         const firebaseConfig = {
@@ -323,7 +324,6 @@
         let driverPlacemark = null;
         let isOnline = false;
         let currentPos = [39.0560, 66.8300];
-        let watchId = null;
         let offerTimer = null;
         let timeLeft = 15;
         let totalIncome = 0;
@@ -364,11 +364,12 @@
             });
 
             initLocationTracker();
+            listenForIncomingOrders();
         });
 
         function initLocationTracker() {
             if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(pos => {
+                navigator.geolocation.watchPosition(pos => {
                     currentPos = [pos.coords.latitude, pos.coords.longitude];
                     
                     if (!driverPlacemark) {
@@ -384,7 +385,6 @@
                         driverPlacemark.geometry.setCoordinates(currentPos);
                     }
 
-                    // AGAR ONLINE BO'LSA, JONLI KOORDINATANI MIJOZLARGA YUBORISH
                     if (isOnline) {
                         db.ref('drivers/' + driverId).set({
                             lat: currentPos[0],
@@ -400,6 +400,43 @@
             }
         }
 
+        // MIJOZLARDAN KELADIGAN BUYURTMALARNI KUZATISH
+        function listenForIncomingOrders() {
+            db.ref('orders/current_order').on('value', snapshot => {
+                const order = snapshot.val();
+                if (order && order.status === 'searching' && isOnline) {
+                    showOrderPopup(order);
+                } else {
+                    dismissOrder();
+                }
+            });
+        }
+
+        function showOrderPopup(order) {
+            const sheet = document.getElementById("orderSheet");
+            sheet.style.display = "flex";
+            
+            document.getElementById("ordPrice").innerText = order.price;
+            document.getElementById("ordTariff").innerText = order.tariff.toUpperCase();
+            document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name} (${order.distance})`;
+            document.getElementById("ordDest").innerText = `Manzil: ${order.destination}`;
+
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+
+            timeLeft = 15;
+            document.getElementById("timerBar").style.width = "100%";
+            clearInterval(offerTimer);
+            offerTimer = setInterval(() => {
+                timeLeft--;
+                const percent = (timeLeft / 15) * 100;
+                document.getElementById("timerBar").style.width = percent + "%";
+                if (timeLeft <= 0) {
+                    clearInterval(offerTimer);
+                    dismissOrder();
+                }
+            }, 1000);
+        }
+
         function toggleDriverOnline() {
             isOnline = !isOnline;
             const btn = document.getElementById("toggleBtn");
@@ -412,7 +449,6 @@
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Mijozlarga ko'rinmoqdasiz";
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                // BAZAGA ONLINE HOLATDA YOZISH
                 db.ref('drivers/' + driverId).set({
                     lat: currentPos[0],
                     lon: currentPos[1],
@@ -428,7 +464,6 @@
                 banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
                 
-                // OFFLINE BO'LGANDA XARITADAN O'CHIRISH
                 db.ref('drivers/' + driverId).remove();
                 dismissOrder();
             }
@@ -437,6 +472,7 @@
         function dismissOrder() {
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
+            db.ref('orders/current_order').update({ status: 'dismissed' });
         }
 
         function acceptDriverOrder() {
@@ -447,17 +483,14 @@
 
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            const clientPos = [currentPos[0] + 0.005, currentPos[1] + 0.004];
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [currentPos, clientPos],
-                params: { routingMode: 'auto', results: 1 }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 6
+            db.ref('orders/current_status').set({
+                status: 'accepted',
+                driver_name: document.getElementById("dName").innerText,
+                driver_car: "Oq Onix • 70 N 079 NN",
+                driver_phone: "+998883893379"
             });
-            map.geoObjects.add(multiRoute);
+
+            db.ref('orders/current_order').update({ status: 'accepted' });
         }
 
         function completeCurrentTrip() {
@@ -468,7 +501,9 @@
             document.getElementById("activeTripPanel").style.display = "none";
             document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
 
-            if (multiRoute) map.geoObjects.remove(multiRoute);
+            db.ref('orders/current_status').remove();
+            db.ref('orders/current_order').remove();
+
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             alert("✅ Safar muvaffaqiyatli yakunlandi!");
         }
