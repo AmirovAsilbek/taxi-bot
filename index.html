@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Safar ma'lumotlari</title>
+    <title>Express Taxi</title>
     <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #fff; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fa; }
 
         #map {
             width: 100vw;
-            height: 54vh;
+            height: 100vh;
             position: absolute;
             top: 0;
             left: 0;
             z-index: 1;
         }
 
-        /* Xaritadagi suzuvchi tugmalar */
+        /* Suzuvchi tugmalar */
         .map-btn {
             position: absolute;
             z-index: 10;
@@ -34,39 +34,71 @@
             justify-content: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             cursor: pointer;
+            font-size: 18px;
         }
-        .btn-back { top: 16px; left: 16px; font-size: 20px; font-weight: bold; }
-        .btn-locate { bottom: 47vh; right: 16px; font-size: 20px; }
+        .btn-menu { top: 16px; left: 16px; }
+        .btn-locate { bottom: 42vh; right: 16px; font-size: 20px; }
 
-        /* Pastki oyna - Safar tafsilotlari */
-        .bottom-sheet {
+        /* Asosiy panellar */
+        .screen-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 48vh;
             background: #ffffff;
             border-radius: 26px 26px 0 0;
             z-index: 20;
-            box-shadow: 0 -4px 25px rgba(0,0,0,0.12);
-            padding: 18px 20px;
-            display: flex;
+            box-shadow: 0 -4px 25px rgba(0,0,0,0.15);
+            padding: 20px;
+            display: none;
             flex-direction: column;
-            justify-content: space-between;
+            gap: 14px;
+            transition: all 0.3s ease;
         }
 
-        .sheet-title {
-            font-size: 19px;
-            font-weight: 700;
+        /* 1-EKRAN: Qidiruv paneli */
+        #screen1 {
+            display: flex;
+        }
+        .search-title {
+            font-size: 22px;
+            font-weight: 800;
             color: #111;
         }
+        .search-input-box {
+            display: flex;
+            align-items: center;
+            background: #f1f2f6;
+            border-radius: 14px;
+            padding: 12px 16px;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .search-input-box input {
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            width: 100%;
+            outline: none;
+            color: #111;
+        }
+        .feedback-card {
+            background: #ffffff;
+            border: 1.5px solid #f0f0f0;
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            cursor: pointer;
+        }
 
-        /* Manzillar bloki */
+        /* 2-EKRAN: Safar ma'lumotlari */
         .route-points {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            position: relative;
         }
         .point-item {
             display: flex;
@@ -85,11 +117,8 @@
         }
         .dot-start { background: #ffcc00; box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2); }
         .dot-end { background: #e91e63; }
-        .point-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #222;
-        }
+        .point-name { font-size: 14px; font-weight: 600; color: #222; }
+
         .btn-note {
             background: #f4f4f6;
             border: none;
@@ -101,7 +130,6 @@
             cursor: pointer;
         }
 
-        /* Tarif Kartasi */
         .tariff-card {
             background: #ffffff;
             border: 1.5px solid #ececec;
@@ -111,52 +139,19 @@
             align-items: center;
             justify-content: space-between;
         }
-        .tariff-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .car-img {
-            width: 52px;
-            height: auto;
-        }
-        .tariff-name {
-            font-size: 15px;
-            font-weight: 700;
-            color: #111;
-        }
-        .tariff-seats {
-            font-size: 12px;
-            color: #888;
-        }
-        .tariff-price {
-            text-align: right;
-        }
-        .price-val {
-            font-size: 16px;
-            font-weight: 800;
-            color: #111;
-        }
-        .price-old {
-            font-size: 11px;
-            color: #aaa;
-            text-decoration: line-through;
-        }
+        .tariff-left { display: flex; align-items: center; gap: 12px; }
+        .car-img { width: 50px; height: auto; }
+        .tariff-name { font-size: 15px; font-weight: 700; color: #111; }
+        .tariff-seats { font-size: 12px; color: #888; }
+        .price-val { font-size: 16px; font-weight: 800; color: #111; }
+        .price-old { font-size: 11px; color: #aaa; text-decoration: line-through; }
 
-        /* Choypuli va Jami */
         .pricing-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        .tip-selector {
-            font-size: 13px;
-            color: #444;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .tip-selector { font-size: 13px; color: #444; font-weight: 600; }
         .total-badge {
             border: 1.5px solid #ffcc00;
             padding: 5px 12px;
@@ -166,110 +161,117 @@
             color: #111;
         }
 
-        /* Vaqt va To'lov turi */
-        .option-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #555;
-            font-weight: 600;
-        }
-
-        /* Asosiy tugmalar */
-        .action-row {
-            display: flex;
-            gap: 10px;
-        }
         .btn-request {
-            flex: 2;
+            width: 100%;
             background: #e91e63;
             color: #fff;
             border: none;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 15px;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
             transition: 0.2s;
         }
-        .btn-request:active {
-            transform: scale(0.98);
+
+        /* 3-EKRAN: Haydovchi keldi */
+        .driver-info-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
         }
-        .btn-code {
-            flex: 1;
-            background: #e91e63;
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
+        .driver-details h3 { font-size: 18px; color: #111; margin-bottom: 4px; }
+        .driver-details p { font-size: 13px; color: #666; margin: 2px 0; }
+        .driver-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffcc00;
         }
     </style>
 </head>
 <body>
 
-    <!-- Xarita -->
+    <!-- Yandex Xarita -->
     <div id="map"></div>
-    <button class="map-btn btn-back" onclick="tg.close()">←</button>
+    <button class="map-btn btn-menu" id="topBtn" onclick="goBack()">☰</button>
     <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
-    <!-- Pastki Panel -->
-    <div class="bottom-sheet">
-        <div class="sheet-title">Safaringiz ma'lumotlari</div>
+    <!-- 1-EKRAN: Qayerga borasiz? -->
+    <div class="screen-sheet" id="screen1">
+        <div class="search-title">Qayerga borasiz?</div>
+        <div class="search-input-box" onclick="showOverviewScreen()">
+            <span>🔍</span>
+            <input type="text" placeholder="Manzil yoki joy nomini qidiring..." readonly>
+        </div>
+        <div class="feedback-card">
+            <div>
+                <div style="font-weight: 700; font-size: 14px;">Xizmatni baholang</div>
+                <div style="font-size: 12px; color: #777;">Fikringiz biz uchun muhim</div>
+            </div>
+            <span style="font-size: 18px; color: #e91e63;">💬 &gt;</span>
+        </div>
+    </div>
+
+    <!-- 2-EKRAN: Safar ma'lumotlari -->
+    <div class="screen-sheet" id="screen2">
+        <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
 
         <div class="route-points">
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-start"></div>
-                    <span class="point-name" id="startLocation">Tanlangan manzil</span>
+                    <span class="point-name" id="startLocation">Tanlangan joy</span>
                 </div>
-                <button class="btn-note" onclick="addNote()">📝 Izoh qo'shish</button>
+                <button class="btn-note" onclick="addNote()">📝 Izoh</button>
             </div>
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-end"></div>
-                    <span class="point-name" id="endLocation">Manzilingiz</span>
+                    <span class="point-name">Markaziy manzil</span>
                 </div>
             </div>
         </div>
 
-        <!-- Tarif Kartasi -->
         <div class="tariff-card">
             <div class="tariff-left">
-                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart Taksi">
+                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
                 <div>
-                    <div class="tariff-name">Standart Taksi ⌵</div>
+                    <div class="tariff-name">Standard Taksi ⌵</div>
                     <div class="tariff-seats">4 kishilik</div>
                 </div>
             </div>
-            <div class="tariff-price">
-                <div class="price-val" id="basePrice">25 000 UZS</div>
+            <div style="text-align: right;">
+                <div class="price-val">25 000 UZS</div>
                 <div class="price-old">30 000 UZS</div>
             </div>
         </div>
 
-        <!-- Choypuli va Jami -->
         <div class="pricing-row">
             <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
-            <div class="total-badge" id="totalPrice">Jami: 27 000 UZS</div>
+            <div class="total-badge">Jami: 27 000 UZS</div>
         </div>
 
-        <!-- Vaqt va To'lov -->
-        <div class="option-row">
-            <span>🕒 Hozir jo'nash ⌵</span>
-            <span>💵 Naqd pul ⌵</span>
+        <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
+    </div>
+
+    <!-- 3-EKRAN: Haydovchi yetib keldi -->
+    <div class="screen-sheet" id="screen3">
+        <div style="font-size: 20px; font-weight: 800; color: #28a745;">Haydovchingiz yetib keldi!</div>
+        
+        <div class="driver-info-card">
+            <div class="driver-details">
+                <h3 id="dName">Ali Valiyev</h3>
+                <p>🚖 <b>Cobalt Oq</b> • <span id="dCar">01 A 777 AA</span></p>
+                <p>📞 +998 90 123 45 67</p>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="driver-avatar" alt="Haydovchi">
         </div>
 
-        <!-- Tugmalar -->
-        <div class="action-row">
-            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
-            <button class="btn-code" onclick="showTripCode()">Safar kodi</button>
-        </div>
+        <button class="btn-request" style="background: #28a745;" onclick="tg.close()">✅ Tushunarli</button>
     </div>
 
     <script>
@@ -277,7 +279,7 @@
         tg.expand();
 
         let map, userPlacemark;
-        let userCoords = [39.6542, 66.9597]; // Markaziy koordinata
+        let userCoords = [39.6542, 66.9597]; // Samarqand markazi
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
@@ -298,6 +300,9 @@
                 userCoords = newCoords;
                 userPlacemark.geometry.setCoordinates(newCoords);
             });
+
+            // Avtomobil piktogrammalarini xaritaga qo'shish (vizual bezak uchun)
+            addNearbyCars(userCoords);
         });
 
         function locateMe() {
@@ -310,20 +315,40 @@
             }
         }
 
-        function addNote() {
-            const note = prompt("Haydovchi uchun izoh qoldiring (masalan: 2-podyezd):");
-            if (note) {
-                alert("Izoh saqlandi: " + note);
+        function addNearbyCars(center) {
+            const offsets = [[0.002, 0.002], [-0.002, 0.003], [0.003, -0.002], [-0.003, -0.002]];
+            offsets.forEach(off => {
+                const carPlacemark = new ymaps.Placemark([center[0] + off[0], center[1] + off[1]], {}, {
+                    preset: 'islands#yellowTaxiIcon'
+                });
+                map.geoObjects.add(carPlacemark);
+            });
+        }
+
+        // Ekranlarni almashtirish
+        function showOverviewScreen() {
+            document.getElementById("screen1").style.display = "none";
+            document.getElementById("screen2").style.display = "flex";
+            document.getElementById("topBtn").innerText = "←";
+        }
+
+        function goBack() {
+            if (document.getElementById("screen2").style.display === "flex") {
+                document.getElementById("screen2").style.display = "none";
+                document.getElementById("screen1").style.display = "flex";
+                document.getElementById("topBtn").innerText = "☰";
+            } else {
+                tg.close();
             }
         }
 
-        function showTripCode() {
-            alert("Sizning safar kodingiz: " + Math.floor(1000 + Math.random() * 9000));
+        function addNote() {
+            prompt("Haydovchi uchun izoh (masalan: Dom oldida kuting):");
         }
 
         function sendTaxiOrder() {
             const btn = document.getElementById("submitOrderBtn");
-            btn.innerText = "Yuborilmoqda...";
+            btn.innerText = "Buyurtma yuborildi...";
             btn.disabled = true;
 
             const payload = {
@@ -333,10 +358,14 @@
                 price: "27 000 UZS"
             };
 
+            // Botga yuborish
             tg.sendData(JSON.stringify(payload));
+
+            // 3-ekranga o'tish (Haydovchi qabul qilgandagi oyna)
             setTimeout(() => {
-                tg.close();
-            }, 300);
+                document.getElementById("screen2").style.display = "none";
+                document.getElementById("screen3").style.display = "flex";
+            }, 800);
         }
     </script>
 </body>
