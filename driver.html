@@ -1,526 +1,485 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RideYellow - Driver Partner</title>
-    <!-- Yandex Xarita API -->
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase Realtime Database SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fb; color: #111; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RideYellow - Driver Partner</title>
+    <!-- Yandex Xarita API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fb; color: #111; }
 
-        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* RIDEYELLOW BRANDED TOP BAR */
-        .top-bar {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            right: 16px;
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 30;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            border: 1px solid #eee;
-        }
+        /* RIDEYELLOW BRANDED TOP BAR */
+        .top-bar {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 30;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+        }
 
-        .brand-section { display: flex; align-items: center; gap: 12px; }
-        .yellow-badge {
-            width: 40px;
-            height: 40px;
-            background: #ffcc00;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 22px;
-            color: #111;
-            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.4);
-        }
-        .driver-name { font-weight: 800; font-size: 15px; color: #111; }
-        .driver-car { font-size: 12px; color: #777; }
+        .brand-section { display: flex; align-items: center; gap: 12px; }
+        .yellow-badge {
+            width: 40px;
+            height: 40px;
+            background: #ffcc00;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 22px;
+            color: #111;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.4);
+        }
+        .driver-name { font-weight: 800; font-size: 15px; color: #111; }
+        .driver-car { font-size: 12px; color: #777; }
 
-        /* STATUS TOGGLE */
-        .status-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: #f1f2f6;
-            padding: 8px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 13px;
-            color: #555;
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            border: 1.5px solid #e1e2e6;
-        }
-        .status-pill.online {
-            background: #111111;
-            border-color: #111111;
-            color: #ffcc00;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-        }
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff4757;
-        }
-        .status-pill.online .status-indicator {
-            background: #2ed573;
-            box-shadow: 0 0 8px #2ed573;
-        }
+        /* RIDEYELLOW STATUS TOGGLE */
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f1f2f6;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: 1.5px solid #e1e2e6;
+        }
+        .status-pill.online {
+            background: #111111;
+            border-color: #111111;
+            color: #ffcc00;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        .status-pill.online .status-indicator {
+            background: #2ed573;
+            box-shadow: 0 0 8px #2ed573;
+        }
 
-        /* QAYTA MARKAZLASH TUGMASI */
-        .btn-recenter {
-            position: absolute;
-            right: 16px;
-            bottom: 225px;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: #ffffff;
-            border: none;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 25;
-        }
+        /* QAYTA MARKAZLASH TUGMASI */
+        .btn-recenter {
+            position: absolute;
+            right: 16px;
+            bottom: 225px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 25;
+        }
 
-        /* PASTKI DASHBOARD */
-        .bottom-card {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            right: 16px;
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 18px 20px;
-            z-index: 30;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 1px solid #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        /* RIDEYELLOW PASTKI STATISTIKA VA DASHBOARD */
+        .bottom-card {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 18px 20px;
+            z-index: 30;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            text-align: center;
-        }
-        .stat-item { padding: 0 4px; }
-        .stat-value { font-size: 18px; font-weight: 900; color: #111; }
-        .stat-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; margin-top: 2px; }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+        }
+        .stat-item { padding: 0 4px; }
+        .stat-value { font-size: 18px; font-weight: 900; color: #111; }
+        .stat-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; margin-top: 2px; }
 
-        .status-banner {
-            background: #fbfbfc;
-            border: 1.5px dashed #e1e2e6;
-            border-radius: 14px;
-            padding: 11px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-        }
+        .status-banner {
+            background: #fbfbfc;
+            border: 1.5px dashed #e1e2e6;
+            border-radius: 14px;
+            padding: 11px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
 
-        /* SAFARNI YAKUNLASH REJIMI */
-        .active-trip-panel {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .btn-finish-trip {
-            background: #111111;
-            color: #ffcc00;
-            border: none;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-        }
-        .btn-finish-trip:active { transform: scale(0.98); }
+        /* SAFARNI YAKUNLASH REJIMI */
+        .active-trip-panel {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-finish-trip {
+            background: #111111;
+            color: #ffcc00;
+            border: none;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+        }
+        .btn-finish-trip:active { transform: scale(0.98); }
 
-        /* POPUP: YANGI BUYURTMA TAKLIFI */
-        .order-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 100;
-            padding: 24px 20px 20px 20px;
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.25);
-            border-top: 4px solid #ff3333;
-            animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* RIDEYELLOW POPUP: YANGI BUYURTMA TAKLIFI */
+        .order-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px 28px 0 0;
+            z-index: 100;
+            padding: 24px 20px 20px 20px;
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.25);
+            border-top: 4px solid #ff3333;
+            animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .order-top { display: flex; justify-content: space-between; align-items: center; }
-        .price-tag { font-size: 26px; font-weight: 900; color: #111; }
-        .badge-tariff {
-            background: #fff5f5;
-            color: #ff3333;
-            font-weight: 800;
-            font-size: 12px;
-            padding: 5px 12px;
-            border-radius: 10px;
-            border: 1.5px solid #ffcccc;
-        }
+        .order-top { display: flex; justify-content: space-between; align-items: center; }
+        .price-tag { font-size: 26px; font-weight: 900; color: #111; }
+        .badge-tariff {
+            background: #fff5f5;
+            color: #ff3333;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 10px;
+            border: 1.5px solid #ffcccc;
+        }
 
-        .timer-bar-container {
-            width: 100%;
-            height: 6px;
-            background: #f1f2f6;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .timer-bar {
-            width: 100%;
-            height: 100%;
-            background: #ff3333;
-            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
-            transition: width 1s linear;
-        }
+        /* QIZIL TAYMER PROGRESS BARI */
+        .timer-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #f1f2f6;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .timer-bar {
+            width: 100%;
+            height: 100%;
+            background: #ff3333;
+            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+            transition: width 1s linear;
+        }
 
-        .route-info {
-            background: #f8f9fa;
-            border-radius: 18px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            border: 1px solid #ebebeb;
-        }
-        .route-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; color: #222; }
-        .dot-icon { width: 10px; height: 10px; border-radius: 50%; }
+        .route-info {
+            background: #f8f9fa;
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid #ebebeb;
+        }
+        .route-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; color: #222; }
+        .dot-icon { width: 10px; height: 10px; border-radius: 50%; }
 
-        .btn-yellow-main {
-            background: #ffcc00;
-            color: #111;
-            border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 900;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 16px rgba(255, 204, 0, 0.4);
-        }
-        .btn-yellow-main:active { transform: scale(0.98); }
+        .btn-yellow-main {
+            background: #ffcc00;
+            color: #111;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 16px rgba(255, 204, 0, 0.4);
+        }
+        .btn-yellow-main:active { transform: scale(0.98); }
 
-        .btn-pass {
-            background: transparent;
-            color: #888;
-            border: none;
-            padding: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-        }
-    </style>
+        .btn-pass {
+            background: transparent;
+            color: #888;
+            border: none;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div id="map"></div>
 
-    <!-- Yuqori Brand Paneli -->
-    <div class="top-bar">
-        <div class="brand-section">
-            <div class="yellow-badge">Y</div>
-            <div>
-                <div class="driver-name" id="dName">Haydovchi</div>
-                <div class="driver-car" id="dCar">Chevrolet Onix (70 N 079 NN)</div>
-            </div>
-        </div>
+    <!-- Yuqori Brand Paneli -->
+    <div class="top-bar">
+        <div class="brand-section">
+            <div class="yellow-badge">Y</div>
+            <div>
+                <div class="driver-name" id="dName">Haydovchi</div>
+                <div class="driver-car" id="dCar">Chevrolet Onix (70 N 079 NN)</div>
+            </div>
+        </div>
 
-        <div class="status-pill" id="toggleBtn" onclick="toggleDriverOnline()">
-            <div class="status-indicator"></div>
-            <span id="statusLabel">Offline</span>
-        </div>
-    </div>
+        <div class="status-pill" id="toggleBtn" onclick="toggleDriverOnline()">
+            <div class="status-indicator"></div>
+            <span id="statusLabel">Offline</span>
+        </div>
+    </div>
 
-    <!-- Qayta joylashuvga qaytish tugmasi -->
-    <button class="btn-recenter" onclick="centerDriverLocation()">🎯</button>
+    <!-- Qayta joylashuvga qaytish tugmasi -->
+    <button class="btn-recenter" onclick="centerDriverLocation()">🎯</button>
 
-    <!-- Pastki Dashboard -->
-    <div class="bottom-card">
-        <div class="dashboard-grid">
-            <div class="stat-item">
-                <div class="stat-value" id="tripsCount">0</div>
-                <div class="stat-label">BUYURTMA</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="todayEarnings">0 UZS</div>
-                <div class="stat-label">DAROMAD</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">5.0 ★</div>
-                <div class="stat-label">REYTING</div>
-            </div>
-        </div>
+    <!-- Pastki Dashboard -->
+    <div class="bottom-card">
+        <div class="dashboard-grid">
+            <div class="stat-item">
+                <div class="stat-value" id="tripsCount">0</div>
+                <div class="stat-label">BUYURTMA</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="todayEarnings">0 UZS</div>
+                <div class="stat-label">DAROMAD</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">5.0 ★</div>
+                <div class="stat-label">REYTING</div>
+            </div>
+        </div>
 
-        <div class="status-banner" id="gpsStatus">
-            Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
-        </div>
+        <div class="status-banner" id="gpsStatus">
+            Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
+        </div>
 
-        <!-- Faol safarni yakunlash tugmasi -->
-        <div class="active-trip-panel" id="activeTripPanel">
-            <button class="btn-finish-trip" onclick="completeCurrentTrip()">🏁 SAFARNI YAKUNLASH</button>
-        </div>
-    </div>
+        <!-- Faol safarni yakunlash tugmasi -->
+        <div class="active-trip-panel" id="activeTripPanel">
+            <button class="btn-finish-trip" onclick="completeCurrentTrip()">🏁 SAFARNI YAKUNLASH</button>
+        </div>
+    </div>
 
-    <!-- Yangi Buyurtma Qabul Qilish Modali -->
-    <div class="order-sheet" id="orderSheet">
-        <div class="order-top">
-            <div>
-                <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase;">Yangi Buyurtma</div>
-                <div class="price-tag" id="ordPrice">18 500 UZS</div>
-            </div>
-            <span class="badge-tariff" id="ordTariff">STANDART</span>
-        </div>
+    <!-- Yangi Buyurtma Qabul Qilish Modali (POPUP) -->
+    <div class="order-sheet" id="orderSheet">
+        <div class="order-top">
+            <div>
+                <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase;">Yangi Buyurtma</div>
+                <div class="price-tag" id="ordPrice">18 500 UZS</div>
+            </div>
+            <span class="badge-tariff" id="ordTariff">STANDART</span>
+        </div>
 
-        <!-- QIZIL PROGRESS BAR -->
-        <div class="timer-bar-container">
-            <div class="timer-bar" id="timerBar"></div>
-        </div>
+        <!-- QIZIL PROGRESS BAR -->
+        <div class="timer-bar-container">
+            <div class="timer-bar" id="timerBar"></div>
+        </div>
 
-        <div class="route-info">
-            <div class="route-row">
-                <div class="dot-icon" style="background: #ffcc00;"></div>
-                <span id="ordStart">Mijozgacha: 750 m (2 min)</span>
-            </div>
-            <div class="route-row">
-                <div class="dot-icon" style="background: #ff3333;"></div>
-                <span id="ordDest">Manzil: Temirchi mahallasi</span>
-            </div>
-        </div>
+        <div class="route-info">
+            <div class="route-row">
+                <div class="dot-icon" style="background: #ffcc00;"></div>
+                <span id="ordStart">Mijozgacha: 750 m (2 min)</span>
+            </div>
+            <div class="route-row">
+                <div class="dot-icon" style="background: #ff3333;"></div>
+                <span id="ordDest">Manzil: Temirchi mahallasi</span>
+            </div>
+        </div>
 
-        <button class="btn-yellow-main" onclick="acceptDriverOrder()">🚖 BUYURTMANI QABUL QILISH</button>
-        <button class="btn-pass" onclick="dismissOrder()">O'tkazib yuborish</button>
-    </div>
+        <button class="btn-yellow-main" onclick="acceptDriverOrder()">🚖 BUYURTMANI QABUL QILISH</button>
+        <button class="btn-pass" onclick="dismissOrder()">O'tkazib yuborish</button>
+    </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-        // REALTIME FIREBASE DATABASE
-        const firebaseConfig = {
-            databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        let map, multiRoute;
+        let driverPlacemark = null;
+        let isOnline = false;
+        let currentPos = [39.0560, 66.8300];
+        let watchId = null;
+        let offerTimer = null;
+        let timeLeft = 15;
+        let totalIncome = 0;
+        let completedRides = 0;
 
-        let map, multiRoute;
-        let driverPlacemark = null;
-        let isOnline = false;
-        let currentPos = [39.0560, 66.8300];
-        let watchId = null;
-        let offerTimer = null;
-        let timeLeft = 15;
-        let totalIncome = 0;
-        let completedRides = 0;
+        // RIDEYELLOW AVTOMOBIL MARKERI
+        const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64">
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
+                </filter>
+                <g filter="url(#shadow)">
+                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
+                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
+                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
+                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
+                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
+                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
+                </g>
+            </svg>
+        `);
 
-        let driverId = "driver_1";
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            driverId = "driver_" + tg.initDataUnsafe.user.id;
-            document.getElementById("dName").innerText = tg.initDataUnsafe.user.first_name || 'Haydovchi';
-        }
+        ymaps.ready(() => {
+            map = new ymaps.Map("map", {
+                center: currentPos,
+                zoom: 16,
+                type: 'yandex#map',
+                controls: []
+            });
 
-        const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 64 64">
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.45"/>
-                </filter>
-                <g filter="url(#shadow)">
-                    <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
-                    <rect x="12" y="6" width="40" height="52" rx="14" fill="#007aff"/>
-                    <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
-                    <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
-                    <rect x="18" y="27" width="28" height="18" rx="4" fill="#005ecb"/>
-                    <circle cx="18" cy="8" r="2.5" fill="#fff"/>
-                    <circle cx="46" cy="8" r="2.5" fill="#fff"/>
-                </g>
-            </svg>
-        `);
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                document.getElementById("dName").innerText = `${u.first_name || 'Haydovchi'}`;
+            }
 
-        ymaps.ready(() => {
-            map = new ymaps.Map("map", {
-                center: currentPos,
-                zoom: 16,
-                type: 'yandex#map',
-                controls: []
-            });
+            initLocationTracker();
+        });
 
-            initLocationTracker();
-        });
+        function initLocationTracker() {
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(pos => {
+                    currentPos = [pos.coords.latitude, pos.coords.longitude];
+                    
+                    if (!driverPlacemark) {
+                        driverPlacemark = new ymaps.Placemark(currentPos, {}, {
+                            iconLayout: 'default#image',
+                            iconImageHref: topViewCarSvg,
+                            iconImageSize: [40, 40],
+                            iconImageOffset: [-20, -20]
+                        });
+                        map.geoObjects.add(driverPlacemark);
+                        map.setCenter(currentPos, 16);
+                    } else {
+                        driverPlacemark.geometry.setCoordinates(currentPos);
+                    }
+                }, null, { enableHighAccuracy: true });
+            }
+        }
 
-        function initLocationTracker() {
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(pos => {
-                    currentPos = [pos.coords.latitude, pos.coords.longitude];
-                    
-                    if (!driverPlacemark) {
-                        driverPlacemark = new ymaps.Placemark(currentPos, {}, {
-                            iconLayout: 'default#image',
-                            iconImageHref: topViewCarSvg,
-                            iconImageSize: [40, 40],
-                            iconImageOffset: [-20, -20]
-                        });
-                        map.geoObjects.add(driverPlacemark);
-                        map.setCenter(currentPos, 16);
-                    } else {
-                        driverPlacemark.geometry.setCoordinates(currentPos);
-                    }
+        function toggleDriverOnline() {
+            isOnline = !isOnline;
+            const btn = document.getElementById("toggleBtn");
+            const lbl = document.getElementById("statusLabel");
+            const banner = document.getElementById("gpsStatus");
 
-                    // JONLI KOORDINATANI BAZAGA YANGILAB TURISH
-                    if (isOnline) {
-                        db.ref('drivers/' + driverId).set({
-                            lat: currentPos[0],
-                            lon: currentPos[1],
-                            name: document.getElementById("dName").innerText,
-                            car: "Oq Onix • 70 N 079 NN",
-                            tariff: "standart",
-                            is_online: true,
-                            updated_at: Date.now()
-                        });
-                    }
-                }, null, { enableHighAccuracy: true });
-            }
-        }
+            if (isOnline) {
+                btn.classList.add("online");
+                lbl.innerText = "Online";
+                banner.innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-        function toggleDriverOnline() {
-            isOnline = !isOnline;
-            const btn = document.getElementById("toggleBtn");
-            const lbl = document.getElementById("statusLabel");
-            const banner = document.getElementById("gpsStatus");
+                setTimeout(() => {
+                    if (isOnline) triggerIncomingOrder();
+                }, 3000);
+            } else {
+                btn.classList.remove("online");
+                lbl.innerText = "Offline";
+                banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                dismissOrder();
+            }
+        }
 
-            if (isOnline) {
-                btn.classList.add("online");
-                lbl.innerText = "Online";
-                banner.innerHTML = "🟢 Jonli lokatsiya faol • Mijozlarga ko'rinmoqdasiz";
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        function triggerIncomingOrder() {
+            const sheet = document.getElementById("orderSheet");
+            sheet.style.display = "flex";
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
 
-                db.ref('drivers/' + driverId).set({
-                    lat: currentPos[0],
-                    lon: currentPos[1],
-                    name: document.getElementById("dName").innerText,
-                    car: "Oq Onix • 70 N 079 NN",
-                    tariff: "standart",
-                    is_online: true,
-                    updated_at: Date.now()
-                });
-            } else {
-                btn.classList.remove("online");
-                lbl.innerText = "Offline";
-                banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            // 15 soniyalik qizil taymer
+            timeLeft = 15;
+            document.getElementById("timerBar").style.width = "100%";
+            clearInterval(offerTimer);
+            offerTimer = setInterval(() => {
+                timeLeft--;
+                const percent = (timeLeft / 15) * 100;
+                document.getElementById("timerBar").style.width = percent + "%";
+                if (timeLeft <= 0) {
+                    clearInterval(offerTimer);
+                    dismissOrder();
+                }
+            }, 1000);
+        }
 
-                db.ref('drivers/' + driverId).remove();
-                dismissOrder();
-            }
-        }
+        function acceptDriverOrder() {
+            clearInterval(offerTimer);
+            document.getElementById("orderSheet").style.display = "none";
+            document.getElementById("activeTripPanel").style.display = "flex";
+            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
 
-        function triggerIncomingOrder() {
-            const sheet = document.getElementById("orderSheet");
-            sheet.style.display = "flex";
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            timeLeft = 15;
-            document.getElementById("timerBar").style.width = "100%";
-            clearInterval(offerTimer);
-            offerTimer = setInterval(() => {
-                timeLeft--;
-                const percent = (timeLeft / 15) * 100;
-                document.getElementById("timerBar").style.width = percent + "%";
-                if (timeLeft <= 0) {
-                    clearInterval(offerTimer);
-                    dismissOrder();
-                }
-            }, 1000);
-        }
+            const clientPos = [currentPos[0] + 0.005, currentPos[1] + 0.004];
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [currentPos, clientPos],
+                params: { routingMode: 'auto', results: 1 }
+            }, {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 6
+            });
+            map.geoObjects.add(multiRoute);
+        }
 
-        function acceptDriverOrder() {
-            clearInterval(offerTimer);
-            document.getElementById("orderSheet").style.display = "none";
-            document.getElementById("activeTripPanel").style.display = "flex";
-            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
+        function completeCurrentTrip() {
+            completedRides++;
+            totalIncome += 18500;
+            document.getElementById("tripsCount").innerText = completedRides;
+            document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
+            document.getElementById("activeTripPanel").style.display = "none";
+            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
 
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            alert("✅ Safar muvaffaqiyatli yakunlandi! 18 500 UZS hisobingizga qo'shildi.");
+        }
 
-            // BAZADA BUYURTMA QABUL QILINGANINI BELGILASH
-            db.ref('orders/current_status').set({
-                status: 'accepted',
-                driver_name: document.getElementById("dName").innerText,
-                driver_car: "Oq Onix • 70 N 079 NN",
-                driver_phone: "+998883893379"
-            });
+        function dismissOrder() {
+            clearInterval(offerTimer);
+            document.getElementById("orderSheet").style.display = "none";
+        }
 
-            const clientPos = [currentPos[0] + 0.005, currentPos[1] + 0.004];
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [currentPos, clientPos],
-                params: { routingMode: 'auto', results: 1 }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 6
-            });
-            map.geoObjects.add(multiRoute);
-        }
-
-        function completeCurrentTrip() {
-            completedRides++;
-            totalIncome += 18500;
-            document.getElementById("tripsCount").innerText = completedRides;
-            document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
-            document.getElementById("activeTripPanel").style.display = "none";
-            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
-
-            db.ref('orders/current_status').remove();
-
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            alert("✅ Safar muvaffaqiyatli yakunlandi! 18 500 UZS hisobingizga qo'shildi.");
-        }
-
-        function dismissOrder() {
-            clearInterval(offerTimer);
-            document.getElementById("orderSheet").style.display = "none";
-            // BAZADAGI HOLATNI BEKOR QILISH
-            db.ref('orders/current_status').remove();
-        }
-
-        function centerDriverLocation() {
-            if (currentPos) {
-                map.setCenter(currentPos, 16, { duration: 300 });
-            }
-        }
-    </script>
+        function centerDriverLocation() {
+            if (currentPos) {
+                map.setCenter(currentPos, 16, { duration: 300 });
+            }
+        }
+    </script>
 </body>
 </html>
