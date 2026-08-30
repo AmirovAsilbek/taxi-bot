@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yandex Go Style Taxi</title>
+    <title>Safar ma'lumotlari</title>
+    <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -12,13 +13,14 @@
 
         #map {
             width: 100vw;
-            height: 55vh;
+            height: 54vh;
             position: absolute;
             top: 0;
             left: 0;
             z-index: 1;
         }
 
+        /* Xaritadagi suzuvchi tugmalar */
         .map-btn {
             position: absolute;
             z-index: 10;
@@ -34,8 +36,9 @@
             cursor: pointer;
         }
         .btn-back { top: 16px; left: 16px; font-size: 20px; font-weight: bold; }
-        .btn-locate { bottom: 46vh; right: 16px; font-size: 20px; }
+        .btn-locate { bottom: 47vh; right: 16px; font-size: 20px; }
 
+        /* Pastki oyna - Safar tafsilotlari */
         .bottom-sheet {
             position: absolute;
             bottom: 0;
@@ -46,23 +49,24 @@
             border-radius: 26px 26px 0 0;
             z-index: 20;
             box-shadow: 0 -4px 25px rgba(0,0,0,0.12);
-            padding: 20px 22px;
+            padding: 18px 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
 
         .sheet-title {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 700;
             color: #111;
-            margin-bottom: 8px;
         }
 
+        /* Manzillar bloki */
         .route-points {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            position: relative;
         }
         .point-item {
             display: flex;
@@ -86,16 +90,26 @@
             font-weight: 600;
             color: #222;
         }
+        .btn-note {
+            background: #f4f4f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+        }
 
+        /* Tarif Kartasi */
         .tariff-card {
-            background: #f8f9fa;
-            border: 2px solid #ffcc00;
+            background: #ffffff;
+            border: 1.5px solid #ececec;
             border-radius: 16px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin: 6px 0;
         }
         .tariff-left {
             display: flex;
@@ -103,88 +117,158 @@
             gap: 12px;
         }
         .car-img {
-            width: 50px;
+            width: 52px;
             height: auto;
         }
         .tariff-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #111;
         }
         .tariff-seats {
             font-size: 12px;
-            color: #777;
+            color: #888;
         }
         .tariff-price {
             text-align: right;
         }
         .price-val {
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #111;
+        }
+        .price-old {
+            font-size: 11px;
+            color: #aaa;
+            text-decoration: line-through;
+        }
+
+        /* Choypuli va Jami */
+        .pricing-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tip-selector {
+            font-size: 13px;
+            color: #444;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .total-badge {
+            border: 1.5px solid #ffcc00;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 800;
             color: #111;
         }
 
+        /* Vaqt va To'lov turi */
+        .option-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        /* Asosiy tugmalar */
         .action-row {
-            width: 100%;
-            margin-top: 6px;
+            display: flex;
+            gap: 10px;
         }
         .btn-request {
-            width: 100%;
-            background: #ffcc00;
-            color: #000;
+            flex: 2;
+            background: #e91e63;
+            color: #fff;
             border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 16px;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
             transition: 0.2s;
         }
         .btn-request:active {
             transform: scale(0.98);
         }
+        .btn-code {
+            flex: 1;
+            background: #e91e63;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
+        }
     </style>
 </head>
 <body>
 
+    <!-- Xarita -->
     <div id="map"></div>
     <button class="map-btn btn-back" onclick="tg.close()">←</button>
     <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
+    <!-- Pastki Panel -->
     <div class="bottom-sheet">
-        <div class="sheet-title">Safar ma'lumotlari</div>
+        <div class="sheet-title">Safaringiz ma'lumotlari</div>
 
         <div class="route-points">
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-start"></div>
-                    <span class="point-name" id="startLocation">Joylashuvingiz tanlanmoqda...</span>
+                    <span class="point-name" id="startLocation">Tanlangan manzil</span>
                 </div>
+                <button class="btn-note" onclick="addNote()">📝 Izoh qo'shish</button>
             </div>
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-end"></div>
-                    <span class="point-name" id="distInfo">Masofa: -- km</span>
+                    <span class="point-name" id="endLocation">Manzilingiz</span>
                 </div>
             </div>
         </div>
 
+        <!-- Tarif Kartasi -->
         <div class="tariff-card">
             <div class="tariff-left">
-                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
+                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart Taksi">
                 <div>
-                    <div class="tariff-name">Standard</div>
+                    <div class="tariff-name">Standart Taksi ⌵</div>
                     <div class="tariff-seats">4 kishilik</div>
                 </div>
             </div>
             <div class="tariff-price">
-                <div class="price-val" id="totalPrice">5 000 UZS</div>
+                <div class="price-val" id="basePrice">25 000 UZS</div>
+                <div class="price-old">30 000 UZS</div>
             </div>
         </div>
 
+        <!-- Choypuli va Jami -->
+        <div class="pricing-row">
+            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
+            <div class="total-badge" id="totalPrice">Jami: 27 000 UZS</div>
+        </div>
+
+        <!-- Vaqt va To'lov -->
+        <div class="option-row">
+            <span>🕒 Hozir jo'nash ⌵</span>
+            <span>💵 Naqd pul ⌵</span>
+        </div>
+
+        <!-- Tugmalar -->
         <div class="action-row">
-            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Buyurtma berish</button>
+            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
+            <button class="btn-code" onclick="showTripCode()">Safar kodi</button>
         </div>
     </div>
 
@@ -193,11 +277,7 @@
         tg.expand();
 
         let map, userPlacemark;
-        let userCoords = [41.311081, 69.240562];
-        
-        // Yandex Go narx sozlamalari:
-        const BASE_PRICE = 5000; // Boshlang'ich minimal narx
-        const PER_KM_PRICE = 2000; // Har 1 km uchun qo'shiladigan narx
+        let userCoords = [39.6542, 66.9597]; // Markaziy koordinata
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
@@ -217,7 +297,6 @@
                 const newCoords = map.getCenter();
                 userCoords = newCoords;
                 userPlacemark.geometry.setCoordinates(newCoords);
-                calculateYandexPrice();
             });
         });
 
@@ -227,22 +306,19 @@
                     userCoords = [pos.coords.latitude, pos.coords.longitude];
                     map.setCenter(userCoords, 16);
                     userPlacemark.geometry.setCoordinates(userCoords);
-                    calculateYandexPrice();
                 }, null, { enableHighAccuracy: true });
             }
         }
 
-        // Masofa va Narxni hisoblash
-        function calculateYandexPrice() {
-            // Xarita markazidan shahar markazigacha bo'lgan taxminiy masofani hisoblash (misol uchun)
-            const dist = ymaps.coordSystem.geo.getDistance(userCoords, [41.311081, 69.240562]) / 1000;
-            const calculatedDist = Math.max(1, dist.toFixed(1)); // Kamida 1 km
-            
-            const finalPrice = Math.round((BASE_PRICE + (calculatedDist * PER_KM_PRICE)) / 500) * 500;
+        function addNote() {
+            const note = prompt("Haydovchi uchun izoh qoldiring (masalan: 2-podyezd):");
+            if (note) {
+                alert("Izoh saqlandi: " + note);
+            }
+        }
 
-            document.getElementById("startLocation").innerText = "Xaritadan tanlangan joy";
-            document.getElementById("distInfo").innerText = "Markazgacha: " + calculatedDist + " km";
-            document.getElementById("totalPrice").innerText = finalPrice.toLocaleString() + " UZS";
+        function showTripCode() {
+            alert("Sizning safar kodingiz: " + Math.floor(1000 + Math.random() * 9000));
         }
 
         function sendTaxiOrder() {
@@ -254,7 +330,7 @@
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                price: document.getElementById("totalPrice").innerText
+                price: "27 000 UZS"
             };
 
             tg.sendData(JSON.stringify(payload));
