@@ -7,7 +7,7 @@
     <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase Realtime Database SDK -->
+    <!-- Firebase Realtime SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -310,13 +310,13 @@
         }
         .btn-go-action:active { transform: scale(0.98); background: #e02424; }
 
-        /* 2-EKRAN: SAFAR TAFSILOTLARI */
+        /* 2-EKRAN: SAFAR TAFSILOTLARI (Barcha tariflar ko'rinishi uchun moslashtirildi) */
         .overview-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 56vh;
+            height: 64vh;
             background: #ffffff;
             border-radius: 28px 28px 0 0;
             z-index: 30;
@@ -350,8 +350,9 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 190px;
+            max-height: 180px;
             overflow-y: auto;
+            padding-right: 2px;
         }
 
         .tariff-card {
@@ -614,6 +615,7 @@
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
+    <!-- SAFAR TAFSILOTLARI (Barcha tariflar ko'rinadigan qilib to'g'irlandi) -->
     <div class="overview-sheet" id="overviewSheet">
         <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
@@ -633,6 +635,7 @@
             </div>
         </div>
 
+        <!-- STANDART, KOMFORT, KOMFORT+ -->
         <div class="tariff-list">
             <div class="tariff-card active" id="tariff_standart" onclick="selectTariff('standart')">
                 <div class="tariff-left">
@@ -643,6 +646,28 @@
                     </div>
                 </div>
                 <div class="price-val" id="price_standart">5 500 UZS</div>
+            </div>
+
+            <div class="tariff-card" id="tariff_komfort" onclick="selectTariff('komfort')">
+                <div class="tariff-left">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3202/3202926.png" class="car-img" alt="Komfort">
+                    <div>
+                        <div class="tariff-name">Komfort</div>
+                        <div class="tariff-seats" id="seats_komfort">4 kishilik • Keng saloni</div>
+                    </div>
+                </div>
+                <div class="price-val" id="price_komfort">9 000 UZS</div>
+            </div>
+
+            <div class="tariff-card" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
+                <div class="tariff-left">
+                    <img src="https://cdn-icons-png.flaticon.com/512/75/75780.png" class="car-img" alt="Komfort+">
+                    <div>
+                        <div class="tariff-name">Komfort+</div>
+                        <div class="tariff-seats" id="seats_komfort_plus">Premium • Konditsioner</div>
+                    </div>
+                </div>
+                <div class="price-val" id="price_komfort_plus">14 000 UZS</div>
             </div>
         </div>
 
@@ -690,7 +715,6 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        // Mini App yopilib qolishining oldini olish
         tg.enableClosingConfirmation();
 
         // REALTIME FIREBASE DATABASE
@@ -960,9 +984,20 @@
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
         }
 
+        let prices = {
+            standart: 5500,
+            komfort: 9000,
+            komfort_plus: 14000
+        };
+
         function updateTariffsAvailabilityUI() {
             document.getElementById("tariff_standart").classList.remove("disabled");
+            document.getElementById("tariff_komfort").classList.remove("disabled");
+            document.getElementById("tariff_komfort_plus").classList.remove("disabled");
+
             document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+            document.getElementById("seats_komfort").innerText = "4 kishilik • Keng saloni";
+            document.getElementById("seats_komfort_plus").innerText = "Premium • Konditsioner";
 
             const orderBtn = document.getElementById("submitOrderBtn");
             orderBtn.disabled = false;
@@ -978,18 +1013,18 @@
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("centerPin").style.display = "none";
             document.getElementById("topBtn").innerText = "←";
-            document.getElementById("locBtn").style.bottom = "58vh";
+            document.getElementById("locBtn").style.bottom = "64vh";
 
             document.getElementById("overviewStart").innerText = "Mening joylashuvim";
             document.getElementById("overviewDest").innerText = targetName;
 
-            prices = {
-                standart: Math.round((5000 + (targetDist * 2000)) / 500) * 500,
-                komfort: Math.round((8000 + (targetDist * 2500)) / 500) * 500,
-                komfort_plus: Math.round((12000 + (targetDist * 3200)) / 500) * 500
-            };
+            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
+            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
+            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
 
             document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
+            document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
+            document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
 
             updateTariffsAvailabilityUI();
 
@@ -1014,7 +1049,6 @@
             map.geoObjects.add(multiRoute);
         }
 
-        // Taksichi chaqirish va xavfsiz qidiruv oynasini ochish (yopilib qolmaydi)
         function sendTaxiOrder() {
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
@@ -1050,7 +1084,7 @@
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "58vh";
+            document.getElementById("locBtn").style.bottom = "64vh";
         }
 
         function handleTopBtnClick() {
