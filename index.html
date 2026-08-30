@@ -345,18 +345,18 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 48vh;
+            height: 56vh;
             background: #ffffff;
             border-radius: 28px 28px 0 0;
             z-index: 30;
             box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 18px 20px 24px 20px;
+            padding: 18px 20px 20px 20px;
             display: none;
             flex-direction: column;
             justify-content: space-between;
         }
 
-        .route-points { display: flex; flex-direction: column; gap: 10px; }
+        .route-points { display: flex; flex-direction: column; gap: 8px; }
         .point-item { display: flex; align-items: center; justify-content: space-between; }
         .point-left { display: flex; align-items: center; gap: 10px; }
         .dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -375,20 +375,35 @@
             cursor: pointer;
         }
 
+        /* TARIFLAR RO'YXATI */
+        .tariff-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
         .tariff-card {
             background: #ffffff;
-            border: 1.5px solid #ececec;
+            border: 2px solid #ececec;
             border-radius: 16px;
             padding: 10px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tariff-card.active {
+            border-color: #ffcc00;
+            background: #fffdf0;
         }
         .tariff-left { display: flex; align-items: center; gap: 12px; }
-        .car-img { width: 48px; height: auto; }
-        .tariff-name { font-size: 15px; font-weight: 700; }
+        .car-img { width: 44px; height: auto; }
+        .tariff-name { font-size: 15px; font-weight: 700; color: #111; }
         .tariff-seats { font-size: 12px; color: #888; }
-        .price-val { font-size: 16px; font-weight: 800; }
+        .price-val { font-size: 15px; font-weight: 800; color: #111; }
 
         .pricing-row { display: flex; align-items: center; justify-content: space-between; }
         .tip-selector { font-size: 13px; color: #444; font-weight: 600; }
@@ -536,20 +551,48 @@
             </div>
         </div>
 
-        <div class="tariff-card">
-            <div class="tariff-left">
-                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
-                <div>
-                    <div class="tariff-name" id="txt_tariff">Standart</div>
-                    <div class="tariff-seats" id="seatsDist">4 kishilik • -- km</div>
+        <!-- STANDART, KOMFORT, KOMFORT+ TARIFLAR -->
+        <div class="tariff-list">
+            <!-- Standart -->
+            <div class="tariff-card active" id="tariff_standart" onclick="selectTariff('standart')">
+                <div class="tariff-left">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart">
+                    <div>
+                        <div class="tariff-name">Standart</div>
+                        <div class="tariff-seats" id="seats_standart">4 kishilik • -- km</div>
+                    </div>
                 </div>
+                <div class="price-val" id="price_standart">11 000 UZS</div>
             </div>
-            <div class="price-val" id="basePrice">15 000 UZS</div>
+
+            <!-- Komfort -->
+            <div class="tariff-card" id="tariff_komfort" onclick="selectTariff('komfort')">
+                <div class="tariff-left">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3202/3202926.png" class="car-img" alt="Komfort">
+                    <div>
+                        <div class="tariff-name">Komfort</div>
+                        <div class="tariff-seats" id="seats_komfort">4 kishilik • Keng saloni</div>
+                    </div>
+                </div>
+                <div class="price-val" id="price_komfort">15 000 UZS</div>
+            </div>
+
+            <!-- Komfort+ -->
+            <div class="tariff-card" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
+                <div class="tariff-left">
+                    <img src="https://cdn-icons-png.flaticon.com/512/75/75780.png" class="car-img" alt="Komfort+">
+                    <div>
+                        <div class="tariff-name">Komfort+</div>
+                        <div class="tariff-seats" id="seats_komfort_plus">Premium • Konditsioner</div>
+                    </div>
+                </div>
+                <div class="price-val" id="price_komfort_plus">20 000 UZS</div>
+            </div>
         </div>
 
         <div class="pricing-row">
             <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
-            <div class="total-badge" id="totalPrice">Jami: 17 000 UZS</div>
+            <div class="total-badge" id="totalPrice">Jami: 13 000 UZS</div>
         </div>
 
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
@@ -567,8 +610,15 @@
         let targetCoords = [39.0560, 66.8300];
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
-        let finalTripPrice = "15 000 UZS";
+        let currentTariff = "Standart";
+        let finalTripPrice = "13 000 UZS";
         let searchTimer = null;
+
+        let prices = {
+            standart: 11000,
+            komfort: 15000,
+            komfort_plus: 20000
+        };
 
         let mapTypeIndex = 0;
         const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
@@ -578,17 +628,17 @@
             uz: {
                 biz: "Biznes-hisob", sec: "Xavfsizlik", addr: "Mening manzillarim", hist: "Buyurtmalar tarixi",
                 set: "Sozlamalar (Til)", supp: "Qo'llab-quvvatlash", info: "Ma'lumot", overview: "Safaringiz ma'lumotlari",
-                tariff: "Standart", seats: "4 kishilik", btn_order: "🚖 Taksi chaqirish"
+                btn_order: "🚖 Taksi chaqirish"
             },
             ru: {
                 biz: "Бизнес-аккаунт", sec: "Безопасность", addr: "Мои адреса", hist: "История заказов",
                 set: "Настройки (Язык)", supp: "Служба поддержки", info: "Информация", overview: "Детали поездки",
-                tariff: "Стандарт", seats: "4 места", btn_order: "🚖 Заказать такси"
+                btn_order: "🚖 Заказать такси"
             },
             en: {
                 biz: "Business Account", sec: "Safety", addr: "My Addresses", hist: "Ride History",
                 set: "Settings (Language)", supp: "Support", info: "Information", overview: "Ride Overview",
-                tariff: "Standard", seats: "4 seats", btn_order: "🚖 Request Taxi"
+                btn_order: "🚖 Request Taxi"
             }
         };
 
@@ -614,12 +664,10 @@
             locateMe();
             checkUserAuth();
 
-            // XARITA SURILGANDA PANEL PASTGA TUSHADI
             map.events.add('actionbegin', () => {
                 collapseSheet();
             });
 
-            // XARITA TO'XTAGANDA MARKAZIY KOORDINATANI ANIQLASH
             map.events.add('actionend', () => {
                 targetCoords = map.getCenter();
                 targetDist = getDistanceKm(startCoords[0], startCoords[1], targetCoords[0], targetCoords[1]);
@@ -805,38 +853,66 @@
             });
         }
 
-        // 3-EKRAN: SIZNING JOYINGIZ UCHUN ODAMCHA I把它 (islands#yellowPersonIcon) VA BORISH UCHUN QIZIL PIN
+        // TARIFNI TANLASH VA NARXNI YANGILASH
+        function selectTariff(type) {
+            document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
+            
+            let selectedPrice = prices.standart;
+            if (type === 'standart') {
+                document.getElementById("tariff_standart").classList.add("active");
+                currentTariff = "Standart";
+                selectedPrice = prices.standart;
+            } else if (type === 'komfort') {
+                document.getElementById("tariff_komfort").classList.add("active");
+                currentTariff = "Komfort";
+                selectedPrice = prices.komfort;
+            } else if (type === 'komfort_plus') {
+                document.getElementById("tariff_komfort_plus").classList.add("active");
+                currentTariff = "Komfort+";
+                selectedPrice = prices.komfort_plus;
+            }
+
+            const totalCalc = selectedPrice + 2000;
+            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
+            finalTripPrice = totalCalc.toLocaleString() + " UZS";
+        }
+
+        // 3-EKRAN: SAFAR TAFSILOTLARI VA NARXLARNI HISOBLASH
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
             document.getElementById("centerPin").style.display = "none";
             document.getElementById("topBtn").innerText = "←";
-            document.getElementById("locBtn").style.bottom = "50vh";
+            document.getElementById("locBtn").style.bottom = "58vh";
 
             document.getElementById("overviewStart").innerText = "Mening joylashuvim";
             document.getElementById("overviewDest").innerText = targetName;
-            document.getElementById("seatsDist").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+            document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
-            const baseCalc = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
-            const totalCalc = baseCalc + 2000;
-            
-            document.getElementById("basePrice").innerText = baseCalc.toLocaleString() + " UZS";
-            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
-            finalTripPrice = totalCalc.toLocaleString() + " UZS";
+            // Har bir tarif narxini hisoblash
+            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
+            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
+            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
 
-            // Eski belgilarni tozalash
+            document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
+            document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
+            document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
+
+            selectTariff('standart');
+
+            // Xaritadagi belgilarni yangilash
             if (multiRoute) map.geoObjects.remove(multiRoute);
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
             if (destPlacemark) map.geoObjects.remove(destPlacemark);
 
-            // A NUQTA: ODAMCHA BELGISI (islands#yellowPersonIcon)
+            // A NUQTA: ODAMCHA BELGISI
             startPlacemark = new ymaps.Placemark(startCoords, {
                 hintContent: 'Sizning joylashuvingiz'
             }, {
                 preset: 'islands#yellowPersonIcon'
             });
 
-            // B NUQTA: BORADIGAN MANZIL (Qizil tomchi pin)
+            // B NUQTA: BORADIGAN MANZIL
             destPlacemark = new ymaps.Placemark(targetCoords, {
                 hintContent: targetName
             }, {
@@ -846,7 +922,6 @@
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            // Yo'l marshrutini chizish
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [startCoords, targetCoords],
                 params: { results: 1 }
@@ -964,7 +1039,6 @@
             document.getElementById("txt_supp").innerText = l.supp;
             document.getElementById("txt_info").innerText = l.info;
             document.getElementById("txt_overview").innerText = l.overview;
-            document.getElementById("txt_tariff").innerText = l.tariff;
             document.getElementById("submitOrderBtn").innerText = l.btn_order;
             closeModal();
         }
@@ -982,6 +1056,7 @@
                 dest_lon: targetCoords[1],
                 destination: targetName,
                 distance: targetDist.toFixed(1) + " km",
+                tariff: currentTariff,
                 price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
