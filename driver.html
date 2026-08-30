@@ -83,7 +83,7 @@
         .btn-recenter {
             position: absolute;
             right: 16px;
-            bottom: 225px;
+            bottom: 270px;
             width: 46px;
             height: 46px;
             border-radius: 50%;
@@ -105,9 +105,9 @@
             right: 16px;
             background: #ffffff;
             border-radius: 24px;
-            padding: 18px 20px;
+            padding: 16px 18px;
             z-index: 30;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
             border: 1px solid #f0f0f0;
             display: flex;
             flex-direction: column;
@@ -120,38 +120,79 @@
             text-align: center;
         }
         .stat-item { padding: 0 4px; }
-        .stat-value { font-size: 18px; font-weight: 900; color: #111; }
+        .stat-value { font-size: 17px; font-weight: 900; color: #111; }
         .stat-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; margin-top: 2px; }
 
         .status-banner {
             background: #fbfbfc;
             border: 1.5px dashed #e1e2e6;
             border-radius: 14px;
-            padding: 11px;
+            padding: 10px;
             text-align: center;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             color: #666;
         }
 
+        /* FAOL SAFAR BOSHQARUV PANELI */
         .active-trip-panel {
             display: none;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
+
+        .client-info-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            border-radius: 14px;
+            padding: 10px 14px;
+        }
+        .client-meta { display: flex; flex-direction: column; gap: 2px; }
+        .client-meta-name { font-weight: 800; font-size: 14px; color: #111; }
+        .client-meta-dest { font-size: 12px; color: #666; }
+        .btn-call {
+            background: #2ed573;
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(46, 213, 115, 0.3);
+        }
+
+        .btn-step-action {
+            background: #ffcc00;
+            color: #111;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 900;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 14px rgba(255, 204, 0, 0.35);
+        }
+
         .btn-finish-trip {
             background: #111111;
             color: #ffcc00;
             border: none;
-            padding: 15px;
+            padding: 14px;
             border-radius: 16px;
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 900;
             cursor: pointer;
             width: 100%;
             box-shadow: 0 4px 14px rgba(0,0,0,0.2);
         }
 
+        /* YANGI BUYURTMA POPUP */
         .order-sheet {
             position: absolute;
             bottom: 0;
@@ -165,7 +206,7 @@
             flex-direction: column;
             gap: 14px;
             box-shadow: 0 -10px 40px rgba(0,0,0,0.25);
-            border-top: 4px solid #ff3333;
+            border-top: 4px solid #ffcc00;
             animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -173,13 +214,13 @@
         .order-top { display: flex; justify-content: space-between; align-items: center; }
         .price-tag { font-size: 26px; font-weight: 900; color: #111; }
         .badge-tariff {
-            background: #fff5f5;
-            color: #ff3333;
+            background: #fffdf0;
+            color: #b8860b;
             font-weight: 800;
             font-size: 12px;
             padding: 5px 12px;
             border-radius: 10px;
-            border: 1.5px solid #ffcccc;
+            border: 1.5px solid #ffcc00;
         }
 
         .timer-bar-container {
@@ -192,8 +233,8 @@
         .timer-bar {
             width: 100%;
             height: 100%;
-            background: #ff3333;
-            box-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
+            background: #ffcc00;
+            box-shadow: 0 0 8px rgba(255, 204, 0, 0.5);
             transition: width 1s linear;
         }
 
@@ -242,8 +283,8 @@
         <div class="brand-section">
             <div class="yellow-badge">Y</div>
             <div>
-                <div class="driver-name" id="dName">Haydovchi</div>
-                <div class="driver-car" id="dCar">Chevrolet Onix (70 N 079 NN)</div>
+                <div class="driver-name" id="dName">Asilbek Amirov</div>
+                <div class="driver-car" id="dCar">Oq Onix • 70 N 079 NN</div>
             </div>
         </div>
 
@@ -275,11 +316,20 @@
             Buyurtmalarni qabul qilish uchun "Offline" tugmasini bosing
         </div>
 
+        <!-- SAFAR BOSHQARISH BOSQICHLARI -->
         <div class="active-trip-panel" id="activeTripPanel">
-            <button class="btn-finish-trip" onclick="completeCurrentTrip()">🏁 SAFARNI YAKUNLASH</button>
+            <div class="client-info-strip">
+                <div class="client-meta">
+                    <span class="client-meta-name" id="actClientName">Mijoz</span>
+                    <span class="client-meta-dest" id="actClientDest">Manzil</span>
+                </div>
+                <a href="tel:+998900000000" class="btn-call" id="actCallBtn">📞</a>
+            </div>
+            <button class="btn-step-action" id="stepActionBtn" onclick="handleStepAction()">📍 YETIB KELDIM</button>
         </div>
     </div>
 
+    <!-- YANGI BUYURTMA EKRANI -->
     <div class="order-sheet" id="orderSheet">
         <div class="order-top">
             <div>
@@ -296,7 +346,7 @@
         <div class="route-info">
             <div class="route-row">
                 <div class="dot-icon" style="background: #ffcc00;"></div>
-                <span id="ordStart">Mijozgacha: 750 m (2 min)</span>
+                <span id="ordStart">Mijozgacha: 750 m</span>
             </div>
             <div class="route-row">
                 <div class="dot-icon" style="background: #ff3333;"></div>
@@ -325,14 +375,20 @@
         let isOnline = false;
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
-        let timeLeft = 15;
-        let totalIncome = 0;
-        let completedRides = 0;
+        let currentOrderData = null;
+        let tripStep = 'to_client'; // 'to_client' -> 'waiting' -> 'in_trip'
         
+        let completedRides = parseInt(localStorage.getItem('ry_driver_trips') || '0');
+        let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings') || '0');
+
+        document.getElementById("tripsCount").innerText = completedRides;
+        document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
+
         let driverId = "driver_1";
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             driverId = "driver_" + tg.initDataUnsafe.user.id;
-            document.getElementById("dName").innerText = tg.initDataUnsafe.user.first_name || 'Haydovchi';
+            const u = tg.initDataUnsafe.user;
+            document.getElementById("dName").innerText = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Asilbek Amirov';
         }
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
@@ -367,6 +423,21 @@
             listenForIncomingOrders();
         });
 
+        function playBeepSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+
         function initLocationTracker() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
@@ -390,7 +461,7 @@
                             lat: currentPos[0],
                             lon: currentPos[1],
                             name: document.getElementById("dName").innerText,
-                            car: "Oq Onix • 70 N 079 NN",
+                            car: document.getElementById("dCar").innerText,
                             tariff: "standart",
                             is_online: true,
                             updated_at: Date.now()
@@ -400,30 +471,31 @@
             }
         }
 
-        // MIJOZLARDAN KELADIGAN BUYURTMALARNI KUZATISH
         function listenForIncomingOrders() {
             db.ref('orders/current_order').on('value', snapshot => {
                 const order = snapshot.val();
-                if (order && order.status === 'searching' && isOnline) {
+                if (order && order.status === 'searching' && isOnline && !currentOrderData) {
                     showOrderPopup(order);
-                } else {
-                    dismissOrder();
+                } else if (!order || order.status !== 'searching') {
+                    if (!currentOrderData) dismissOrder();
                 }
             });
         }
 
         function showOrderPopup(order) {
+            currentOrderData = order;
             const sheet = document.getElementById("orderSheet");
             sheet.style.display = "flex";
             
-            document.getElementById("ordPrice").innerText = order.price;
-            document.getElementById("ordTariff").innerText = order.tariff.toUpperCase();
-            document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name} (${order.distance})`;
-            document.getElementById("ordDest").innerText = `Manzil: ${order.destination}`;
+            document.getElementById("ordPrice").innerText = order.price || "0 UZS";
+            document.getElementById("ordTariff").innerText = (order.tariff || "STANDART").toUpperCase();
+            document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name || 'Mijoz'} (${order.distance || ''})`;
+            document.getElementById("ordDest").innerText = `Manzil: ${order.destination || "Belgilangan nuqta"}`;
 
+            playBeepSound();
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
 
-            timeLeft = 15;
+            let timeLeft = 15;
             document.getElementById("timerBar").style.width = "100%";
             clearInterval(offerTimer);
             offerTimer = setInterval(() => {
@@ -453,7 +525,7 @@
                     lat: currentPos[0],
                     lon: currentPos[1],
                     name: document.getElementById("dName").innerText,
-                    car: "Oq Onix • 70 N 079 NN",
+                    car: document.getElementById("dCar").innerText,
                     tariff: "standart",
                     is_online: true,
                     updated_at: Date.now()
@@ -472,7 +544,20 @@
         function dismissOrder() {
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
-            db.ref('orders/current_order').update({ status: 'dismissed' });
+            currentOrderData = null;
+        }
+
+        function drawRoute(fromCoords, toCoords) {
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [fromCoords, toCoords],
+                params: { routingMode: 'auto', results: 1 }
+            }, {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeWidth: 6
+            });
+            map.geoObjects.add(multiRoute);
         }
 
         function acceptDriverOrder() {
@@ -481,21 +566,71 @@
             document.getElementById("activeTripPanel").style.display = "flex";
             document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
 
+            tripStep = 'to_client';
+            const btn = document.getElementById("stepActionBtn");
+            btn.className = "btn-step-action";
+            btn.innerText = "📍 YETIB KELDIM";
+
+            document.getElementById("actClientName").innerText = currentOrderData.client_name || "Mijoz";
+            document.getElementById("actClientDest").innerText = currentOrderData.destination || "Manzil";
+            if (currentOrderData.client_phone) {
+                document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
+            }
+
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
             db.ref('orders/current_status').set({
                 status: 'accepted',
+                step: 'to_client',
                 driver_name: document.getElementById("dName").innerText,
-                driver_car: "Oq Onix • 70 N 079 NN",
+                driver_car: document.getElementById("dCar").innerText,
                 driver_phone: "+998883893379"
             });
 
             db.ref('orders/current_order').update({ status: 'accepted' });
+
+            if (currentOrderData.lat && currentOrderData.lon) {
+                drawRoute(currentPos, [currentOrderData.lat, currentOrderData.lon]);
+            }
+        }
+
+        function handleStepAction() {
+            const btn = document.getElementById("stepActionBtn");
+
+            if (tripStep === 'to_client') {
+                tripStep = 'waiting';
+                btn.className = "btn-step-action";
+                btn.innerText = "🚀 SAFARNI BOSHLASH";
+                document.getElementById("gpsStatus").innerHTML = "⏳ Mijoz kutilmoqda...";
+
+                db.ref('orders/current_status').update({ step: 'arrived' });
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            } else if (tripStep === 'waiting') {
+                tripStep = 'in_trip';
+                btn.className = "btn-finish-trip";
+                btn.innerText = "🏁 SAFARNI YAKUNLASH";
+                document.getElementById("gpsStatus").innerHTML = "🚗 Safar davom etmoqda...";
+
+                db.ref('orders/current_status').update({ step: 'in_trip' });
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                if (currentOrderData.dest_lat && currentOrderData.dest_lon) {
+                    drawRoute(currentPos, [currentOrderData.dest_lat, currentOrderData.dest_lon]);
+                }
+            } else if (tripStep === 'in_trip') {
+                completeCurrentTrip();
+            }
         }
 
         function completeCurrentTrip() {
             completedRides++;
-            totalIncome += 18500;
+            const priceNum = parseInt((currentOrderData && currentOrderData.price ? currentOrderData.price.replace(/\D/g, '') : '18500')) || 18500;
+            totalIncome += priceNum;
+
+            localStorage.setItem('ry_driver_trips', completedRides);
+            localStorage.setItem('ry_driver_earnings', totalIncome);
+
             document.getElementById("tripsCount").innerText = completedRides;
             document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
             document.getElementById("activeTripPanel").style.display = "none";
@@ -503,6 +638,10 @@
 
             db.ref('orders/current_status').remove();
             db.ref('orders/current_order').remove();
+
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            currentOrderData = null;
+            tripStep = 'to_client';
 
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             alert("✅ Safar muvaffaqiyatli yakunlandi!");
