@@ -636,7 +636,7 @@
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
-    <!-- 2-EKRAN: Safar tafsilotlari -->
+    <!-- 2-EKRAN: SAFAR TAFSILOTLARI -->
     <div class="overview-sheet" id="overviewSheet">
         <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
@@ -752,7 +752,6 @@
         let currentTariff = null;
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
-        let searchToAcceptTimer = null;
 
         // BOTDAN KELGAN HAYDOVCHILARNI O'QISH
         let activeDrivers = [];
@@ -1169,32 +1168,49 @@
             map.geoObjects.add(multiRoute);
         }
 
-        // BUYURTMA YUBORISH VA HAYDOVCHI QABUL QILISH EKRANIGA O'TISH
+        // BUYURTMA YUBORISH (QIDIRUV REJIMI DAVOM ETADI)
         function sendTaxiOrder() {
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
 
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            const payload = {
+                type: "client_order_searching",
+                lat: startCoords[0],
+                lon: startCoords[1],
+                dest_lat: targetCoords[0],
+                dest_lon: targetCoords[1],
+                destination: targetName,
+                distance: targetDist.toFixed(1) + " km",
+                tariff: currentTariff,
+                price: finalTripPrice,
+                client_name: document.getElementById("uName").innerText,
+                client_phone: document.getElementById("uPhone").innerText
+            };
 
-            // 3 soniyadan so'ng haydovchi qabul qilgani va RideYellow ekrani chiqadi
-            clearTimeout(searchToAcceptTimer);
-            searchToAcceptTimer = setTimeout(() => {
-                showDriverAcceptedScreen();
-            }, 3000);
+            if (tg.sendData) {
+                tg.sendData(JSON.stringify(payload));
+            }
+
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
         }
 
-        // HAYDOVCHI QABUL QILGANIDAN SO'NG CHIQADIGAN EKRAN
-        function showDriverAcceptedScreen() {
+        // HAYDOVCHI QABUL QILGANDA ISHLAYDIGAN FUNKSIYA
+        function showDriverAcceptedScreen(driverData) {
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "32vh";
 
+            if (driverData) {
+                document.getElementById("accDriverName").innerText = driverData.name || "Asilbek Amirov";
+                document.getElementById("accDriverCar").innerText = `${driverData.car || 'Oq Onix'} • ${driverData.number || '70 N 079 NN'}`;
+            }
             document.getElementById("accTripPrice").innerText = finalTripPrice;
 
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            // Xaritada haydovchi mashinasini mijoz tomon jonli harakatlantirish
             const driverStartPos = [startCoords[0] + 0.004, startCoords[1] + 0.003];
             if (driverPlacemark) map.geoObjects.remove(driverPlacemark);
             
@@ -1206,7 +1222,6 @@
             });
             map.geoObjects.add(driverPlacemark);
 
-            // Haydovchidan mijozgacha yo'nalish
             if (multiRoute) map.geoObjects.remove(multiRoute);
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [driverStartPos, startCoords],
@@ -1220,7 +1235,6 @@
         }
 
         function cancelTaxiOrder() {
-            clearTimeout(searchToAcceptTimer);
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -1273,73 +1287,18 @@
             modal.style.display = "flex";
 
             if (type === 'xavfsizlik') {
-                title.innerText = langData[currentLang].sec;
-                content.innerHTML = `
-                    <div style="font-weight: 700; margin-bottom: 15px;">🛡️ Xavfsizlik markazi:</div>
-                    <ul style="list-style-type: disc; padding-left: 20px; line-height: 2;">
-                        <li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li>
-                        <li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li>
-                        <li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li>
-                    </ul>
-                `;
+                title.innerText = "Xavfsizlik";
+                content.innerHTML = `<ul style="line-height:2;"><li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li><li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li><li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li></ul>`;
             } else if (type === 'yordam') {
-                title.innerText = langData[currentLang].supp;
-                content.innerHTML = `
-                    <div style="font-size: 15px; margin-bottom: 20px; color: #444;">
-                        🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.
-                    </div>
-                    <div class="contact-box">
-                        <a href="tel:+998500527977" class="contact-link">
-                            <span style="font-size: 20px;">📞</span>
-                            <span>Telefon: <b>+998 50 052 79 77</b></span>
-                        </a>
-                        <a href="https://t.me/Amirovffff" target="_blank" class="contact-link">
-                            <span style="font-size: 20px;">💬</span>
-                            <span>Telegram: <b>@Amirovffff</b></span>
-                        </a>
-                    </div>
-                `;
-            } else if (type === 'biznes') {
-                title.innerText = langData[currentLang].biz;
-                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali korporativ taksi xizmatlaridan foydalanishingiz mumkin.<br><br>Aloqa uchun: <a href='tel:+998500527977' style='color:#0088cc; font-weight:bold;'>+998 50 052 79 77</a></p>";
-            } else if (type === 'manzillar') {
-                title.innerText = langData[currentLang].addr;
-                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 Uy: Kiritilmagan<br>💼 Ish: Kiritilmagan</p>";
-            } else if (type === 'tarix') {
-                title.innerText = langData[currentLang].hist;
-                content.innerHTML = "<p>🕒 Hozircha buyurtmalar tarixi mavjud emas.</p>";
-            } else if (type === 'sozlamalar') {
-                title.innerText = langData[currentLang].set;
-                content.innerHTML = `
-                    <div style="margin-bottom:15px; font-weight:bold;">Tilni tanlang / Выберите язык / Select language:</div>
-                    <button class="lang-btn ${currentLang==='uz'?'active':''}" onclick="setLanguage('uz')">🇺🇿 O'zbekcha</button>
-                    <button class="lang-btn ${currentLang==='ru'?'active':''}" onclick="setLanguage('ru')">🇷🇺 Русский</button>
-                    <button class="lang-btn ${currentLang==='en'?'active':''}" onclick="setLanguage('en')">🇬🇧 English</button>
-                `;
-            } else if (type === 'info') {
-                title.innerText = langData[currentLang].info;
-                content.innerHTML = "<p>🚖 <b>Express Taxi Bot v2.0</b><br><br>Dasturchi va ma'muriyat: <a href='https://t.me/Amirovffff' style='color:#0088cc; font-weight:bold;'>@Amirovffff</a></p>";
+                title.innerText = "Qo'llab-quvvatlash";
+                content.innerHTML = `<p>🎧 Mijozlarni qo'llab-quvvatlash: <b>+998 50 052 79 77</b><br>Telegram: <b>@Amirovffff</b></p>`;
+            } else {
+                title.innerText = "Ma'lumot";
+                content.innerHTML = "<p>Express Taxi RideYellow v2.0</p>";
             }
         }
 
-        function closeModal() {
-            document.getElementById("modalView").style.display = "none";
-        }
-
-        function setLanguage(lang) {
-            currentLang = lang;
-            const l = langData[lang];
-            document.getElementById("txt_biz").innerText = l.biz;
-            document.getElementById("txt_sec").innerText = l.sec;
-            document.getElementById("txt_addr").innerText = l.addr;
-            document.getElementById("txt_hist").innerText = l.hist;
-            document.getElementById("txt_set").innerText = l.set;
-            document.getElementById("txt_supp").innerText = l.supp;
-            document.getElementById("txt_info").innerText = l.info;
-            document.getElementById("txt_overview").innerText = l.overview;
-            updateTariffsAvailabilityUI();
-            closeModal();
-        }
+        function closeModal() { document.getElementById("modalView").style.display = "none"; }
     </script>
 </body>
 </html>
