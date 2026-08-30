@@ -3,153 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taksi Buyurtma</title>
+    <title>Taksi Chaqirish</title>
+    <!-- Yandex Maps API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #ffffff; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 1; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; }
+        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: #1e1e1e; border-top: 2px solid #ffcc00; z-index: 20; border-radius: 22px 22px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); padding: 15px 20px 25px 20px; }
-        .driver-card { display: none; background: #ffcc00; color: #000; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-        .driver-card h4 { margin: 0 0 6px 0; font-size: 16px; display: flex; justify-content: space-between; }
-        .driver-card p { margin: 3px 0; font-size: 13px; font-weight: 500; }
-        .btn { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 14px; width: 100%; cursor: pointer; transition: 0.2s; }
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #1e1e1e;
+            border-top: 2px solid #ffcc00;
+            border-radius: 20px 20px 0 0;
+            padding: 16px 20px 28px 20px;
+            z-index: 10;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-text {
+            font-size: 13px;
+            color: #bbb;
+            text-align: center;
+        }
+
+        .btn-order {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 14px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-order:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div class="bottom-sheet">
-        <div class="driver-card" id="driverCard">
-            <h4><span id="dName">Haydovchi</span> <span id="dStatus">🟢 Yo'lda</span></h4>
-            <p>🚘 Mashina: <b id="dCar">...</b></p>
-            <p>📞 Telefon: <b id="dPhone">...</b></p>
-        </div>
-        <button class="btn" id="orderBtn" onclick="requestTaxi()">🚖 Shu yerdan taksi chaqirish</button>
+    <div class="bottom-bar">
+        <div class="info-text">📍 Xaritadan joylashuvingizni belgilang</div>
+        <button class="btn-order" id="orderBtn" onclick="sendOrder()">🚖 Shu yerdan taksi chaqirish</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I";
-        const ADMIN_ID = "8726943857";
+        let myMap, placemark;
+        let defaultCoords = [39.6542, 66.9597]; // Samarqand
 
-        let myMap, userPlacemark;
-        let driverPlacemark = null;
-
-        ymaps.ready(init);
-
-        function init() {
+        ymaps.ready(() => {
             myMap = new ymaps.Map("map", {
-                center: [39.6542, 66.9597],
+                center: defaultCoords,
                 zoom: 16,
                 controls: ['zoomControl']
             });
 
-            userPlacemark = new ymaps.Placemark(myMap.getCenter(), {}, {
+            placemark = new ymaps.Placemark(defaultCoords, {
+                hintContent: "Siz shu yerdasiz"
+            }, {
                 draggable: true,
-                preset: 'islands#redCircleDotIcon'
+                preset: 'islands#redDotIcon'
             });
-            myMap.geoObjects.add(userPlacemark);
 
+            myMap.geoObjects.add(placemark);
+
+            // Jonli geolokatsiyani aniqlash
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     const coords = [pos.coords.latitude, pos.coords.longitude];
                     myMap.setCenter(coords, 16);
-                    userPlacemark.geometry.setCoordinates(coords);
+                    placemark.geometry.setCoordinates(coords);
                 }, null, { enableHighAccuracy: true });
             }
 
-            setInterval(fetchDriverLiveLocation, 2500);
-        }
-
-        function fetchDriverLiveLocation() {
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                const data = res.record;
-                if (data && data.lat && data.lon) {
-                    const dCoords = [data.lat, data.lon];
-
-                    document.getElementById('driverCard').style.display = 'block';
-                    document.getElementById('dName').innerText = data.name || 'Haydovchi';
-                    document.getElementById('dCar').innerText = data.car || 'Mashina';
-                    document.getElementById('dPhone').innerText = data.phone || '';
-                    document.getElementById('orderBtn').innerText = "🚖 Haydovchi siz tomonga yo'lda...";
-
-                    if (!driverPlacemark) {
-                        driverPlacemark = new ymaps.Placemark(dCoords, {
-                            hintContent: `${data.name} (${data.car})`
-                        }, {
-                            preset: 'islands#yellowTaxiIcon'
-                        });
-                        myMap.geoObjects.add(driverPlacemark);
-                    } else {
-                        driverPlacemark.geometry.setCoordinates(dCoords);
-                    }
-                }
-            })
-            .catch(err => console.log(err));
-        }
-
-        function requestTaxi() {
-            const coords = userPlacemark.geometry.getCoordinates();
-            const client = tg.initDataUnsafe?.user;
-            const clientName = client?.first_name ? `${client.first_name} ${client.last_name || ''}` : "Mijoz";
-            const clientId = client?.id || 0;
-
-            // Tugma matnini yangilash (oyna aslo yopilmaydi)
-            document.getElementById('orderBtn').innerText = '⏳ Qidirilmoqda... Haydovchiga yuborildi';
-
-            // 1. Haydovchi xaritasi uchun koordinatani saqlash
-            fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02/latest', {
-                headers: { 'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                let current = res.record || {};
-                current.client_lat = coords[0];
-                current.client_lon = coords[1];
-                current.client_name = clientName;
-
-                return fetch('https://api.jsonbin.io/v3/b/66d0c2e7e41b4d34e4277b02', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': '$2a$10$7vNqk8L9ZzFqU2vWc1qKxe.aP.z/lGfA9l8xH6m9bW3x7c4G6.mvy'
-                    },
-                    body: JSON.stringify(current)
-                });
+            // Xaritani bosganda belgini ko'chirish
+            myMap.events.add('click', e => {
+                const coords = e.get('coords');
+                placemark.geometry.setCoordinates(coords);
             });
+        });
 
-            // 2. Telegram orqali xabar yuborish
-            const yandexNavi = `https://yandex.uz/maps/?rtext=~${coords[0]},${coords[1]}&rtt=auto`;
-            const orderText = `🔔 <b>Yangi buyurtma!</b>\n\n👤 Mijoz: ${clientName}\n📍 Manzil: ${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`;
+        function sendOrder() {
+            const coords = placemark.geometry.getCoordinates();
+            const btn = document.getElementById("orderBtn");
+            btn.innerText = "⏳ Yuborilmoqda...";
+            btn.disabled = true;
 
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    chat_id: ADMIN_ID,
-                    text: orderText,
-                    parse_mode: "HTML",
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: "🧭 Yandex Navigatorda ochish", url: yandexNavi }],
-                            [
-                                { text: "✅ Qabul qilish", callback_data: `accept_${clientId}` },
-                                { text: "❌ Rad etish", callback_data: `reject_${clientId}` }
-                            ]
-                        ]
-                    }
-                })
-            }).catch(e => console.error(e));
+            const orderData = {
+                type: "client_order",
+                lat: coords[0],
+                lon: coords[1]
+            };
+
+            // Telegram botga to'g'ridan-to'g'ri ma'lumot yuborish
+            tg.sendData(JSON.stringify(orderData));
         }
     </script>
 </body>
