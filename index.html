@@ -73,6 +73,170 @@
         .btn-layers { top: 18px; right: 18px; font-size: 18px; }
         .btn-locate { bottom: 230px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
+        /* RO'YXATDAN O'TISH MODALI */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 20px;
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .auth-title { font-size: 20px; font-weight: 800; color: #111; text-align: center; }
+        .auth-desc { font-size: 13px; color: #666; text-align: center; margin-bottom: 5px; }
+        .auth-input {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            background: #f8f9fa;
+        }
+        .auth-input:focus { border-color: #ffcc00; background: #fff; }
+        .btn-auth-submit {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* YON MENYU */
+        .side-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
+            display: none;
+        }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -80%;
+            width: 75%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 100;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0 16px 0;
+            overflow-y: auto;
+        }
+        .side-menu.open { left: 0; }
+
+        .user-profile {
+            padding: 0 20px 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #ffcc00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #000;
+        }
+        .user-name { font-weight: 700; font-size: 16px; color: #111; }
+        .user-phone { font-size: 12px; color: #888; }
+
+        .menu-list { list-style: none; padding: 10px 0; }
+        .menu-item {
+            padding: 13px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 15px;
+            color: #222;
+            cursor: pointer;
+        }
+        .menu-item:active { background: #f5f5f5; }
+        .menu-left { display: flex; align-items: center; gap: 14px; }
+        .menu-icon { font-size: 18px; }
+
+        /* MODAL VIEW */
+        .modal-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+        .modal-content { font-size: 15px; color: #333; line-height: 1.6; }
+        .contact-box { display: flex; flex-direction: column; gap: 14px; margin-top: 15px; }
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #f8f9fa;
+            border: 1.5px solid #ececec;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #111;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .lang-btn {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #ececec;
+            border-radius: 12px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+        .lang-btn.active { border-color: #ffcc00; background: #fffbe6; }
+
         /* 1-EKRAN: PASTKI PANEL */
         .bottom-sheet {
             position: absolute;
@@ -92,7 +256,6 @@
         }
         .bottom-sheet.expanded { height: 85vh; }
 
-        /* Rasmdagi tutqich zonasi */
         .handle-area {
             width: 100%;
             padding: 6px 0 10px 0;
@@ -134,7 +297,7 @@
             outline: none;
         }
 
-        /* Qidiruv natijalari */
+        /* QIDIRUV NATIJALARI */
         .search-results {
             display: none;
             flex-direction: column;
@@ -158,7 +321,7 @@
         .result-sub { font-size: 12px; color: #777; }
         .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
 
-        /* QIZIL BORISH TUGMASI */
+        /* DOIMIY QIZIL BORISH TUGMASI */
         .btn-go-action {
             display: block;
             width: 100%;
@@ -250,29 +413,27 @@
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
-
-        /* Yon Menyu */
-        .side-menu-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.4); z-index: 99; display: none;
-        }
-        .side-menu {
-            position: fixed; top: 0; left: -80%; width: 75%; height: 100%;
-            background: #ffffff; z-index: 100; transition: left 0.3s ease;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding: 24px 0;
-        }
-        .side-menu.open { left: 0; }
-        .user-profile { padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 44px; height: 44px; border-radius: 50%; background: #ffcc00; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
-        .menu-item { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <!-- RO'YXATDAN O'TISH OYNASI -->
+    <div class="auth-overlay" id="authModal">
+        <div class="auth-card">
+            <div class="auth-title">Xush kelibsiz! 👋</div>
+            <div class="auth-desc">Taksidan foydalanish uchun ma'lumotlaringizni kiriting:</div>
+            
+            <input type="text" id="regName" class="auth-input" placeholder="Ismingiz">
+            <input type="tel" id="regPhone" class="auth-input" placeholder="+998 90 123 45 67">
+            
+            <button class="btn-auth-submit" onclick="saveUserRegistration()">Ro'yxatdan o'tish va Kirish</button>
+        </div>
+    </div>
+
     <!-- Xarita -->
     <div id="map"></div>
 
-    <!-- Markazdagi Harakatlanuvchi Qizil Pin -->
+    <!-- Markazdagi Qizil Pin -->
     <div class="center-pin-container" id="centerPin">
         <div class="center-pin"></div>
         <div class="pin-shadow"></div>
@@ -287,26 +448,61 @@
     <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
     <div class="side-menu" id="sideMenu">
         <div class="user-profile">
-            <div class="user-avatar">A</div>
+            <div class="user-avatar" id="uAvatar">U</div>
             <div>
-                <div style="font-weight: 700; font-size: 16px;" id="uName">Foydalanuvchi</div>
-                <div style="font-size: 12px; color: #888;" id="uPhone">+998 50 052 79 77</div>
+                <div class="user-name" id="uName">Foydalanuvchi</div>
+                <div class="user-phone" id="uPhone">+998 90 000 00 00</div>
             </div>
         </div>
-        <div style="padding: 10px 0;">
-            <div class="menu-item" onclick="alert('Xavfsizlik: Barcha haydovchilar maxsus tekshiruvdan o\'tgan.')"><span>🛡️ Xavfsizlik</span><span>›</span></div>
-            <div class="menu-item" onclick="window.location.href='https://t.me/Amirovffff'"><span>🎧 Qo\'llab-quvvatlash</span><span>›</span></div>
+
+        <ul class="menu-list">
+            <li class="menu-item" onclick="openModal('biznes')">
+                <div class="menu-left"><span class="menu-icon">💼</span><span id="txt_biz">Biznes-hisob</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('xavfsizlik')">
+                <div class="menu-left"><span class="menu-icon">🛡️</span><span id="txt_sec">Xavfsizlik</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('manzillar')">
+                <div class="menu-left"><span class="menu-icon">📍</span><span id="txt_addr">Mening manzillarim</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('tarix')">
+                <div class="menu-left"><span class="menu-icon">🕒</span><span id="txt_hist">Buyurtmalar tarixi</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('sozlamalar')">
+                <div class="menu-left"><span class="menu-icon">⚙️</span><span id="txt_set">Sozlamalar (Til)</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('yordam')">
+                <div class="menu-left"><span class="menu-icon">🎧</span><span id="txt_supp">Qo'llab-quvvatlash</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('info')">
+                <div class="menu-left"><span class="menu-icon">ℹ️</span><span id="txt_info">Ma'lumot</span></div>
+                <span>›</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- MODAL VIEW -->
+    <div class="modal-view" id="modalView">
+        <div class="modal-header">
+            <button class="map-btn" style="position:static; width:40px; height:40px;" onclick="closeModal()">←</button>
+            <span id="modalTitle">Sarlavha</span>
         </div>
+        <div class="modal-content" id="modalContent"></div>
     </div>
 
     <!-- 1-EKRAN: Xaritadan belgilash va Qidiruv paneli -->
     <div class="bottom-sheet" id="bottomSheet">
-        <!-- Bosilganda yoki tortilganda pastga tushuvchi tutqich -->
         <div class="handle-area" onclick="collapseSheet()" id="handleArea">
             <div class="sheet-handle-bar"></div>
         </div>
 
-        <div class="title-text" id="sheetTitle">📍 Xaritadagi manzil</div>
+        <div class="title-text" id="sheetTitle">📍 Shahrisabz Tumani</div>
 
         <div class="search-box">
             <span>🔍</span>
@@ -316,13 +512,13 @@
         <!-- Natijalar ro'yxati -->
         <div class="search-results" id="searchResults"></div>
 
-        <!-- QIZIL BORISH TUGMASI -->
+        <!-- DOIMIY QIZIL BORISH TUGMASI -->
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
     <!-- 2-EKRAN: Safar tafsilotlari -->
     <div class="overview-sheet" id="overviewSheet">
-        <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
+        <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
         <div class="route-points">
             <div class="point-item">
@@ -344,7 +540,7 @@
             <div class="tariff-left">
                 <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
                 <div>
-                    <div class="tariff-name">Standart</div>
+                    <div class="tariff-name" id="txt_tariff">Standart</div>
                     <div class="tariff-seats" id="seatsDist">4 kishilik • -- km</div>
                 </div>
             </div>
@@ -364,15 +560,34 @@
         tg.expand();
 
         let map, multiRoute;
-        let startCoords = [39.0833, 66.8333];
-        let targetCoords = [39.0833, 66.8333];
-        let targetName = "Xaritadan tanlangan joy";
+        let startCoords = [39.0560, 66.8300]; // Shahrisabz markazi
+        let targetCoords = [39.0560, 66.8300];
+        let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
         let finalTripPrice = "15 000 UZS";
         let searchTimer = null;
 
         let mapTypeIndex = 0;
         const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
+
+        let currentLang = "uz";
+        const langData = {
+            uz: {
+                biz: "Biznes-hisob", sec: "Xavfsizlik", addr: "Mening manzillarim", hist: "Buyurtmalar tarixi",
+                set: "Sozlamalar (Til)", supp: "Qo'llab-quvvatlash", info: "Ma'lumot", overview: "Safaringiz ma'lumotlari",
+                tariff: "Standart", seats: "4 kishilik", btn_order: "🚖 Taksi chaqirish"
+            },
+            ru: {
+                biz: "Бизнес-аккаунт", sec: "Безопасность", addr: "Мои адреса", hist: "История заказов",
+                set: "Настройки (Язык)", supp: "Служба поддержки", info: "Информация", overview: "Детали поездки",
+                tariff: "Стандарт", seats: "4 места", btn_order: "🚖 Заказать такси"
+            },
+            en: {
+                biz: "Business Account", sec: "Safety", addr: "My Addresses", hist: "Ride History",
+                set: "Settings (Language)", supp: "Support", info: "Information", overview: "Ride Overview",
+                tariff: "Standard", seats: "4 seats", btn_order: "🚖 Request Taxi"
+            }
+        };
 
         function getDistanceKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -388,44 +603,44 @@
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
                 center: startCoords,
-                zoom: 16,
+                zoom: 15,
                 type: 'yandex#map',
                 controls: []
             });
 
             locateMe();
-            loadUserData();
+            checkUserAuth();
 
-            // XARITA HARAKATLANISHI BOSHLANGANDA PANEL AVTOMATIK PASTGA TUSHADI
+            // XARITA SURILGANDA PANEL PASTGA TUSHADI
             map.events.add('actionbegin', () => {
                 collapseSheet();
             });
 
-            // XARITA TO'XTAGANDA MARKAZIY PIN OSTIDAGI MANZILNI ANIQLASH
+            // XARITA TO'XTAGANDA MARKAZIY KOORDINATANI ANIQLASH
             map.events.add('actionend', () => {
                 targetCoords = map.getCenter();
                 targetDist = getDistanceKm(startCoords[0], startCoords[1], targetCoords[0], targetCoords[1]);
                 if (targetDist < 0.2) targetDist = 0.5;
 
-                const revUrl = `https://photon.komoot.io/reverse?lat=${targetCoords[0]}&lon=${targetCoords[1]}`;
+                // OpenStreetMap Reverse orqali O'zbekistondagi aniq nomni olish
+                const revUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${targetCoords[0]}&lon=${targetCoords[1]}&accept-language=uz`;
                 fetch(revUrl)
                     .then(res => res.json())
                     .then(data => {
-                        if (data.features && data.features.length > 0) {
-                            const p = data.features[0].properties;
-                            targetName = p.name || p.street || p.district || "Xaritadan tanlangan manzil";
+                        if (data && data.address) {
+                            const a = data.address;
+                            targetName = a.road || a.suburb || a.village || a.town || a.city || a.county || "Shahrisabz";
                         } else {
                             targetName = "Xaritadagi belgilangan nuqta";
                         }
                         document.getElementById("sheetTitle").innerText = "📍 " + targetName;
                     })
                     .catch(() => {
-                        targetName = "Xaritadagi belgilangan joy";
+                        targetName = "Xaritadagi joylashuv";
                         document.getElementById("sheetTitle").innerText = "📍 " + targetName;
                     });
             });
 
-            // Xarita bosilganda markazlashtirish va panelni tushirish
             map.events.add('click', (e) => {
                 collapseSheet();
                 const clickPos = e.get('coords');
@@ -433,20 +648,61 @@
             });
         });
 
-        // Swipe (surish) orqali pastga tushirish hodisalari
+        // Swipe orqali pastga tushirish
         let startY = 0;
         const handleArea = document.getElementById("handleArea");
-        
         handleArea.addEventListener("touchstart", (e) => {
             startY = e.touches[0].clientY;
         }, { passive: true });
 
         handleArea.addEventListener("touchmove", (e) => {
             const currentY = e.touches[0].clientY;
-            if (currentY - startY > 30) { // Pastga tortilganda
+            if (currentY - startY > 30) {
                 collapseSheet();
             }
         }, { passive: true });
+
+        function checkUserAuth() {
+            const savedName = localStorage.getItem("taxi_user_name");
+            const savedPhone = localStorage.getItem("taxi_user_phone");
+
+            if (savedName && savedPhone) {
+                updateProfileUI(savedName, savedPhone);
+            } else {
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    const tgFullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                    document.getElementById("regName").value = tgFullName;
+                }
+                document.getElementById("authModal").style.display = "flex";
+            }
+        }
+
+        function saveUserRegistration() {
+            const name = document.getElementById("regName").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+
+            if (!name) {
+                alert("Iltimos, ismingizni kiriting!");
+                return;
+            }
+            if (!phone || phone.length < 7) {
+                alert("Iltimos, telefon raqamingizni to'liq kiriting!");
+                return;
+            }
+
+            localStorage.setItem("taxi_user_name", name);
+            localStorage.setItem("taxi_user_phone", phone);
+
+            updateProfileUI(name, phone);
+            document.getElementById("authModal").style.display = "none";
+        }
+
+        function updateProfileUI(name, phone) {
+            document.getElementById("uName").innerText = name;
+            document.getElementById("uPhone").innerText = phone;
+            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
+        }
 
         function changeMapType() {
             mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
@@ -476,7 +732,7 @@
             document.getElementById("searchInput").blur();
         }
 
-        // QIDIRUV
+        // ANIQ VA FAOL QIDIRUV (FAQAT O'ZBEKISTON / SHAHRISABZ DOIRASIDA)
         function handleSearchInput(query) {
             clearTimeout(searchTimer);
             if (query.trim().length < 2) {
@@ -488,55 +744,65 @@
                 const container = document.getElementById("searchResults");
                 container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
 
-                const delta = 0.18;
-                const bbox = `${startCoords[1] - delta},${startCoords[0] - delta},${startCoords[1] + delta},${startCoords[0] + delta}`;
-                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query.trim())}&lat=${startCoords[0]}&lon=${startCoords[1]}&bbox=${bbox}&limit=10`;
+                // O'zbekiston kodi (countrycodes=uz) bilan aniq qidiruv
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim() + ' Shahrisabz Uzbekistan')}&countrycodes=uz&limit=8&accept-language=uz`;
 
                 fetch(url)
                     .then(res => res.json())
                     .then(data => {
                         container.innerHTML = "";
-                        if (!data.features || data.features.length === 0) {
-                            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>20 km radiusda manzil topilmadi</div>";
-                            return;
+                        if (!data || data.length === 0) {
+                            // Agar topilmasa butun O'zbekiston bo'yicha qidirish
+                            return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&countrycodes=uz&limit=8&accept-language=uz`)
+                                .then(r => r.json())
+                                .then(altData => renderResults(altData, container, query));
                         }
-
-                        data.features.forEach(feat => {
-                            const coords = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
-                            const dist = getDistanceKm(startCoords[0], startCoords[1], coords[0], coords[1]);
-
-                            if (dist <= 20.0) {
-                                const p = feat.properties;
-                                const name = p.name || query;
-                                const desc = [p.street, p.district, p.city].filter(Boolean).join(", ") || "Yaqin manzil";
-
-                                const div = document.createElement("div");
-                                div.className = "result-item";
-                                div.innerHTML = `
-                                    <div>
-                                        <div class="result-title">${name}</div>
-                                        <div class="result-sub">${desc}</div>
-                                    </div>
-                                    <div class="result-dist">${dist.toFixed(1)} km</div>
-                                `;
-
-                                div.onclick = () => {
-                                    targetCoords = coords;
-                                    targetName = name;
-                                    targetDist = dist;
-                                    map.setCenter(coords, 16, { duration: 300 });
-                                    document.getElementById("sheetTitle").innerText = "📍 " + name;
-                                    collapseSheet();
-                                };
-
-                                container.appendChild(div);
-                            }
-                        });
+                        renderResults(data, container, query);
                     })
                     .catch(() => {
                         container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
                     });
             }, 300);
+        }
+
+        function renderResults(items, container, query) {
+            if (!items || items.length === 0) {
+                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                return;
+            }
+
+            container.innerHTML = "";
+            items.forEach(item => {
+                const lat = parseFloat(item.lat);
+                const lon = parseFloat(item.lon);
+                const coords = [lat, lon];
+                const dist = getDistanceKm(startCoords[0], startCoords[1], lat, lon);
+
+                const nameParts = item.display_name.split(',');
+                const title = nameParts[0];
+                const sub = nameParts.slice(1, 3).join(',');
+
+                const div = document.createElement("div");
+                div.className = "result-item";
+                div.innerHTML = `
+                    <div>
+                        <div class="result-title">${title}</div>
+                        <div class="result-sub">${sub}</div>
+                    </div>
+                    <div class="result-dist">${dist.toFixed(1)} km</div>
+                `;
+
+                div.onclick = () => {
+                    targetCoords = coords;
+                    targetName = title;
+                    targetDist = dist > 0.2 ? dist : 0.5;
+                    map.setCenter(coords, 16, { duration: 300 });
+                    document.getElementById("sheetTitle").innerText = "📍 " + title;
+                    collapseSheet();
+                };
+
+                container.appendChild(div);
+            });
         }
 
         // 3-EKRAN: SAFAR TAFSILOTLARIGA O'TISH
@@ -551,7 +817,6 @@
             document.getElementById("overviewDest").innerText = targetName;
             document.getElementById("seatsDist").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
-            // Narx hisoblash
             const baseCalc = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
             const totalCalc = baseCalc + 2000;
             
@@ -602,11 +867,81 @@
             }
         }
 
-        function loadUserData() {
-            const name = localStorage.getItem("taxi_user_name") || "Foydalanuvchi";
-            const phone = localStorage.getItem("taxi_user_phone") || "+998 50 052 79 77";
-            document.getElementById("uName").innerText = name;
-            document.getElementById("uPhone").innerText = phone;
+        function openModal(type) {
+            toggleSideMenu();
+            const modal = document.getElementById("modalView");
+            const title = document.getElementById("modalTitle");
+            const content = document.getElementById("modalContent");
+            modal.style.display = "flex";
+
+            if (type === 'xavfsizlik') {
+                title.innerText = langData[currentLang].sec;
+                content.innerHTML = `
+                    <div style="font-weight: 700; margin-bottom: 15px;">🛡️ Xavfsizlik markazi:</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; line-height: 2;">
+                        <li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li>
+                        <li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li>
+                        <li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li>
+                    </ul>
+                `;
+            } else if (type === 'yordam') {
+                title.innerText = langData[currentLang].supp;
+                content.innerHTML = `
+                    <div style="font-size: 15px; margin-bottom: 20px; color: #444;">
+                        🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.
+                    </div>
+                    <div class="contact-box">
+                        <a href="tel:+998500527977" class="contact-link">
+                            <span style="font-size: 20px;">📞</span>
+                            <span>Telefon: <b>+998 50 052 79 77</b></span>
+                        </a>
+                        <a href="https://t.me/Amirovffff" target="_blank" class="contact-link">
+                            <span style="font-size: 20px;">💬</span>
+                            <span>Telegram: <b>@Amirovffff</b></span>
+                        </a>
+                    </div>
+                `;
+            } else if (type === 'biznes') {
+                title.innerText = langData[currentLang].biz;
+                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali korporativ taksi xizmatlaridan foydalanishingiz mumkin.<br><br>Aloqa uchun: <a href='tel:+998500527977' style='color:#0088cc; font-weight:bold;'>+998 50 052 79 77</a></p>";
+            } else if (type === 'manzillar') {
+                title.innerText = langData[currentLang].addr;
+                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 Uy: Kiritilmagan<br>💼 Ish: Kiritilmagan</p>";
+            } else if (type === 'tarix') {
+                title.innerText = langData[currentLang].hist;
+                content.innerHTML = "<p>🕒 Hozircha buyurtmalar tarixi mavjud emas.</p>";
+            } else if (type === 'sozlamalar') {
+                title.innerText = langData[currentLang].set;
+                content.innerHTML = `
+                    <div style="margin-bottom:15px; font-weight:bold;">Tilni tanlang / Выберите язык / Select language:</div>
+                    <button class="lang-btn ${currentLang==='uz'?'active':''}" onclick="setLanguage('uz')">🇺🇿 O'zbekcha</button>
+                    <button class="lang-btn ${currentLang==='ru'?'active':''}" onclick="setLanguage('ru')">🇷🇺 Русский</button>
+                    <button class="lang-btn ${currentLang==='en'?'active':''}" onclick="setLanguage('en')">🇬🇧 English</button>
+                `;
+            } else if (type === 'info') {
+                title.innerText = langData[currentLang].info;
+                content.innerHTML = "<p>🚖 <b>Express Taxi Bot v2.0</b><br><br>Dasturchi va ma'muriyat: <a href='https://t.me/Amirovffff' style='color:#0088cc; font-weight:bold;'>@Amirovffff</a></p>";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("modalView").style.display = "none";
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            const l = langData[lang];
+            document.getElementById("txt_biz").innerText = l.biz;
+            document.getElementById("txt_sec").innerText = l.sec;
+            document.getElementById("txt_addr").innerText = l.addr;
+            document.getElementById("txt_hist").innerText = l.hist;
+            document.getElementById("txt_set").innerText = l.set;
+            document.getElementById("txt_supp").innerText = l.supp;
+            document.getElementById("txt_info").innerText = l.info;
+            document.getElementById("txt_overview").innerText = l.overview;
+            document.getElementById("txt_tariff").innerText = l.tariff;
+            document.getElementById("submitOrderBtn").innerText = l.btn_order;
+            closeModal();
         }
 
         function sendTaxiOrder() {
