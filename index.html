@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi</title>
-    <!-- Yandex Xarita va Qidiruv API -->
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&suggest_apikey=YOUR_KEY" type="text/javascript"></script>
+    <!-- Yandex Xarita API -->
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -13,7 +13,7 @@
 
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* MARKAZIY QOTIB TURGAN SARIQ NISHON (PIN) */
+        /* MARKAZIY QIZIL NISHON (PIN) */
         .center-pin-container {
             position: absolute;
             top: 50%;
@@ -28,11 +28,11 @@
         .center-pin {
             width: 38px;
             height: 38px;
-            background: #ffcc00;
+            background: #ff3333; /* QIZIL RANG */
             border: 3px solid #111;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -41,23 +41,21 @@
             content: '';
             width: 12px;
             height: 12px;
-            background: #111;
+            background: #ffffff;
             border-radius: 50%;
             transform: rotate(45deg);
         }
         .pin-shadow {
             width: 14px;
             height: 6px;
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,0,0,0.3);
             border-radius: 50%;
             margin-top: 2px;
         }
 
         /* Navigatsiya tugmalari */
-        .btn-menu {
+        .map-btn {
             position: absolute;
-            top: 18px;
-            left: 18px;
             z-index: 20;
             background: #ffffff;
             border: none;
@@ -71,24 +69,9 @@
             cursor: pointer;
             font-size: 20px;
         }
-        .btn-locate {
-            position: absolute;
-            bottom: 220px;
-            right: 18px;
-            z-index: 20;
-            background: #ffffff;
-            border: none;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-            cursor: pointer;
-            font-size: 22px;
-            transition: bottom 0.3s ease;
-        }
+        .btn-menu { top: 18px; left: 18px; }
+        .btn-layers { top: 18px; right: 18px; } /* O'ng tarafdagi xarita qatlami */
+        .btn-locate { bottom: 220px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
         /* SURILUVCHI PASTKI PANEL */
         .bottom-sheet {
@@ -101,30 +84,24 @@
             border-radius: 28px 28px 0 0;
             z-index: 30;
             box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 12px 20px 25px 20px;
+            padding: 12px 20px 20px 20px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        .bottom-sheet.expanded {
-            height: 80vh;
-        }
+        .bottom-sheet.expanded { height: 82vh; }
 
         .sheet-handle-bar {
-            width: 44px;
-            height: 5px;
+            width: 48px;
+            height: 6px;
             background: #dcdde1;
-            border-radius: 5px;
-            margin: 0 auto 6px auto;
-            cursor: grab;
+            border-radius: 6px;
+            margin: 0 auto 4px auto;
+            cursor: pointer;
         }
 
-        .title-text {
-            font-size: 22px;
-            font-weight: 800;
-            color: #111;
-        }
+        .title-text { font-size: 22px; font-weight: 800; color: #111; }
 
         .search-box {
             display: flex;
@@ -143,59 +120,57 @@
             outline: none;
         }
 
-        /* Qidiruv natijalari ro'yxati */
+        /* 20 KM Natijalar */
         .search-results {
             display: none;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             overflow-y: auto;
-            max-height: calc(80vh - 170px);
-            padding-top: 8px;
+            max-height: calc(82vh - 230px);
         }
         .result-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
+            justify-content: space-between;
+            padding: 12px 14px;
             background: #f8f9fa;
+            border: 1px solid #ebebeb;
             border-radius: 12px;
             cursor: pointer;
         }
         .result-item:active { background: #e9ecef; }
-        .result-title { font-weight: 600; font-size: 15px; color: #222; }
+        .result-title { font-weight: 700; font-size: 14px; color: #222; }
         .result-sub { font-size: 12px; color: #777; }
+        .result-dist { font-size: 12px; font-weight: 700; color: #ff3333; }
 
-        /* Buyurtma berish tugmasi */
-        .btn-order-now {
+        /* SARIQ HOSHIYALI BORISH TUGMASI */
+        .btn-go-destination {
             display: none;
             width: 100%;
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 16px;
+            background: #ffffff;
+            color: #111;
+            border: 3px solid #ffcc00;
+            padding: 15px;
             border-radius: 16px;
             font-size: 16px;
             font-weight: 800;
+            text-align: center;
             cursor: pointer;
             margin-top: auto;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.2);
+            transition: 0.2s;
         }
+        .btn-go-destination:active { background: #ffcc00; color: #000; }
 
         /* Yon Menyu */
         .side-menu-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.4);
-            z-index: 99;
-            display: none;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4); z-index: 99; display: none;
         }
         .side-menu {
-            position: fixed;
-            top: 0; left: -80%; width: 75%; height: 100%;
-            background: #ffffff;
-            z-index: 100;
-            transition: left 0.3s ease;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
-            padding: 24px 0;
+            position: fixed; top: 0; left: -80%; width: 75%; height: 100%;
+            background: #ffffff; z-index: 100; transition: left 0.3s ease;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.2); padding: 24px 0;
         }
         .side-menu.open { left: 0; }
         .user-profile { padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
@@ -208,21 +183,22 @@
     <!-- Xarita -->
     <div id="map"></div>
 
-    <!-- Markazda qotib turuvchi pin -->
+    <!-- Markazdagi Qizil Pin -->
     <div class="center-pin-container">
         <div class="center-pin"></div>
         <div class="pin-shadow"></div>
     </div>
 
     <!-- Tugmalar -->
-    <button class="btn-menu" onclick="toggleSideMenu()">☰</button>
-    <button class="btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
+    <button class="map-btn btn-menu" onclick="toggleSideMenu()">☰</button>
+    <button class="map-btn btn-layers" onclick="changeMapType()">🗺️</button>
+    <button class="map-btn btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
 
     <!-- Yon Menyu -->
     <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
     <div class="side-menu" id="sideMenu">
         <div class="user-profile">
-            <div class="user-avatar" id="uAvatar">A</div>
+            <div class="user-avatar">A</div>
             <div>
                 <div style="font-weight: 700; font-size: 16px;" id="uName">Foydalanuvchi</div>
                 <div style="font-size: 12px; color: #888;" id="uPhone">+998 50 052 79 77</div>
@@ -234,21 +210,23 @@
         </div>
     </div>
 
-    <!-- Suriluvchi Panel -->
+    <!-- Suriluvchi Pastki Panel -->
     <div class="bottom-sheet" id="bottomSheet">
+        <!-- Tutqich: Bosilganda pastga/tepaga tushadi -->
         <div class="sheet-handle-bar" onclick="toggleSheetExpand()"></div>
         
         <div class="title-text" id="sheetTitle">Qayerga borasiz?</div>
 
         <div class="search-box">
             <span>🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="searchLocation(this.value)">
+            <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="searchNearby20Km(this.value)">
         </div>
 
-        <!-- Shahardagi joylar ro'yxati -->
+        <!-- 20 km Natijalar ro'yxati -->
         <div class="search-results" id="searchResults"></div>
 
-        <button class="btn-order-now" id="orderBtn" onclick="sendTaxiOrder()">🚖 Shu yerdan taksi chaqirish</button>
+        <!-- Sariq hoshiyali Borish tugmasi -->
+        <button class="btn-go-destination" id="goDestBtn" onclick="sendTaxiOrder()">shu manzilga borish</button>
     </div>
 
     <script>
@@ -256,32 +234,57 @@
         tg.expand();
 
         let map;
-        let currentCity = "Samarqand";
-        let userCoords = [39.6542, 66.9597];
-        let selectedAddress = "Tanlangan joy";
+        let userCoords = [39.6542, 66.9597]; // Joylashuvingiz
+        let selectedDestName = "";
+        let mapTypeIndex = 0;
+        const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
+
+        // Masofani hisoblash (km)
+        function getDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
                 center: userCoords,
                 zoom: 16,
+                type: 'yandex#map',
                 controls: []
             });
 
             locateMe();
             loadUserData();
 
-            // Xarita surilib to'xtaganda markazdagi manzilni aniqlash
+            // Xarita siljib to'xtaganda
             map.events.add('actionend', () => {
                 userCoords = map.getCenter();
                 ymaps.geocode(userCoords).then(res => {
                     const firstGeo = res.geoObjects.get(0);
                     if (firstGeo) {
-                        selectedAddress = firstGeo.getAddressLine();
-                        document.getElementById("sheetTitle").innerText = "📍 " + (firstGeo.getName() || "Tanlangan manzil");
+                        selectedDestName = firstGeo.getAddressLine();
+                        document.getElementById("sheetTitle").innerText = "📍 " + (firstGeo.getName() || "Tanlangan joy");
                     }
                 });
             });
+
+            // Xarita bo'sh joyi bosilganda panel pastga tushadi
+            map.events.add('click', () => {
+                collapseSheet();
+            });
         });
+
+        // Xarita turlarini almashtirish
+        function changeMapType() {
+            mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
+            map.setType(mapTypes[mapTypeIndex]);
+        }
 
         function locateMe() {
             if (navigator.geolocation) {
@@ -292,17 +295,18 @@
             }
         }
 
-        // Panelni surish va kattalashtirish
+        // Panelni boshqarish
         function expandSheet() {
             document.getElementById("bottomSheet").classList.add("expanded");
             document.getElementById("searchResults").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "82vh";
+            document.getElementById("locBtn").style.bottom = "84vh";
         }
 
         function collapseSheet() {
             document.getElementById("bottomSheet").classList.remove("expanded");
             document.getElementById("searchResults").style.display = "none";
             document.getElementById("locBtn").style.bottom = "220px";
+            document.getElementById("searchInput").blur();
         }
 
         function toggleSheetExpand() {
@@ -314,36 +318,49 @@
             }
         }
 
-        // Shahar doirasida manzil qidirish
-        function searchLocation(query) {
+        // 20 km masofadagi joylarni qidirish
+        function searchNearby20Km(query) {
             if (query.length < 2) return;
 
-            ymaps.suggest(currentCity + ", " + query).then(items => {
-                const resultsContainer = document.getElementById("searchResults");
-                resultsContainer.innerHTML = "";
+            ymaps.suggest(query, {
+                boundedBy: [
+                    [userCoords[0] - 0.18, userCoords[1] - 0.18],
+                    [userCoords[0] + 0.18, userCoords[1] + 0.18]
+                ]
+            }).then(items => {
+                const container = document.getElementById("searchResults");
+                container.innerHTML = "";
 
                 items.forEach(item => {
-                    const div = document.createElement("div");
-                    div.className = "result-item";
-                    div.innerHTML = `
-                        <span style="font-size: 20px;">📍</span>
-                        <div>
-                            <div class="result-title">${item.displayName.split(',')[0]}</div>
-                            <div class="result-sub">${item.value}</div>
-                        </div>
-                    `;
-                    div.onclick = () => {
-                        ymaps.geocode(item.value).then(res => {
-                            const coords = res.geoObjects.get(0).geometry.getCoordinates();
-                            map.setCenter(coords, 17, { duration: 400 });
-                            selectedAddress = item.value;
-                            document.getElementById("sheetTitle").innerText = "📍 " + item.displayName.split(',')[0];
-                            document.getElementById("searchInput").value = item.displayName.split(',')[0];
-                            collapseSheet();
-                            document.getElementById("orderBtn").style.display = "block";
-                        });
-                    };
-                    resultsContainer.appendChild(div);
+                    ymaps.geocode(item.value).then(res => {
+                        const geoObj = res.geoObjects.get(0);
+                        if (!geoObj) return;
+
+                        const targetCoords = geoObj.geometry.getCoordinates();
+                        const dist = getDistanceKm(userCoords[0], userCoords[1], targetCoords[0], targetCoords[1]);
+
+                        // Faqat 20 km ichidagi joylarni chiqarish
+                        if (dist <= 20) {
+                            const div = document.createElement("div");
+                            div.className = "result-item";
+                            div.innerHTML = `
+                                <div>
+                                    <div class="result-title">${item.displayName.split(',')[0]}</div>
+                                    <div class="result-sub">${item.value}</div>
+                                </div>
+                                <div class="result-dist">${dist.toFixed(1)} km</div>
+                            `;
+                            div.onclick = () => {
+                                map.setCenter(targetCoords, 17, { duration: 400 });
+                                selectedDestName = item.value;
+                                document.getElementById("sheetTitle").innerText = "📍 " + item.displayName.split(',')[0];
+                                document.getElementById("searchInput").value = item.displayName.split(',')[0];
+                                collapseSheet();
+                                document.getElementById("goDestBtn").style.display = "block";
+                            };
+                            container.appendChild(div);
+                        }
+                    });
                 });
             });
         }
@@ -365,11 +382,10 @@
             const phone = localStorage.getItem("taxi_user_phone") || "+998 50 052 79 77";
             document.getElementById("uName").innerText = name;
             document.getElementById("uPhone").innerText = phone;
-            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
         }
 
         function sendTaxiOrder() {
-            const btn = document.getElementById("orderBtn");
+            const btn = document.getElementById("goDestBtn");
             btn.innerText = "Buyurtma yuborilmoqda...";
             btn.disabled = true;
 
@@ -377,7 +393,7 @@
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                address: selectedAddress,
+                destination: selectedDestName || "Tanlangan manzil",
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
             };
