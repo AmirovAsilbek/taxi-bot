@@ -560,8 +560,11 @@
         tg.expand();
 
         let map, multiRoute;
-        let startCoords = [39.0560, 66.8300]; // Shahrisabz markazi
-        let targetCoords = [39.0560, 66.8300];
+        let startPlacemark = null;
+        let destPlacemark = null;
+
+        let startCoords = [39.0560, 66.8300]; // Foydalanuvchi joylashuvi
+        let targetCoords = [39.0560, 66.8300]; // Boriladigan manzil
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
         let finalTripPrice = "15 000 UZS";
@@ -622,7 +625,6 @@
                 targetDist = getDistanceKm(startCoords[0], startCoords[1], targetCoords[0], targetCoords[1]);
                 if (targetDist < 0.2) targetDist = 0.5;
 
-                // OpenStreetMap Reverse orqali O'zbekistondagi aniq nomni olish
                 const revUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${targetCoords[0]}&lon=${targetCoords[1]}&accept-language=uz`;
                 fetch(revUrl)
                     .then(res => res.json())
@@ -732,7 +734,7 @@
             document.getElementById("searchInput").blur();
         }
 
-        // ANIQ VA FAOL QIDIRUV (FAQAT O'ZBEKISTON / SHAHRISABZ DOIRASIDA)
+        // QIDIRUV
         function handleSearchInput(query) {
             clearTimeout(searchTimer);
             if (query.trim().length < 2) {
@@ -744,7 +746,6 @@
                 const container = document.getElementById("searchResults");
                 container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
 
-                // O'zbekiston kodi (countrycodes=uz) bilan aniq qidiruv
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim() + ' Shahrisabz Uzbekistan')}&countrycodes=uz&limit=8&accept-language=uz`;
 
                 fetch(url)
@@ -752,7 +753,6 @@
                     .then(data => {
                         container.innerHTML = "";
                         if (!data || data.length === 0) {
-                            // Agar topilmasa butun O'zbekiston bo'yicha qidirish
                             return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&countrycodes=uz&limit=8&accept-language=uz`)
                                 .then(r => r.json())
                                 .then(altData => renderResults(altData, container, query));
@@ -805,7 +805,7 @@
             });
         }
 
-        // 3-EKRAN: SAFAR TAFSILOTLARIGA O'TISH
+        // 3-EKRAN: TOMCHI PINLAR (A VA B) BILAN MARSHRUTGA O'TISH
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -824,8 +824,29 @@
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
 
-            // Xaritada yo'nalish chizish
+            // Eski belgilarni tozalash
             if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (startPlacemark) map.geoObjects.remove(startPlacemark);
+            if (destPlacemark) map.geoObjects.remove(destPlacemark);
+
+            // A nuqta: Sariq tomchi pin
+            startPlacemark = new ymaps.Placemark(startCoords, {
+                hintContent: 'Sizning joylashuvingiz'
+            }, {
+                preset: 'islands#yellowDotIcon'
+            });
+
+            // B nuqta: Qizil tomchi pin (Tanlangan manzil)
+            destPlacemark = new ymaps.Placemark(targetCoords, {
+                hintContent: targetName
+            }, {
+                preset: 'islands#redDotIcon'
+            });
+
+            map.geoObjects.add(startPlacemark);
+            map.geoObjects.add(destPlacemark);
+
+            // Yo'l marshrutini chizish
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [startCoords, targetCoords],
                 params: { results: 1 }
@@ -844,7 +865,11 @@
                 document.getElementById("centerPin").style.display = "flex";
                 document.getElementById("topBtn").innerText = "☰";
                 document.getElementById("locBtn").style.bottom = "230px";
+                
                 if (multiRoute) map.geoObjects.remove(multiRoute);
+                if (startPlacemark) map.geoObjects.remove(startPlacemark);
+                if (destPlacemark) map.geoObjects.remove(destPlacemark);
+
                 collapseSheet();
             } else {
                 toggleSideMenu();
