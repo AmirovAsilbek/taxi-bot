@@ -678,10 +678,17 @@
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
 
-        // HAQIQIY ONLINE HAYDOVCHILAR (Bazada haydovchi bo'lmasa bo'sh bo'ladi)
-        let activeDrivers = [
-            // Masalan: { id: 1, lat: 39.0580, lon: 66.8320, is_online: true, tariff: 'standart' }
-        ];
+        // BOTDAN KELGAN HAYDOVCHILARNI O'QISH
+        let activeDrivers = [];
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const driversParam = urlParams.get('drivers');
+            if (driversParam) {
+                activeDrivers = JSON.parse(decodeURIComponent(driversParam));
+            }
+        } catch (e) {
+            console.error("Haydovchilarni o'qishda xatolik:", e);
+        }
 
         // TEPADAN QARALGAN KO'K AVTO SVG
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
@@ -704,7 +711,6 @@
             </svg>
         `);
 
-        // TARIFLARNING REAL HOLATINI HISOBLASH (Avtomatik faol mashinalarga bog'liq)
         let tariffAvailability = {
             standart: false,
             komfort: false,
@@ -712,9 +718,16 @@
         };
 
         function recalculateTariffAvailability() {
-            tariffAvailability.standart = activeDrivers.some(d => d.is_online && (d.tariff === 'standart' || !d.tariff));
-            tariffAvailability.komfort = activeDrivers.some(d => d.is_online && d.tariff === 'komfort');
-            tariffAvailability.komfort_plus = activeDrivers.some(d => d.is_online && d.tariff === 'komfort_plus');
+            if (activeDrivers && activeDrivers.length > 0) {
+                // Agar kamida bitta faol haydovchi bo'lsa, Standart har doim yonadi
+                tariffAvailability.standart = true;
+                tariffAvailability.komfort = activeDrivers.some(d => d.tariff === 'komfort');
+                tariffAvailability.komfort_plus = activeDrivers.some(d => d.tariff === 'komfort_plus');
+            } else {
+                tariffAvailability.standart = false;
+                tariffAvailability.komfort = false;
+                tariffAvailability.komfort_plus = false;
+            }
         }
 
         let prices = {
@@ -807,7 +820,7 @@
             driverPlacemarks = [];
 
             activeDrivers.forEach(driver => {
-                if (driver.is_online) {
+                if (driver.lat && driver.lon) {
                     const carPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {}, {
                         iconLayout: 'default#image',
                         iconImageHref: topViewBlueCarSvg,
@@ -822,7 +835,6 @@
             recalculateTariffAvailability();
         }
 
-        // Swipe orqali pastga tushirish
         let startY = 0;
         const handleArea = document.getElementById("handleArea");
         handleArea.addEventListener("touchstart", (e) => {
@@ -1068,7 +1080,6 @@
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
             if (destPlacemark) map.geoObjects.remove(destPlacemark);
 
-            // A NUQTA: ODAMCHA VA KUTISH VAQTI
             startPlacemark = new ymaps.Placemark(startCoords, {
                 iconContent: '<div style="background:#fff; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:800; color:#111; box-shadow:0 3px 8px rgba(0,0,0,0.25); margin-top:-38px; margin-left:-18px; border:1.5px solid #ffcc00;">Kutish: 3 min</div>',
                 hintContent: 'Sizning joylashuvingiz'
@@ -1076,7 +1087,6 @@
                 preset: 'islands#yellowPersonIcon'
             });
 
-            // B NUQTA: BORISH MANZILI VA KELISH VAQTI
             const now = new Date();
             const arrivalMinutes = Math.round(targetDist * 2.2) + 3;
             now.setMinutes(now.getMinutes() + arrivalMinutes);
@@ -1092,7 +1102,6 @@
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            // KO'CHALAR BO'YLAB AVTO MARSHRUT
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [startCoords, targetCoords],
                 params: {
