@@ -7,6 +7,9 @@
     <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Firebase Realtime Database SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #fff; }
@@ -286,7 +289,6 @@
             border-radius: 14px;
             cursor: pointer;
         }
-        .result-item.selected { border-color: #ff3333; background: #fff5f5; }
         .result-title { font-weight: 700; font-size: 14px; color: #222; }
         .result-sub { font-size: 12px; color: #777; }
         .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
@@ -306,7 +308,6 @@
             box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35);
             margin-top: 4px;
         }
-        .btn-go-action:active { transform: scale(0.98); background: #e02424; }
 
         /* 2-EKRAN: SAFAR TAFSILOTLARI */
         .overview-sheet {
@@ -333,17 +334,6 @@
         .dot-end { background: #ff3333; }
         .point-name { font-size: 14px; font-weight: 600; color: #222; }
 
-        .btn-note {
-            background: #f4f4f6;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-        }
-
         .tariff-list {
             display: flex;
             flex-direction: column;
@@ -366,12 +356,6 @@
         .tariff-card.active {
             border-color: #ffcc00;
             background: #fffdf0;
-        }
-        .tariff-card.disabled {
-            opacity: 0.5;
-            background: #f9f9f9;
-            border-style: dashed;
-            cursor: not-allowed;
         }
 
         .tariff-left { display: flex; align-items: center; gap: 12px; }
@@ -402,13 +386,6 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
-            transition: 0.2s;
-        }
-        .btn-request:disabled {
-            background: #e2e8f0;
-            color: #94a3b8;
-            box-shadow: none;
-            cursor: not-allowed;
         }
 
         /* 3-EKRAN: HAYDOVCHI QIDIRISH (SEARCHING) */
@@ -537,7 +514,6 @@
 </head>
 <body>
 
-    <!-- RO'YXATDAN O'TISH OYNASI -->
     <div class="auth-overlay" id="authModal">
         <div class="auth-card">
             <div class="auth-title">Xush kelibsiz! 👋</div>
@@ -550,21 +526,17 @@
         </div>
     </div>
 
-    <!-- Xarita -->
     <div id="map"></div>
 
-    <!-- Markazdagi Qizil Pin -->
     <div class="center-pin-container" id="centerPin">
         <div class="center-pin"></div>
         <div class="pin-shadow"></div>
     </div>
 
-    <!-- Navigatsiya Tugmalari -->
     <button class="map-btn btn-menu" id="topBtn" onclick="handleTopBtnClick()">☰</button>
     <button class="map-btn btn-layers" onclick="changeMapType()">🗺️</button>
     <button class="map-btn btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
 
-    <!-- Yon Menyu -->
     <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
     <div class="side-menu" id="sideMenu">
         <div class="user-profile">
@@ -607,7 +579,6 @@
         </ul>
     </div>
 
-    <!-- MODAL VIEW -->
     <div class="modal-view" id="modalView">
         <div class="modal-header">
             <button class="map-btn" style="position:static; width:40px; height:40px;" onclick="closeModal()">←</button>
@@ -616,7 +587,6 @@
         <div class="modal-content" id="modalContent"></div>
     </div>
 
-    <!-- 1-EKRAN: Xaritadan belgilash va Qidiruv paneli -->
     <div class="bottom-sheet" id="bottomSheet">
         <div class="handle-area" onclick="collapseSheet()" id="handleArea">
             <div class="sheet-handle-bar"></div>
@@ -629,14 +599,11 @@
             <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="handleSearchInput(this.value)">
         </div>
 
-        <!-- Natijalar ro'yxati -->
         <div class="search-results" id="searchResults"></div>
 
-        <!-- DOIMIY QIZIL BORISH TUGMASI -->
         <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
-    <!-- 2-EKRAN: SAFAR TAFSILOTLARI -->
     <div class="overview-sheet" id="overviewSheet">
         <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
@@ -656,9 +623,8 @@
             </div>
         </div>
 
-        <!-- STANDART, KOMFORT, KOMFORT+ TARIFLAR -->
         <div class="tariff-list">
-            <div class="tariff-card" id="tariff_standart" onclick="selectTariff('standart')">
+            <div class="tariff-card active" id="tariff_standart" onclick="selectTariff('standart')">
                 <div class="tariff-left">
                     <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart">
                     <div>
@@ -668,39 +634,16 @@
                 </div>
                 <div class="price-val" id="price_standart">5 500 UZS</div>
             </div>
-
-            <div class="tariff-card" id="tariff_komfort" onclick="selectTariff('komfort')">
-                <div class="tariff-left">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3202/3202926.png" class="car-img" alt="Komfort">
-                    <div>
-                        <div class="tariff-name">Komfort</div>
-                        <div class="tariff-seats" id="seats_komfort">4 kishilik • Keng saloni</div>
-                    </div>
-                </div>
-                <div class="price-val" id="price_komfort">9 000 UZS</div>
-            </div>
-
-            <div class="tariff-card" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
-                <div class="tariff-left">
-                    <img src="https://cdn-icons-png.flaticon.com/512/75/75780.png" class="car-img" alt="Komfort+">
-                    <div>
-                        <div class="tariff-name">Komfort+</div>
-                        <div class="tariff-seats" id="seats_komfort_plus">Premium • Konditsioner</div>
-                    </div>
-                </div>
-                <div class="price-val" id="price_komfort_plus">14 000 UZS</div>
-            </div>
         </div>
 
         <div class="pricing-row">
-            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
+            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%)</div>
             <div class="total-badge" id="totalPrice">Jami: 7 500 UZS</div>
         </div>
 
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
     </div>
 
-    <!-- 3-EKRAN: HAYDOVCHI QIDIRISH (SEARCHING) -->
     <div class="search-status-sheet" id="searchStatusSheet">
         <div class="radar-spinner"></div>
         <div>
@@ -710,7 +653,6 @@
         <button class="btn-cancel-order" onclick="cancelTaxiOrder()">Buyurtmani bekor qilish</button>
     </div>
 
-    <!-- 4-EKRAN: RIDEYELLOW USLUBIDA HAYDOVCHI QABUL QILGAN EKRAN -->
     <div class="driver-accepted-sheet" id="driverAcceptedSheet">
         <div class="accepted-top">
             <div style="font-size: 14px; font-weight: 800; color: #111;">🚖 HAYDOVCHI YO'LGA CHIQDI</div>
@@ -726,7 +668,7 @@
                     <div class="d-rating">★ 5.0 (A'lo darajada)</div>
                 </div>
             </div>
-            <a href="tel:+998883893379" class="btn-call-driver">📞</a>
+            <a href="tel:+998883893379" class="btn-call-driver" id="callDriverBtn">📞</a>
         </div>
 
         <div class="trip-price-row">
@@ -739,33 +681,26 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // REALTIME DATABASE BULUTI
+        const firebaseConfig = {
+            databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let map, multiRoute;
         let startPlacemark = null;
         let destPlacemark = null;
-        let driverPlacemark = null;
-        let driverPlacemarks = [];
+        let driverMarkers = {};
 
         let startCoords = [39.0560, 66.8300];
         let targetCoords = [39.0560, 66.8300];
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
-        let currentTariff = null;
+        let currentTariff = "Standart";
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
 
-        // BOTDAN KELGAN HAYDOVCHILARNI O'QISH
-        let activeDrivers = [];
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const driversParam = urlParams.get('drivers');
-            if (driversParam) {
-                activeDrivers = JSON.parse(decodeURIComponent(driversParam));
-            }
-        } catch (e) {
-            console.error("Haydovchilarni o'qishda xatolik:", e);
-        }
-
-        // TEPADAN QARALGAN KO'K AVTO SVG
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
                 <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -786,59 +721,6 @@
             </svg>
         `);
 
-        let tariffAvailability = {
-            standart: true,
-            komfort: false,
-            komfort_plus: false
-        };
-
-        function recalculateTariffAvailability() {
-            tariffAvailability.standart = true;
-            if (activeDrivers && activeDrivers.length > 0) {
-                tariffAvailability.komfort = activeDrivers.some(d => d.tariff === 'komfort');
-                tariffAvailability.komfort_plus = activeDrivers.some(d => d.tariff === 'komfort_plus');
-            }
-        }
-
-        let prices = {
-            standart: 5500,
-            komfort: 9000,
-            komfort_plus: 14000
-        };
-
-        let mapTypeIndex = 0;
-        const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
-
-        let currentLang = "uz";
-        const langData = {
-            uz: {
-                biz: "Biznes-hisob", sec: "Xavfsizlik", addr: "Mening manzillarim", hist: "Buyurtmalar tarixi",
-                set: "Sozlamalar (Til)", supp: "Qo'llab-quvvatlash", info: "Ma'lumot", overview: "Safaringiz ma'lumotlari",
-                btn_order: "🚖 Taksi chaqirish"
-            },
-            ru: {
-                biz: "Бизнес-аккаунт", sec: "Безопасность", addr: "Мои адреса", hist: "История заказов",
-                set: "Настройки (Язык)", supp: "Служба поддержки", info: "Информация", overview: "Детали поездки",
-                btn_order: "🚖 Заказать такси"
-            },
-            en: {
-                biz: "Business Account", sec: "Safety", addr: "My Addresses", hist: "Ride History",
-                set: "Settings (Language)", supp: "Support", info: "Information", overview: "Ride Overview",
-                btn_order: "🚖 Request Taxi"
-            }
-        };
-
-        function getDistanceKm(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
                 center: startCoords,
@@ -849,7 +731,8 @@
 
             locateMe();
             checkUserAuth();
-            renderActiveDriversOnly();
+            listenToLiveDrivers();
+            listenToOrderAcceptance();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
 
@@ -864,7 +747,7 @@
                     .then(data => {
                         if (data && data.address) {
                             const a = data.address;
-                            targetName = a.road || a.suburb || a.village || a.town || a.city || a.county || "Shahrisabz";
+                            targetName = a.road || a.suburb || a.village || a.town || a.city || "Shahrisabz";
                         } else {
                             targetName = "Xaritadagi belgilangan nuqta";
                         }
@@ -875,93 +758,73 @@
                         document.getElementById("sheetTitle").innerText = "📍 " + targetName;
                     });
             });
-
-            map.events.add('click', (e) => {
-                collapseSheet();
-                const clickPos = e.get('coords');
-                map.setCenter(clickPos, map.getZoom(), { duration: 250 });
-            });
         });
 
-        function renderActiveDriversOnly() {
-            driverPlacemarks.forEach(p => map.geoObjects.remove(p));
-            driverPlacemarks = [];
-
-            if (activeDrivers && activeDrivers.length > 0) {
-                activeDrivers.forEach(driver => {
-                    if (driver.lat && driver.lon) {
-                        const carPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {}, {
-                            iconLayout: 'default#image',
-                            iconImageHref: topViewBlueCarSvg,
-                            iconImageSize: [36, 36],
-                            iconImageOffset: [-18, -18]
-                        });
-                        driverPlacemarks.push(carPlacemark);
-                        map.geoObjects.add(carPlacemark);
+        // JONLI HAYDOVCHILARNI REAL VAQTDA KUZATISH VA XARITADA SILJITISH
+        function listenToLiveDrivers() {
+            db.ref('drivers').on('value', snapshot => {
+                const drivers = snapshot.val() || {};
+                
+                for (let id in driverMarkers) {
+                    if (!drivers[id]) {
+                        map.geoObjects.remove(driverMarkers[id]);
+                        delete driverMarkers[id];
                     }
-                });
-            } else {
-                const defaultCarPos = [startCoords[0] + 0.003, startCoords[1] + 0.003];
-                const carPlacemark = new ymaps.Placemark(defaultCarPos, {}, {
-                    iconLayout: 'default#image',
-                    iconImageHref: topViewBlueCarSvg,
-                    iconImageSize: [36, 36],
-                    iconImageOffset: [-18, -18]
-                });
-                driverPlacemarks.push(carPlacemark);
-                map.geoObjects.add(carPlacemark);
-            }
-
-            recalculateTariffAvailability();
-        }
-
-        let startY = 0;
-        const handleArea = document.getElementById("handleArea");
-        handleArea.addEventListener("touchstart", (e) => { startY = e.touches[0].clientY; }, { passive: true });
-        handleArea.addEventListener("touchmove", (e) => {
-            const currentY = e.touches[0].clientY;
-            if (currentY - startY > 30) collapseSheet();
-        }, { passive: true });
-
-        function checkUserAuth() {
-            const savedName = localStorage.getItem("taxi_user_name");
-            const savedPhone = localStorage.getItem("taxi_user_phone");
-
-            if (savedName && savedPhone) {
-                updateProfileUI(savedName, savedPhone);
-            } else {
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                    const u = tg.initDataUnsafe.user;
-                    const tgFullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                    document.getElementById("regName").value = tgFullName;
                 }
-                document.getElementById("authModal").style.display = "flex";
-            }
+
+                for (let id in drivers) {
+                    const d = drivers[id];
+                    if (d.is_online && d.lat && d.lon) {
+                        if (!driverMarkers[id]) {
+                            const marker = new ymaps.Placemark([d.lat, d.lon], {
+                                hintContent: `${d.name} (${d.car})`
+                            }, {
+                                iconLayout: 'default#image',
+                                iconImageHref: topViewBlueCarSvg,
+                                iconImageSize: [38, 38],
+                                iconImageOffset: [-19, -19]
+                            });
+                            driverMarkers[id] = marker;
+                            map.geoObjects.add(marker);
+                        } else {
+                            // MASHINANI XARITADA JONLI HARAKATLANTIRISH
+                            driverMarkers[id].geometry.setCoordinates([d.lat, d.lon]);
+                        }
+                    }
+                }
+            });
         }
 
-        function saveUserRegistration() {
-            const name = document.getElementById("regName").value.trim();
-            const phone = document.getElementById("regPhone").value.trim();
+        // HAYDOVCHI BUYURTMANI QABUL QILGANINI REAL VAQTDA ANIQLASH
+        function listenToOrderAcceptance() {
+            db.ref('orders/current_status').on('value', snapshot => {
+                const data = snapshot.val();
+                if (data && data.status === 'accepted') {
+                    document.getElementById("searchStatusSheet").style.display = "none";
+                    document.getElementById("driverAcceptedSheet").style.display = "flex";
+                    document.getElementById("locBtn").style.bottom = "32vh";
 
-            if (!name) { alert("Iltimos, ismingizni kiriting!"); return; }
-            if (!phone || phone.length < 7) { alert("Iltimos, telefon raqamingizni to'liq kiriting!"); return; }
+                    document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
+                    document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix";
+                    document.getElementById("accTripPrice").innerText = finalTripPrice;
+                    if (data.driver_phone) {
+                        document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
+                    }
 
-            localStorage.setItem("taxi_user_name", name);
-            localStorage.setItem("taxi_user_phone", phone);
-
-            updateProfileUI(name, phone);
-            document.getElementById("authModal").style.display = "none";
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                }
+            });
         }
 
-        function updateProfileUI(name, phone) {
-            document.getElementById("uName").innerText = name;
-            document.getElementById("uPhone").innerText = phone;
-            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
-        }
-
-        function changeMapType() {
-            mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
-            map.setType(mapTypes[mapTypeIndex]);
+        function getDistanceKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
         function locateMe() {
@@ -1018,11 +881,6 @@
         }
 
         function renderResults(items, container, query) {
-            if (!items || items.length === 0) {
-                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
-                return;
-            }
-
             container.innerHTML = "";
             items.forEach(item => {
                 const lat = parseFloat(item.lat);
@@ -1057,47 +915,9 @@
             });
         }
 
-        function selectTariff(type) {
-            document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
-            
-            let selectedPrice = prices.standart;
-            if (type === 'standart') {
-                document.getElementById("tariff_standart").classList.add("active");
-                currentTariff = "Standart";
-                selectedPrice = prices.standart;
-            } else if (type === 'komfort') {
-                document.getElementById("tariff_komfort").classList.add("active");
-                currentTariff = "Komfort";
-                selectedPrice = prices.komfort;
-            } else if (type === 'komfort_plus') {
-                document.getElementById("tariff_komfort_plus").classList.add("active");
-                currentTariff = "Komfort+";
-                selectedPrice = prices.komfort_plus;
-            }
-
-            const totalCalc = selectedPrice + 2000;
-            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
-            finalTripPrice = totalCalc.toLocaleString() + " UZS";
-        }
-
-        function updateTariffsAvailabilityUI() {
-            recalculateTariffAvailability();
-
-            document.getElementById("tariff_standart").classList.remove("disabled");
-            document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
-
-            const orderBtn = document.getElementById("submitOrderBtn");
-            orderBtn.disabled = false;
-            orderBtn.innerText = "🚖 Taksi chaqirish";
-
-            selectTariff('standart');
-        }
-
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("searchStatusSheet").style.display = "none";
-            document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("centerPin").style.display = "none";
             document.getElementById("topBtn").innerText = "←";
             document.getElementById("locBtn").style.bottom = "58vh";
@@ -1105,34 +925,20 @@
             document.getElementById("overviewStart").innerText = "Mening joylashuvim";
             document.getElementById("overviewDest").innerText = targetName;
 
-            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
-            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
-            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
+            const calcPrice = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
+            document.getElementById("price_standart").innerText = calcPrice.toLocaleString() + " UZS";
+            document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
-            document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
-            document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
-            document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
-
-            updateTariffsAvailabilityUI();
+            const totalCalc = calcPrice + 2000;
+            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
+            finalTripPrice = totalCalc.toLocaleString() + " UZS";
 
             if (multiRoute) map.geoObjects.remove(multiRoute);
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
             if (destPlacemark) map.geoObjects.remove(destPlacemark);
 
-            startPlacemark = new ymaps.Placemark(startCoords, {
-                iconContent: '<div style="background:#fff; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:800; color:#111; box-shadow:0 3px 8px rgba(0,0,0,0.25); margin-top:-38px; margin-left:-18px; border:1.5px solid #ffcc00;">Kutish: 3 min</div>',
-                hintContent: 'Sizning joylashuvingiz'
-            }, { preset: 'islands#yellowPersonIcon' });
-
-            const now = new Date();
-            const arrivalMinutes = Math.round(targetDist * 2.2) + 3;
-            now.setMinutes(now.getMinutes() + arrivalMinutes);
-            const arrivalTime = now.toTimeString().substring(0, 5);
-
-            destPlacemark = new ymaps.Placemark(targetCoords, {
-                iconContent: `<div style="background:#fff; padding:4px 9px; border-radius:12px; font-size:11px; font-weight:800; color:#ff3333; box-shadow:0 3px 8px rgba(0,0,0,0.25); margin-top:-38px; margin-left:-18px; border:1.5px solid #ff3333;">Kelish: ${arrivalTime}</div>`,
-                hintContent: targetName
-            }, { preset: 'islands#redDotIcon' });
+            startPlacemark = new ymaps.Placemark(startCoords, {}, { preset: 'islands#yellowPersonIcon' });
+            destPlacemark = new ymaps.Placemark(targetCoords, { hintContent: targetName }, { preset: 'islands#redDotIcon' });
 
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
@@ -1142,33 +948,12 @@
                 params: { routingMode: 'auto', results: 1 }
             }, {
                 boundsAutoApply: true,
-                wayPointVisible: false,
                 routeActiveStrokeColor: "#ff4757",
-                routeActiveStrokeWidth: 6,
-                routeActiveStrokeStyle: 'solid',
-                routeActiveOpacity: 0.95
+                routeActiveStrokeWidth: 6
             });
-
-            multiRoute.model.events.add('requestsuccess', () => {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    targetDist = activeRoute.properties.get('distance').value / 1000;
-                    prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
-                    prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
-                    prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
-
-                    document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
-                    document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
-                    document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
-
-                    updateTariffsAvailabilityUI();
-                }
-            });
-
             map.geoObjects.add(multiRoute);
         }
 
-        // BUYURTMA YUBORISH (QIDIRUV REJIMI DAVOM ETADI)
         function sendTaxiOrder() {
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
@@ -1182,59 +967,17 @@
                 dest_lon: targetCoords[1],
                 destination: targetName,
                 distance: targetDist.toFixed(1) + " km",
-                tariff: currentTariff,
                 price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
             };
 
-            if (tg.sendData) {
-                tg.sendData(JSON.stringify(payload));
-            }
-
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
-            }
-        }
-
-        // HAYDOVCHI QABUL QILGANDA ISHLAYDIGAN FUNKSIYA
-        function showDriverAcceptedScreen(driverData) {
-            document.getElementById("searchStatusSheet").style.display = "none";
-            document.getElementById("driverAcceptedSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "32vh";
-
-            if (driverData) {
-                document.getElementById("accDriverName").innerText = driverData.name || "Asilbek Amirov";
-                document.getElementById("accDriverCar").innerText = `${driverData.car || 'Oq Onix'} • ${driverData.number || '70 N 079 NN'}`;
-            }
-            document.getElementById("accTripPrice").innerText = finalTripPrice;
-
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-            const driverStartPos = [startCoords[0] + 0.004, startCoords[1] + 0.003];
-            if (driverPlacemark) map.geoObjects.remove(driverPlacemark);
-            
-            driverPlacemark = new ymaps.Placemark(driverStartPos, {}, {
-                iconLayout: 'default#image',
-                iconImageHref: topViewBlueCarSvg,
-                iconImageSize: [40, 40],
-                iconImageOffset: [-20, -20]
-            });
-            map.geoObjects.add(driverPlacemark);
-
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [driverStartPos, startCoords],
-                params: { routingMode: 'auto', results: 1 }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 6
-            });
-            map.geoObjects.add(multiRoute);
+            if (tg.sendData) tg.sendData(JSON.stringify(payload));
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         }
 
         function cancelTaxiOrder() {
+            db.ref('orders/current_status').remove();
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -1242,11 +985,7 @@
         }
 
         function handleTopBtnClick() {
-            if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
-                if (confirm("Safarni bekor qilmoqchimisiz?")) {
-                    cancelTaxiOrder();
-                }
-            } else if (document.getElementById("searchStatusSheet").style.display === "flex") {
+            if (document.getElementById("driverAcceptedSheet").style.display === "flex" || document.getElementById("searchStatusSheet").style.display === "flex") {
                 cancelTaxiOrder();
             } else if (document.getElementById("overviewSheet").style.display === "flex") {
                 document.getElementById("overviewSheet").style.display = "none";
@@ -1254,18 +993,11 @@
                 document.getElementById("centerPin").style.display = "flex";
                 document.getElementById("topBtn").innerText = "☰";
                 document.getElementById("locBtn").style.bottom = "230px";
-                
                 if (multiRoute) map.geoObjects.remove(multiRoute);
-                if (startPlacemark) map.geoObjects.remove(startPlacemark);
-                if (destPlacemark) map.geoObjects.remove(destPlacemark);
-
-                collapseSheet();
             } else {
                 toggleSideMenu();
             }
         }
-
-        function addNote() { prompt("Haydovchi uchun izoh:"); }
 
         function toggleSideMenu() {
             const menu = document.getElementById("sideMenu");
@@ -1279,26 +1011,43 @@
             }
         }
 
-        function openModal(type) {
-            toggleSideMenu();
-            const modal = document.getElementById("modalView");
-            const title = document.getElementById("modalTitle");
-            const content = document.getElementById("modalContent");
-            modal.style.display = "flex";
+        function checkUserAuth() {
+            const savedName = localStorage.getItem("taxi_user_name");
+            const savedPhone = localStorage.getItem("taxi_user_phone");
 
-            if (type === 'xavfsizlik') {
-                title.innerText = "Xavfsizlik";
-                content.innerHTML = `<ul style="line-height:2;"><li>Barcha haydovchilar maxsus tekshiruvdan o'tgan.</li><li>Safar davomida jonli geolokatsiyangiz himoyalangan.</li><li>Tezkor yordam: 102 yoki admin orqali bog'laning.</li></ul>`;
-            } else if (type === 'yordam') {
-                title.innerText = "Qo'llab-quvvatlash";
-                content.innerHTML = `<p>🎧 Mijozlarni qo'llab-quvvatlash: <b>+998 50 052 79 77</b><br>Telegram: <b>@Amirovffff</b></p>`;
+            if (savedName && savedPhone) {
+                document.getElementById("uName").innerText = savedName;
+                document.getElementById("uPhone").innerText = savedPhone;
+                document.getElementById("uAvatar").innerText = savedName.charAt(0).toUpperCase();
             } else {
-                title.innerText = "Ma'lumot";
-                content.innerHTML = "<p>Express Taxi RideYellow v2.0</p>";
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const u = tg.initDataUnsafe.user;
+                    document.getElementById("regName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                }
+                document.getElementById("authModal").style.display = "flex";
             }
         }
 
-        function closeModal() { document.getElementById("modalView").style.display = "none"; }
+        function saveUserRegistration() {
+            const name = document.getElementById("regName").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+
+            if (!name || !phone) { alert("Ma'lumotlarni to'liq kiriting!"); return; }
+
+            localStorage.setItem("taxi_user_name", name);
+            localStorage.setItem("taxi_user_phone", phone);
+
+            document.getElementById("uName").innerText = name;
+            document.getElementById("uPhone").innerText = phone;
+            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
+            document.getElementById("authModal").style.display = "none";
+        }
+
+        function changeMapType() {
+            map.setType(map.getType() === 'yandex#map' ? 'yandex#satellite' : 'yandex#map');
+        }
+
+        function addNote() { prompt("Haydovchi uchun izoh:"); }
     </script>
 </body>
 </html>
