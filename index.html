@@ -724,7 +724,8 @@
                 tariffAvailability.komfort = activeDrivers.some(d => d.tariff === 'komfort');
                 tariffAvailability.komfort_plus = activeDrivers.some(d => d.tariff === 'komfort_plus');
             } else {
-                tariffAvailability.standart = false;
+                // Har qanday holatda ham Standartni ochiq qoldiramiz
+                tariffAvailability.standart = true;
                 tariffAvailability.komfort = false;
                 tariffAvailability.komfort_plus = false;
             }
@@ -819,18 +820,32 @@
             driverPlacemarks.forEach(p => map.geoObjects.remove(p));
             driverPlacemarks = [];
 
-            activeDrivers.forEach(driver => {
-                if (driver.lat && driver.lon) {
-                    const carPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {}, {
-                        iconLayout: 'default#image',
-                        iconImageHref: topViewBlueCarSvg,
-                        iconImageSize: [32, 32],
-                        iconImageOffset: [-16, -16]
-                    });
-                    driverPlacemarks.push(carPlacemark);
-                    map.geoObjects.add(carPlacemark);
-                }
-            });
+            // Agar URL orqali haydovchilar kelsa, ularni chiqaramiz
+            if (activeDrivers && activeDrivers.length > 0) {
+                activeDrivers.forEach(driver => {
+                    if (driver.lat && driver.lon) {
+                        const carPlacemark = new ymaps.Placemark([driver.lat, driver.lon], {}, {
+                            iconLayout: 'default#image',
+                            iconImageHref: topViewBlueCarSvg,
+                            iconImageSize: [32, 32],
+                            iconImageOffset: [-16, -16]
+                        });
+                        driverPlacemarks.push(carPlacemark);
+                        map.geoObjects.add(carPlacemark);
+                    }
+                });
+            } else {
+                // Agar koordinata kelmagan bo'lsa ham xaritaga standart nuqta yaqinida mashina chiqaramiz
+                const defaultCarPos = [startCoords[0] + 0.002, startCoords[1] + 0.003];
+                const carPlacemark = new ymaps.Placemark(defaultCarPos, {}, {
+                    iconLayout: 'default#image',
+                    iconImageHref: topViewBlueCarSvg,
+                    iconImageSize: [32, 32],
+                    iconImageOffset: [-16, -16]
+                });
+                driverPlacemarks.push(carPlacemark);
+                map.geoObjects.add(carPlacemark);
+            }
 
             recalculateTariffAvailability();
         }
