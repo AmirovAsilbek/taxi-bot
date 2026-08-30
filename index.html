@@ -403,6 +403,7 @@
             opacity: 0.5;
             background: #f9f9f9;
             border-style: dashed;
+            cursor: not-allowed;
         }
 
         .tariff-left { display: flex; align-items: center; gap: 12px; }
@@ -433,6 +434,13 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+            transition: 0.2s;
+        }
+        .btn-request:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
         }
 
         /* 3-EKRAN: QIDIRUV (SEARCHING) HOLATI */
@@ -601,7 +609,7 @@
 
         <!-- STANDART, KOMFORT, KOMFORT+ TARIFLAR -->
         <div class="tariff-list">
-            <div class="tariff-card active" id="tariff_standart" onclick="selectTariff('standart')">
+            <div class="tariff-card" id="tariff_standart" onclick="selectTariff('standart')">
                 <div class="tariff-left">
                     <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart">
                     <div>
@@ -609,7 +617,7 @@
                         <div class="tariff-seats" id="seats_standart">4 kishilik • -- km</div>
                     </div>
                 </div>
-                <div class="price-val" id="price_standart">11 000 UZS</div>
+                <div class="price-val" id="price_standart">5 500 UZS</div>
             </div>
 
             <div class="tariff-card" id="tariff_komfort" onclick="selectTariff('komfort')">
@@ -620,7 +628,7 @@
                         <div class="tariff-seats" id="seats_komfort">4 kishilik • Keng saloni</div>
                     </div>
                 </div>
-                <div class="price-val" id="price_komfort">15 000 UZS</div>
+                <div class="price-val" id="price_komfort">9 000 UZS</div>
             </div>
 
             <div class="tariff-card" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
@@ -631,13 +639,13 @@
                         <div class="tariff-seats" id="seats_komfort_plus">Premium • Konditsioner</div>
                     </div>
                 </div>
-                <div class="price-val" id="price_komfort_plus">20 000 UZS</div>
+                <div class="price-val" id="price_komfort_plus">14 000 UZS</div>
             </div>
         </div>
 
         <div class="pricing-row">
             <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
-            <div class="total-badge" id="totalPrice">Jami: 13 000 UZS</div>
+            <div class="total-badge" id="totalPrice">Jami: 7 500 UZS</div>
         </div>
 
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
@@ -666,11 +674,14 @@
         let targetCoords = [39.0560, 66.8300];
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
-        let currentTariff = "Standart";
-        let finalTripPrice = "13 000 UZS";
+        let currentTariff = null;
+        let finalTripPrice = "0 UZS";
         let searchTimer = null;
 
-        let activeDrivers = [];
+        // HAQIQIY ONLINE HAYDOVCHILAR (Bazada haydovchi bo'lmasa bo'sh bo'ladi)
+        let activeDrivers = [
+            // Masalan: { id: 1, lat: 39.0580, lon: 66.8320, is_online: true, tariff: 'standart' }
+        ];
 
         // TEPADAN QARALGAN KO'K AVTO SVG
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
@@ -693,16 +704,23 @@
             </svg>
         `);
 
-        const tariffAvailability = {
-            standart: true,
+        // TARIFLARNING REAL HOLATINI HISOBLASH (Avtomatik faol mashinalarga bog'liq)
+        let tariffAvailability = {
+            standart: false,
             komfort: false,
             komfort_plus: false
         };
 
+        function recalculateTariffAvailability() {
+            tariffAvailability.standart = activeDrivers.some(d => d.is_online && (d.tariff === 'standart' || !d.tariff));
+            tariffAvailability.komfort = activeDrivers.some(d => d.is_online && d.tariff === 'komfort');
+            tariffAvailability.komfort_plus = activeDrivers.some(d => d.is_online && d.tariff === 'komfort_plus');
+        }
+
         let prices = {
-            standart: 11000,
-            komfort: 15000,
-            komfort_plus: 20000
+            standart: 5500,
+            komfort: 9000,
+            komfort_plus: 14000
         };
 
         let mapTypeIndex = 0;
@@ -800,6 +818,8 @@
                     map.geoObjects.add(carPlacemark);
                 }
             });
+
+            recalculateTariffAvailability();
         }
 
         // Swipe orqali pastga tushirish
@@ -958,7 +978,7 @@
 
         function selectTariff(type) {
             if (!tariffAvailability[type]) {
-                alert("Hozircha bu tarifda bo'sh mashinalar yo'q. Iltimos, Standart tarifini tanlang.");
+                alert("Hozircha yaqin atrofda bo'sh haydovchilar mavjud emas.");
                 return;
             }
 
@@ -985,21 +1005,44 @@
         }
 
         function updateTariffsAvailabilityUI() {
+            recalculateTariffAvailability();
+
+            let anyAvailable = false;
             for (let key in tariffAvailability) {
                 const el = document.getElementById("tariff_" + key);
                 if (el) {
+                    const seatText = el.querySelector(".tariff-seats");
                     if (!tariffAvailability[key]) {
                         el.classList.add("disabled");
-                        const seatText = el.querySelector(".tariff-seats");
+                        el.classList.remove("active");
                         if (seatText) seatText.innerText = "Band / Mashina yo'q";
                     } else {
                         el.classList.remove("disabled");
+                        if (seatText) {
+                            if (key === 'standart') seatText.innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+                            else if (key === 'komfort') seatText.innerText = "4 kishilik • Keng saloni";
+                            else if (key === 'komfort_plus') seatText.innerText = "Premium • Konditsioner";
+                        }
+                        anyAvailable = true;
                     }
                 }
             }
+
+            const orderBtn = document.getElementById("submitOrderBtn");
+            if (!anyAvailable) {
+                currentTariff = null;
+                orderBtn.disabled = true;
+                orderBtn.innerText = "🚫 Hozircha bo'sh taksi yo'q";
+                document.getElementById("totalPrice").innerText = "Jami: 0 UZS";
+            } else {
+                orderBtn.disabled = false;
+                orderBtn.innerText = "🚖 Taksi chaqirish";
+                if (tariffAvailability.standart) selectTariff('standart');
+                else if (tariffAvailability.komfort) selectTariff('komfort');
+                else if (tariffAvailability.komfort_plus) selectTariff('komfort_plus');
+            }
         }
 
-        // 3-EKRAN: KO'CHALAR VA AVTOMOBIL YO'LLARI BO'YLAB ANIQ MARSHRUT CHIZISH
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -1010,7 +1053,6 @@
 
             document.getElementById("overviewStart").innerText = "Mening joylashuvim";
             document.getElementById("overviewDest").innerText = targetName;
-            document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
             prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
             prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
@@ -1021,7 +1063,6 @@
             document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
 
             updateTariffsAvailabilityUI();
-            selectTariff('standart');
 
             if (multiRoute) map.geoObjects.remove(multiRoute);
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
@@ -1051,7 +1092,7 @@
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            // AVTOMOBIL KO'CHALARI VA BURILIShLARI BO'YLAB HAQIQIY YO'L CHIZIG'I (ROUTINGMODE: 'AUTO')
+            // KO'CHALAR BO'YLAB AVTO MARSHRUT
             multiRoute = new ymaps.multiRouter.MultiRoute({
                 referencePoints: [startCoords, targetCoords],
                 params: {
@@ -1061,20 +1102,17 @@
             }, {
                 boundsAutoApply: true,
                 wayPointVisible: false,
-                // Avtomobil ko'chasi chizig'i: Qalin, aniq va yorqin uslubda
                 routeActiveStrokeColor: "#ff4757",
                 routeActiveStrokeWidth: 6,
                 routeActiveStrokeStyle: 'solid',
                 routeActiveOpacity: 0.95
             });
 
-            // Marshrut tuzilganda haqiqiy masofa va vaqtni yangilash
             multiRoute.model.events.add('requestsuccess', () => {
                 const activeRoute = multiRoute.getActiveRoute();
                 if (activeRoute) {
                     const actualDistanceKm = activeRoute.properties.get('distance').value / 1000;
                     targetDist = actualDistanceKm;
-                    document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
                     prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
                     prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
@@ -1084,15 +1122,19 @@
                     document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
                     document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
 
-                    selectTariff('standart');
+                    updateTariffsAvailabilityUI();
                 }
             });
 
             map.geoObjects.add(multiRoute);
         }
 
-        // TAXI CHAQIRISH (MINI APP YOPILMAYDI)
         function sendTaxiOrder() {
+            if (!currentTariff) {
+                alert("Hozircha yaqin atrofda bo'sh haydovchilar mavjud emas.");
+                return;
+            }
+
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
@@ -1230,7 +1272,7 @@
             document.getElementById("txt_supp").innerText = l.supp;
             document.getElementById("txt_info").innerText = l.info;
             document.getElementById("txt_overview").innerText = l.overview;
-            document.getElementById("submitOrderBtn").innerText = l.btn_order;
+            updateTariffsAvailabilityUI();
             closeModal();
         }
     </script>
