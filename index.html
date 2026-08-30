@@ -26,13 +26,13 @@
             align-items: center;
         }
         .center-pin {
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             background: #ff3333;
             border: 3px solid #111;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+            box-shadow: 0 4px 14px rgba(255, 51, 51, 0.45);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -53,7 +53,7 @@
             margin-top: 2px;
         }
 
-        /* Tugmalar */
+        /* Navigatsiya tugmalari */
         .map-btn {
             position: absolute;
             z-index: 20;
@@ -71,20 +71,20 @@
         }
         .btn-menu { top: 18px; left: 18px; }
         .btn-layers { top: 18px; right: 18px; font-size: 18px; }
-        .btn-locate { bottom: 220px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
+        .btn-locate { bottom: 230px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
-        /* 1-EKRAN: PASTKI SURILUVCHI PANEL */
+        /* 1-EKRAN: PASTKI PANEL */
         .bottom-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 210px;
+            height: 220px;
             background: #ffffff;
             border-radius: 28px 28px 0 0;
             z-index: 30;
             box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 12px 20px 20px 20px;
+            padding: 10px 20px 20px 20px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -92,16 +92,30 @@
         }
         .bottom-sheet.expanded { height: 85vh; }
 
+        /* Rasmdagi tutqich zonasi */
+        .handle-area {
+            width: 100%;
+            padding: 6px 0 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
         .sheet-handle-bar {
-            width: 48px;
+            width: 52px;
             height: 6px;
             background: #dcdde1;
             border-radius: 6px;
-            margin: 0 auto 4px auto;
-            cursor: pointer;
         }
 
-        .title-text { font-size: 20px; font-weight: 800; color: #111; display: flex; align-items: center; gap: 6px; }
+        .title-text {
+            font-size: 19px;
+            font-weight: 800;
+            color: #111;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .search-box {
             display: flex;
@@ -114,13 +128,13 @@
         .search-input {
             border: none;
             background: transparent;
-            font-size: 16px;
+            font-size: 15px;
             color: #111;
             width: 100%;
             outline: none;
         }
 
-        /* QIDIRUV NATIJALARI */
+        /* Qidiruv natijalari */
         .search-results {
             display: none;
             flex-direction: column;
@@ -138,31 +152,26 @@
             border: 1.5px solid transparent;
             border-radius: 14px;
             cursor: pointer;
-            transition: 0.2s;
         }
-        .result-item.selected {
-            border-color: #ff3333;
-            background: #fff5f5;
-        }
-        .result-item:active { background: #eee; }
+        .result-item.selected { border-color: #ff3333; background: #fff5f5; }
         .result-title { font-weight: 700; font-size: 14px; color: #222; }
-        .result-sub { font-size: 12px; color: #777; margin-top: 2px; }
+        .result-sub { font-size: 12px; color: #777; }
         .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
 
         /* QIZIL BORISH TUGMASI */
         .btn-go-action {
-            display: none;
+            display: block;
             width: 100%;
             background: #ff3333;
             color: #ffffff;
             border: none;
-            padding: 16px;
+            padding: 15px;
             border-radius: 16px;
             font-size: 16px;
             font-weight: 800;
             text-align: center;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35);
             margin-top: 4px;
         }
         .btn-go-action:active { transform: scale(0.98); background: #e02424; }
@@ -263,13 +272,13 @@
     <!-- Xarita -->
     <div id="map"></div>
 
-    <!-- Markazdagi Qizil Pin -->
+    <!-- Markazdagi Harakatlanuvchi Qizil Pin -->
     <div class="center-pin-container" id="centerPin">
         <div class="center-pin"></div>
         <div class="pin-shadow"></div>
     </div>
 
-    <!-- Tugmalar -->
+    <!-- Navigatsiya Tugmalari -->
     <button class="map-btn btn-menu" id="topBtn" onclick="handleTopBtnClick()">☰</button>
     <button class="map-btn btn-layers" onclick="changeMapType()">🗺️</button>
     <button class="map-btn btn-locate" id="locBtn" onclick="locateMe()">🎯</button>
@@ -290,10 +299,14 @@
         </div>
     </div>
 
-    <!-- 1-EKRAN: Qidiruv paneli -->
+    <!-- 1-EKRAN: Xaritadan belgilash va Qidiruv paneli -->
     <div class="bottom-sheet" id="bottomSheet">
-        <div class="sheet-handle-bar" onclick="toggleSheetExpand()"></div>
-        <div class="title-text" id="sheetTitle">📍 Tanlangan joy</div>
+        <!-- Bosilganda yoki tortilganda pastga tushuvchi tutqich -->
+        <div class="handle-area" onclick="collapseSheet()" id="handleArea">
+            <div class="sheet-handle-bar"></div>
+        </div>
+
+        <div class="title-text" id="sheetTitle">📍 Xaritadagi manzil</div>
 
         <div class="search-box">
             <span>🔍</span>
@@ -315,14 +328,14 @@
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-start"></div>
-                    <span class="point-name" id="overviewStart">Chiqish joyingiz</span>
+                    <span class="point-name" id="overviewStart">Mening joylashuvim</span>
                 </div>
                 <button class="btn-note" onclick="addNote()">📝 Izoh</button>
             </div>
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-end"></div>
-                    <span class="point-name" id="overviewDest">Borish manzili</span>
+                    <span class="point-name" id="overviewDest">Xaritadagi manzil</span>
                 </div>
             </div>
         </div>
@@ -351,10 +364,10 @@
         tg.expand();
 
         let map, multiRoute;
-        let startCoords = [39.0833, 66.8333]; // Foydalanuvchining joylashuvi
-        let mapCenterCoords = [39.0833, 66.8333];
-        let selectedTarget = null;
-        let startAddress = "Tanlangan joy";
+        let startCoords = [39.0833, 66.8333];
+        let targetCoords = [39.0833, 66.8333];
+        let targetName = "Xaritadan tanlangan joy";
+        let targetDist = 1.0;
         let finalTripPrice = "15 000 UZS";
         let searchTimer = null;
 
@@ -375,7 +388,7 @@
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
                 center: startCoords,
-                zoom: 15,
+                zoom: 16,
                 type: 'yandex#map',
                 controls: []
             });
@@ -383,28 +396,57 @@
             locateMe();
             loadUserData();
 
-            // XARITADAN O'ZI BELGILASH: Xaritani surib to'xtatganda markazni borish manzili sifatida olish
-            map.events.add('actionend', () => {
-                mapCenterCoords = map.getCenter();
-                const dist = getDistanceKm(startCoords[0], startCoords[1], mapCenterCoords[0], mapCenterCoords[1]);
-                
-                selectedTarget = {
-                    coords: mapCenterCoords,
-                    name: "Xaritadan tanlangan joy",
-                    address: "Xaritadagi nuqta",
-                    dist: dist > 0.3 ? dist : 1.0
-                };
-
-                document.getElementById("sheetTitle").innerText = "📍 Xaritadan tanlangan joy";
-                document.getElementById("goActionBtn").style.display = "block"; // Qizil borish tugmasi chiqadi
+            // XARITA HARAKATLANISHI BOSHLANGANDA PANEL AVTOMATIK PASTGA TUSHADI
+            map.events.add('actionbegin', () => {
+                collapseSheet();
             });
 
-            // Xarita ustiga bosilganda o'sha nuqtaga markazlashtirish
+            // XARITA TO'XTAGANDA MARKAZIY PIN OSTIDAGI MANZILNI ANIQLASH
+            map.events.add('actionend', () => {
+                targetCoords = map.getCenter();
+                targetDist = getDistanceKm(startCoords[0], startCoords[1], targetCoords[0], targetCoords[1]);
+                if (targetDist < 0.2) targetDist = 0.5;
+
+                const revUrl = `https://photon.komoot.io/reverse?lat=${targetCoords[0]}&lon=${targetCoords[1]}`;
+                fetch(revUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.features && data.features.length > 0) {
+                            const p = data.features[0].properties;
+                            targetName = p.name || p.street || p.district || "Xaritadan tanlangan manzil";
+                        } else {
+                            targetName = "Xaritadagi belgilangan nuqta";
+                        }
+                        document.getElementById("sheetTitle").innerText = "📍 " + targetName;
+                    })
+                    .catch(() => {
+                        targetName = "Xaritadagi belgilangan joy";
+                        document.getElementById("sheetTitle").innerText = "📍 " + targetName;
+                    });
+            });
+
+            // Xarita bosilganda markazlashtirish va panelni tushirish
             map.events.add('click', (e) => {
-                const clickedCoords = e.get('coords');
-                map.setCenter(clickedCoords, map.getZoom(), { duration: 250 });
+                collapseSheet();
+                const clickPos = e.get('coords');
+                map.setCenter(clickPos, map.getZoom(), { duration: 250 });
             });
         });
+
+        // Swipe (surish) orqali pastga tushirish hodisalari
+        let startY = 0;
+        const handleArea = document.getElementById("handleArea");
+        
+        handleArea.addEventListener("touchstart", (e) => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        handleArea.addEventListener("touchmove", (e) => {
+            const currentY = e.touches[0].clientY;
+            if (currentY - startY > 30) { // Pastga tortilganda
+                collapseSheet();
+            }
+        }, { passive: true });
 
         function changeMapType() {
             mapTypeIndex = (mapTypeIndex + 1) % mapTypes.length;
@@ -415,7 +457,7 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     startCoords = [pos.coords.latitude, pos.coords.longitude];
-                    mapCenterCoords = startCoords;
+                    targetCoords = startCoords;
                     map.setCenter(startCoords, 16, { duration: 300 });
                 }, null, { enableHighAccuracy: true });
             }
@@ -430,20 +472,11 @@
         function collapseSheet() {
             document.getElementById("bottomSheet").classList.remove("expanded");
             document.getElementById("searchResults").style.display = "none";
-            document.getElementById("locBtn").style.bottom = "220px";
+            document.getElementById("locBtn").style.bottom = "230px";
             document.getElementById("searchInput").blur();
         }
 
-        function toggleSheetExpand() {
-            const sheet = document.getElementById("bottomSheet");
-            if (sheet.classList.contains("expanded")) {
-                collapseSheet();
-            } else {
-                expandSheet();
-            }
-        }
-
-        // FAQAT TURGAN SHAHAR VA 20 KM RADIUSDAGI JOYLARNI QIDIRISH
+        // QIDIRUV
         function handleSearchInput(query) {
             clearTimeout(searchTimer);
             if (query.trim().length < 2) {
@@ -452,84 +485,62 @@
             }
 
             searchTimer = setTimeout(() => {
-                performLocal20KmSearch(query.trim());
+                const container = document.getElementById("searchResults");
+                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
+
+                const delta = 0.18;
+                const bbox = `${startCoords[1] - delta},${startCoords[0] - delta},${startCoords[1] + delta},${startCoords[0] + delta}`;
+                const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query.trim())}&lat=${startCoords[0]}&lon=${startCoords[1]}&bbox=${bbox}&limit=10`;
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        container.innerHTML = "";
+                        if (!data.features || data.features.length === 0) {
+                            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>20 km radiusda manzil topilmadi</div>";
+                            return;
+                        }
+
+                        data.features.forEach(feat => {
+                            const coords = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
+                            const dist = getDistanceKm(startCoords[0], startCoords[1], coords[0], coords[1]);
+
+                            if (dist <= 20.0) {
+                                const p = feat.properties;
+                                const name = p.name || query;
+                                const desc = [p.street, p.district, p.city].filter(Boolean).join(", ") || "Yaqin manzil";
+
+                                const div = document.createElement("div");
+                                div.className = "result-item";
+                                div.innerHTML = `
+                                    <div>
+                                        <div class="result-title">${name}</div>
+                                        <div class="result-sub">${desc}</div>
+                                    </div>
+                                    <div class="result-dist">${dist.toFixed(1)} km</div>
+                                `;
+
+                                div.onclick = () => {
+                                    targetCoords = coords;
+                                    targetName = name;
+                                    targetDist = dist;
+                                    map.setCenter(coords, 16, { duration: 300 });
+                                    document.getElementById("sheetTitle").innerText = "📍 " + name;
+                                    collapseSheet();
+                                };
+
+                                container.appendChild(div);
+                            }
+                        });
+                    })
+                    .catch(() => {
+                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                    });
             }, 300);
         }
 
-        function performLocal20KmSearch(query) {
-            const container = document.getElementById("searchResults");
-            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
-
-            // Foydalanuvchi joylashuviga bog'langan 20 km bbox
-            const delta = 0.18; // ~20 km
-            const bbox = `${startCoords[1] - delta},${startCoords[0] - delta},${startCoords[1] + delta},${startCoords[0] + delta}`;
-            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${startCoords[0]}&lon=${startCoords[1]}&bbox=${bbox}&limit=10`;
-
-            fetch(url)
-                .then(res => res.json())
-                .then(data => {
-                    container.innerHTML = "";
-                    if (!data.features || data.features.length === 0) {
-                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>20 km radiusda manzil topilmadi</div>";
-                        return;
-                    }
-
-                    let foundAny = false;
-                    data.features.forEach((feat, index) => {
-                        const coords = [feat.geometry.coordinates[1], feat.geometry.coordinates[0]];
-                        const dist = getDistanceKm(startCoords[0], startCoords[1], coords[0], coords[1]);
-
-                        // Qat'iy 20 km filtri
-                        if (dist <= 20.0) {
-                            foundAny = true;
-                            const p = feat.properties;
-                            const name = p.name || query;
-                            const desc = [p.street, p.district, p.city].filter(Boolean).join(", ") || "Yaqin manzil";
-
-                            const div = document.createElement("div");
-                            div.className = "result-item";
-                            div.id = "item_" + index;
-                            div.innerHTML = `
-                                <div>
-                                    <div class="result-title">${name}</div>
-                                    <div class="result-sub">${desc}</div>
-                                </div>
-                                <div class="result-dist">${dist.toFixed(1)} km</div>
-                            `;
-
-                            div.onclick = () => {
-                                document.querySelectorAll(".result-item").forEach(el => el.classList.remove("selected"));
-                                div.classList.add("selected");
-
-                                selectedTarget = {
-                                    coords: coords,
-                                    name: name,
-                                    address: desc,
-                                    dist: dist
-                                };
-
-                                map.setCenter(coords, 16, { duration: 300 });
-                                document.getElementById("sheetTitle").innerText = "📍 " + name;
-                                document.getElementById("goActionBtn").style.display = "block";
-                            };
-
-                            container.appendChild(div);
-                        }
-                    });
-
-                    if (!foundAny) {
-                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>20 km radiusda manzil topilmadi</div>";
-                    }
-                })
-                .catch(() => {
-                    container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>20 km radiusda manzil topilmadi</div>";
-                });
-        }
-
-        // QIZIL BORISH TUGMASI BOSILGANDA 3-EKRANGA O'TISH
+        // 3-EKRAN: SAFAR TAFSILOTLARIGA O'TISH
         function goToOverview() {
-            if (!selectedTarget) return;
-
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
             document.getElementById("centerPin").style.display = "none";
@@ -537,11 +548,11 @@
             document.getElementById("locBtn").style.bottom = "50vh";
 
             document.getElementById("overviewStart").innerText = "Mening joylashuvim";
-            document.getElementById("overviewDest").innerText = selectedTarget.name;
-            document.getElementById("seatsDist").innerText = `4 kishilik • ${selectedTarget.dist.toFixed(1)} km`;
+            document.getElementById("overviewDest").innerText = targetName;
+            document.getElementById("seatsDist").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
-            // Narxni hisoblash
-            const baseCalc = Math.round((5000 + (selectedTarget.dist * 2000)) / 500) * 500;
+            // Narx hisoblash
+            const baseCalc = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
             const totalCalc = baseCalc + 2000;
             
             document.getElementById("basePrice").innerText = baseCalc.toLocaleString() + " UZS";
@@ -551,7 +562,7 @@
             // Xaritada yo'nalish chizish
             if (multiRoute) map.geoObjects.remove(multiRoute);
             multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [startCoords, selectedTarget.coords],
+                referencePoints: [startCoords, targetCoords],
                 params: { results: 1 }
             }, {
                 boundsAutoApply: true,
@@ -567,7 +578,7 @@
                 document.getElementById("bottomSheet").style.display = "flex";
                 document.getElementById("centerPin").style.display = "flex";
                 document.getElementById("topBtn").innerText = "☰";
-                document.getElementById("locBtn").style.bottom = "220px";
+                document.getElementById("locBtn").style.bottom = "230px";
                 if (multiRoute) map.geoObjects.remove(multiRoute);
                 collapseSheet();
             } else {
@@ -607,9 +618,10 @@
                 type: "client_order",
                 lat: startCoords[0],
                 lon: startCoords[1],
-                dest_lat: selectedTarget.coords[0],
-                dest_lon: selectedTarget.coords[1],
-                destination: selectedTarget ? selectedTarget.name : "Tanlangan manzil",
+                dest_lat: targetCoords[0],
+                dest_lon: targetCoords[1],
+                destination: targetName,
+                distance: targetDist.toFixed(1) + " km",
                 price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
