@@ -9,16 +9,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #f8f9fa; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #fff; }
 
-        #map {
-            width: 100vw;
-            height: 100vh;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
+        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
         /* Suzuvchi tugmalar */
         .map-btn {
@@ -39,7 +32,72 @@
         .btn-menu { top: 16px; left: 16px; }
         .btn-locate { bottom: 42vh; right: 16px; font-size: 20px; }
 
-        /* Asosiy panellar */
+        /* YON MENYU (SIDEBAR) */
+        .side-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
+            display: none;
+        }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -80%;
+            width: 75%;
+            height: 100%;
+            background: #ffffff;
+            z-index: 100;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0 16px 0;
+            overflow-y: auto;
+        }
+        .side-menu.open { left: 0; }
+
+        .user-profile {
+            padding: 0 20px 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #ffcc00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #000;
+        }
+        .user-name { font-weight: 700; font-size: 16px; color: #111; }
+        .user-phone { font-size: 12px; color: #888; }
+
+        .menu-list { list-style: none; padding: 10px 0; }
+        .menu-item {
+            padding: 13px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 15px;
+            color: #222;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .menu-item:active { background: #f5f5f5; }
+        .menu-left { display: flex; align-items: center; gap: 14px; }
+        .menu-icon { font-size: 18px; }
+
+        /* PASTKI EKRANLAR */
         .screen-sheet {
             position: absolute;
             bottom: 0;
@@ -53,18 +111,9 @@
             display: none;
             flex-direction: column;
             gap: 14px;
-            transition: all 0.3s ease;
         }
-
-        /* 1-EKRAN: Qidiruv paneli */
-        #screen1 {
-            display: flex;
-        }
-        .search-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #111;
-        }
+        #screen1 { display: flex; }
+        .search-title { font-size: 20px; font-weight: 800; color: #111; }
         .search-input-box {
             display: flex;
             align-items: center;
@@ -74,61 +123,15 @@
             gap: 10px;
             cursor: pointer;
         }
-        .search-input-box input {
-            border: none;
-            background: transparent;
-            font-size: 15px;
-            width: 100%;
-            outline: none;
-            color: #111;
-        }
-        .feedback-card {
-            background: #ffffff;
-            border: 1.5px solid #f0f0f0;
-            border-radius: 16px;
-            padding: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            cursor: pointer;
-        }
+        .search-input-box input { border: none; background: transparent; font-size: 15px; width: 100%; outline: none; }
 
-        /* 2-EKRAN: Safar ma'lumotlari */
-        .route-points {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .point-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .point-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-        .dot-start { background: #ffcc00; box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2); }
+        .route-points { display: flex; flex-direction: column; gap: 10px; }
+        .point-item { display: flex; align-items: center; justify-content: space-between; }
+        .point-left { display: flex; align-items: center; gap: 10px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-start { background: #ffcc00; }
         .dot-end { background: #e91e63; }
         .point-name { font-size: 14px; font-weight: 600; color: #222; }
-
-        .btn-note {
-            background: #f4f4f6;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-        }
 
         .tariff-card {
             background: #ffffff;
@@ -140,98 +143,148 @@
             justify-content: space-between;
         }
         .tariff-left { display: flex; align-items: center; gap: 12px; }
-        .car-img { width: 50px; height: auto; }
-        .tariff-name { font-size: 15px; font-weight: 700; color: #111; }
+        .car-img { width: 48px; height: auto; }
+        .tariff-name { font-size: 15px; font-weight: 700; }
         .tariff-seats { font-size: 12px; color: #888; }
-        .price-val { font-size: 16px; font-weight: 800; color: #111; }
-        .price-old { font-size: 11px; color: #aaa; text-decoration: line-through; }
-
-        .pricing-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .tip-selector { font-size: 13px; color: #444; font-weight: 600; }
-        .total-badge {
-            border: 1.5px solid #ffcc00;
-            padding: 5px 12px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 800;
-            color: #111;
-        }
+        .price-val { font-size: 16px; font-weight: 800; }
 
         .btn-request {
             width: 100%;
-            background: #e91e63;
-            color: #fff;
+            background: #ffcc00;
+            color: #000;
             border: none;
             padding: 15px;
             border-radius: 16px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
-            transition: 0.2s;
         }
 
-        /* 3-EKRAN: Haydovchi keldi */
-        .driver-info-card {
+        /* MODAL OYNALAR (Menyu ichi) */
+        .modal-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .modal-content { font-size: 14px; color: #444; line-height: 1.6; }
+        
+        .lang-btn {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #ececec;
+            border-radius: 12px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 0;
+            cursor: pointer;
         }
-        .driver-details h3 { font-size: 18px; color: #111; margin-bottom: 4px; }
-        .driver-details p { font-size: 13px; color: #666; margin: 2px 0; }
-        .driver-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #ffcc00;
-        }
+        .lang-btn.active { border-color: #ffcc00; background: #fffbe6; }
     </style>
 </head>
 <body>
 
-    <!-- Yandex Xarita -->
+    <!-- Xarita -->
     <div id="map"></div>
-    <button class="map-btn btn-menu" id="topBtn" onclick="goBack()">☰</button>
+    <button class="map-btn btn-menu" id="topBtn" onclick="toggleSideMenu()">☰</button>
     <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
-    <!-- 1-EKRAN: Qayerga borasiz? -->
+    <!-- QORONG'ULASHTIRISH QATLAMI -->
+    <div class="side-menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
+
+    <!-- YON MENYU (RASMDAGI BARCHA SOZLAMALAR) -->
+    <div class="side-menu" id="sideMenu">
+        <div class="user-profile">
+            <div class="user-avatar" id="uAvatar">U</div>
+            <div>
+                <div class="user-name" id="uName">Foydalanuvchi</div>
+                <div class="user-phone" id="uPhone">+998 90 000 00 00</div>
+            </div>
+        </div>
+
+        <ul class="menu-list">
+            <li class="menu-item" onclick="openModal('biznes')">
+                <div class="menu-left"><span class="menu-icon">💼</span><span id="txt_biz">Biznes-hisob</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('xavfsizlik')">
+                <div class="menu-left"><span class="menu-icon">🛡️</span><span id="txt_sec">Xavfsizlik</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('manzillar')">
+                <div class="menu-left"><span class="menu-icon">📍</span><span id="txt_addr">Mening manzillarim</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('tarix')">
+                <div class="menu-left"><span class="menu-icon">🕒</span><span id="txt_hist">Buyurtmalar tarixi</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('sozlamalar')">
+                <div class="menu-left"><span class="menu-icon">⚙️</span><span id="txt_set">Sozlamalar (Til)</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('yordam')">
+                <div class="menu-left"><span class="menu-icon">🎧</span><span id="txt_supp">Qo'llab-quvvatlash</span></div>
+                <span>›</span>
+            </li>
+            <li class="menu-item" onclick="openModal('info')">
+                <div class="menu-left"><span class="menu-icon">ℹ️</span><span id="txt_info">Ma'lumot</span></div>
+                <span>›</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- HAR BIR MENYU UCHUN OCHILADIGAN MODAL OYNA -->
+    <div class="modal-view" id="modalView">
+        <div class="modal-header">
+            <button class="map-btn" style="position:static; width:36px; height:36px;" onclick="closeModal()">←</button>
+            <span id="modalTitle">Sarlavha</span>
+        </div>
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <!-- 1-EKRAN: Qidiruv paneli -->
     <div class="screen-sheet" id="screen1">
-        <div class="search-title">Qayerga borasiz?</div>
+        <div class="search-title" id="txt_where">Qayerga borasiz?</div>
         <div class="search-input-box" onclick="showOverviewScreen()">
             <span>🔍</span>
-            <input type="text" placeholder="Manzil yoki joy nomini qidiring..." readonly>
-        </div>
-        <div class="feedback-card">
-            <div>
-                <div style="font-weight: 700; font-size: 14px;">Xizmatni baholang</div>
-                <div style="font-size: 12px; color: #777;">Fikringiz biz uchun muhim</div>
-            </div>
-            <span style="font-size: 18px; color: #e91e63;">💬 &gt;</span>
+            <input type="text" id="txt_search_ph" placeholder="Manzil yoki joy nomini qidiring..." readonly>
         </div>
     </div>
 
     <!-- 2-EKRAN: Safar ma'lumotlari -->
     <div class="screen-sheet" id="screen2">
-        <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
+        <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
 
         <div class="route-points">
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-start"></div>
-                    <span class="point-name" id="startLocation">Tanlangan joy</span>
+                    <span class="point-name" id="startLocation">Tanlangan manzil</span>
                 </div>
-                <button class="btn-note" onclick="addNote()">📝 Izoh</button>
             </div>
             <div class="point-item">
                 <div class="point-left">
                     <div class="dot dot-end"></div>
-                    <span class="point-name">Markaziy manzil</span>
+                    <span class="point-name">Shahar markazi</span>
                 </div>
             </div>
         </div>
@@ -240,38 +293,14 @@
             <div class="tariff-left">
                 <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
                 <div>
-                    <div class="tariff-name">Standard Taksi ⌵</div>
-                    <div class="tariff-seats">4 kishilik</div>
+                    <div class="tariff-name" id="txt_tariff">Standart</div>
+                    <div class="tariff-seats" id="txt_seats">4 kishilik</div>
                 </div>
             </div>
-            <div style="text-align: right;">
-                <div class="price-val">25 000 UZS</div>
-                <div class="price-old">30 000 UZS</div>
-            </div>
-        </div>
-
-        <div class="pricing-row">
-            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
-            <div class="total-badge">Jami: 27 000 UZS</div>
+            <div class="price-val" id="totalPrice">25 000 UZS</div>
         </div>
 
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
-    </div>
-
-    <!-- 3-EKRAN: Haydovchi yetib keldi -->
-    <div class="screen-sheet" id="screen3">
-        <div style="font-size: 20px; font-weight: 800; color: #28a745;">Haydovchingiz yetib keldi!</div>
-        
-        <div class="driver-info-card">
-            <div class="driver-details">
-                <h3 id="dName">Ali Valiyev</h3>
-                <p>🚖 <b>Cobalt Oq</b> • <span id="dCar">01 A 777 AA</span></p>
-                <p>📞 +998 90 123 45 67</p>
-            </div>
-            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="driver-avatar" alt="Haydovchi">
-        </div>
-
-        <button class="btn-request" style="background: #28a745;" onclick="tg.close()">✅ Tushunarli</button>
     </div>
 
     <script>
@@ -279,30 +308,63 @@
         tg.expand();
 
         let map, userPlacemark;
-        let userCoords = [39.6542, 66.9597]; // Samarqand markazi
+        let userCoords = [39.6542, 66.9597];
+
+        // TILLAR BAZASI (UZ, RU, EN)
+        let currentLang = "uz";
+        const langData = {
+            uz: {
+                biz: "Biznes-hisob",
+                sec: "Xavfsizlik",
+                addr: "Mening manzillarim",
+                hist: "Buyurtmalar tarixi",
+                set: "Sozlamalar (Til)",
+                supp: "Qo'llab-quvvatlash",
+                info: "Ma'lumot",
+                where: "Qayerga borasiz?",
+                search_ph: "Manzil yoki joy nomini qidiring...",
+                overview: "Safaringiz ma'lumotlari",
+                tariff: "Standart",
+                seats: "4 kishilik",
+                btn_order: "🚖 Taksi chaqirish"
+            },
+            ru: {
+                biz: "Бизнес-аккаунт",
+                sec: "Безопасность",
+                addr: "Мои адреса",
+                hist: "История заказов",
+                set: "Настройки (Язык)",
+                supp: "Служба поддержки",
+                info: "Информация",
+                where: "Куда поедем?",
+                search_ph: "Поиск места или адреса...",
+                overview: "Детали поездки",
+                tariff: "Стандарт",
+                seats: "4 места",
+                btn_order: "🚖 Заказать такси"
+            },
+            en: {
+                biz: "Business Account",
+                sec: "Safety",
+                addr: "My Addresses",
+                hist: "Ride History",
+                set: "Settings (Language)",
+                supp: "Support",
+                info: "Information",
+                where: "Where to?",
+                search_ph: "Search place or address...",
+                overview: "Ride Overview",
+                tariff: "Standard",
+                seats: "4 seats",
+                btn_order: "🚖 Request Taxi"
+            }
+        };
 
         ymaps.ready(() => {
-            map = new ymaps.Map("map", {
-                center: userCoords,
-                zoom: 15,
-                controls: []
-            });
-
-            userPlacemark = new ymaps.Placemark(userCoords, {}, {
-                preset: 'islands#yellowDotIcon'
-            });
+            map = new ymaps.Map("map", { center: userCoords, zoom: 15, controls: [] });
+            userPlacemark = new ymaps.Placemark(userCoords, {}, { preset: 'islands#yellowDotIcon' });
             map.geoObjects.add(userPlacemark);
-
             locateMe();
-
-            map.events.add('actionend', () => {
-                const newCoords = map.getCenter();
-                userCoords = newCoords;
-                userPlacemark.geometry.setCoordinates(newCoords);
-            });
-
-            // Avtomobil piktogrammalarini xaritaga qo'shish (vizual bezak uchun)
-            addNearbyCars(userCoords);
         });
 
         function locateMe() {
@@ -315,57 +377,101 @@
             }
         }
 
-        function addNearbyCars(center) {
-            const offsets = [[0.002, 0.002], [-0.002, 0.003], [0.003, -0.002], [-0.003, -0.002]];
-            offsets.forEach(off => {
-                const carPlacemark = new ymaps.Placemark([center[0] + off[0], center[1] + off[1]], {}, {
-                    preset: 'islands#yellowTaxiIcon'
-                });
-                map.geoObjects.add(carPlacemark);
-            });
-        }
-
-        // Ekranlarni almashtirish
-        function showOverviewScreen() {
-            document.getElementById("screen1").style.display = "none";
-            document.getElementById("screen2").style.display = "flex";
-            document.getElementById("topBtn").innerText = "←";
-        }
-
-        function goBack() {
-            if (document.getElementById("screen2").style.display === "flex") {
-                document.getElementById("screen2").style.display = "none";
-                document.getElementById("screen1").style.display = "flex";
-                document.getElementById("topBtn").innerText = "☰";
+        // YON MENYU ISHLASHI
+        function toggleSideMenu() {
+            const menu = document.getElementById("sideMenu");
+            const overlay = document.getElementById("menuOverlay");
+            if (menu.classList.contains("open")) {
+                menu.classList.remove("open");
+                overlay.style.display = "none";
             } else {
-                tg.close();
+                menu.classList.add("open");
+                overlay.style.display = "block";
             }
         }
 
-        function addNote() {
-            prompt("Haydovchi uchun izoh (masalan: Dom oldida kuting):");
+        // MODALLARNI OCHISH VA ISHLATISH
+        function openModal(type) {
+            toggleSideMenu();
+            const modal = document.getElementById("modalView");
+            const title = document.getElementById("modalTitle");
+            const content = document.getElementById("modalContent");
+            modal.style.display = "flex";
+
+            if (type === 'biznes') {
+                title.innerText = langData[currentLang].biz;
+                content.innerHTML = "<p>🏢 <b>Biznes-hisob</b> orqali kompaniya xodimlari uchun korporativ taksi safarlarini tashkil qilishingiz va to'lovlarni shartnoma orqali amalga oshirishingiz mumkin.<br><br>Bog'lanish uchun: +998 71 200 00 00</p>";
+            } else if (type === 'xavfsizlik') {
+                title.innerText = langData[currentLang].sec;
+                content.innerHTML = "<p>🛡️ <b>Xavfsizlik markazi:</b><br><br>• Barcha haydovchilar maxsus tekshiruvdan o'tgan.<br>• Safar davomida jonli geolokatsiyangiz himoyalangan.<br>• Tezkor yordam: 102 yoki admin orqali bog'laning.</p>";
+            } else if (type === 'manzillar') {
+                title.innerText = langData[currentLang].addr;
+                content.innerHTML = "<p>📍 <b>Saqlangan manzillar:</b><br><br>🏠 <b>Uy:</b> Kiritilmagan<br>💼 <b>Ish:</b> Kiritilmagan<br><br><button style='padding:10px; border:none; background:#ffcc00; border-radius:8px; font-weight:bold; cursor:pointer;'>+ Yangi manzil qo'shish</button></p>";
+            } else if (type === 'tarix') {
+                title.innerText = langData[currentLang].hist;
+                content.innerHTML = "<p>🕒 <b>Oxirgi safarlaringiz:</b><br><br>1. Toshkent Markaz → Aeroport (25 000 UZS) • ✅ Bajarilgan<br>2. Registon → Vokzal (15 000 UZS) • ✅ Bajarilgan</p>";
+            } else if (type === 'sozlamalar') {
+                title.innerText = langData[currentLang].set;
+                content.innerHTML = `
+                    <div style="margin-bottom:15px; font-weight:bold;">Tilni tanlang / Выберите язык / Select language:</div>
+                    <button class="lang-btn ${currentLang==='uz'?'active':''}" onclick="setLanguage('uz')">🇺🇿 O'zbekcha</button>
+                    <button class="lang-btn ${currentLang==='ru'?'active':''}" onclick="setLanguage('ru')">🇷🇺 Русский</button>
+                    <button class="lang-btn ${currentLang==='en'?'active':''}" onclick="setLanguage('en')">🇬🇧 English</button>
+                `;
+            } else if (type === 'yordam') {
+                title.innerText = langData[currentLang].supp;
+                content.innerHTML = "<p>🎧 <b>Mijozlarni qo'llab-quvvatlash xizmati</b> 24/7 ishlaydi.<br><br>📞 Telefon: +998 90 123 45 67<br>💬 Telegram: @amirovasilbek</p>";
+            } else if (type === 'info') {
+                title.innerText = langData[currentLang].info;
+                content.innerHTML = "<p>🚖 <b>Express Taxi v2.0</b><br><br>Ushbu ilova Telegram WebApp asosida yo'lovchilarga qulay va tezkor taksi chaqirish uchun ishlab chiqilgan.</p>";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("modalView").style.display = "none";
+        }
+
+        // TILNI O'ZGARTIRISH
+        function setLanguage(lang) {
+            currentLang = lang;
+            const l = langData[lang];
+            
+            document.getElementById("txt_biz").innerText = l.biz;
+            document.getElementById("txt_sec").innerText = l.sec;
+            document.getElementById("txt_addr").innerText = l.addr;
+            document.getElementById("txt_hist").innerText = l.hist;
+            document.getElementById("txt_set").innerText = l.set;
+            document.getElementById("txt_supp").innerText = l.supp;
+            document.getElementById("txt_info").innerText = l.info;
+            document.getElementById("txt_where").innerText = l.where;
+            document.getElementById("txt_search_ph").placeholder = l.search_ph;
+            document.getElementById("txt_overview").innerText = l.overview;
+            document.getElementById("txt_tariff").innerText = l.tariff;
+            document.getElementById("txt_seats").innerText = l.seats;
+            document.getElementById("submitOrderBtn").innerText = l.btn_order;
+
+            closeModal();
+        }
+
+        function showOverviewScreen() {
+            document.getElementById("screen1").style.display = "none";
+            document.getElementById("screen2").style.display = "flex";
         }
 
         function sendTaxiOrder() {
             const btn = document.getElementById("submitOrderBtn");
-            btn.innerText = "Buyurtma yuborildi...";
+            btn.innerText = "Yuborilmoqda...";
             btn.disabled = true;
 
             const payload = {
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                price: "27 000 UZS"
+                price: "25 000 UZS"
             };
 
-            // Botga yuborish
             tg.sendData(JSON.stringify(payload));
-
-            // 3-ekranga o'tish (Haydovchi qabul qilgandagi oyna)
-            setTimeout(() => {
-                document.getElementById("screen2").style.display = "none";
-                document.getElementById("screen3").style.display = "flex";
-            }, 800);
+            setTimeout(() => { tg.close(); }, 300);
         }
     </script>
 </body>
