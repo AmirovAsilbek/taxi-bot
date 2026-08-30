@@ -984,12 +984,6 @@
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
         }
 
-        let prices = {
-            standart: 5500,
-            komfort: 9000,
-            komfort_plus: 14000
-        };
-
         function updateTariffsAvailabilityUI() {
             document.getElementById("tariff_standart").classList.remove("disabled");
             document.getElementById("tariff_komfort").classList.remove("disabled");
@@ -1068,6 +1062,13 @@
                 client_phone: document.getElementById("uPhone").innerText
             };
 
+            // FIREBASE'GA BUYURTMANI YOZISH (Haydovchiga popup chiqishi uchun)
+            db.ref('orders/current_order').set({
+                ...payload,
+                status: "searching",
+                timestamp: Date.now()
+            });
+
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.sendData) {
                 try {
                     window.Telegram.WebApp.sendData(JSON.stringify(payload));
@@ -1081,6 +1082,7 @@
 
         function cancelTaxiOrder() {
             db.ref('orders/current_status').remove();
+            db.ref('orders/current_order').remove();
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
