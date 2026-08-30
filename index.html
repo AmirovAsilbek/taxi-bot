@@ -7,7 +7,7 @@
     <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase Realtime Database SDK -->
+    <!-- Firebase Realtime SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -16,7 +16,6 @@
 
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* MARKAZIY QIZIL NISHON */
         .center-pin-container {
             position: absolute;
             top: 50%;
@@ -56,7 +55,6 @@
             margin-top: 2px;
         }
 
-        /* Navigatsiya tugmalari */
         .map-btn {
             position: absolute;
             z-index: 20;
@@ -76,7 +74,6 @@
         .btn-layers { top: 18px; right: 18px; font-size: 18px; }
         .btn-locate { bottom: 230px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
-        /* RO'YXATDAN O'TISH MODALI */
         .auth-overlay {
             position: fixed;
             top: 0;
@@ -124,7 +121,6 @@
             cursor: pointer;
         }
 
-        /* YON MENYU */
         .side-menu-overlay {
             position: fixed;
             top: 0;
@@ -188,7 +184,6 @@
         .menu-left { display: flex; align-items: center; gap: 14px; }
         .menu-icon { font-size: 18px; }
 
-        /* MODAL VIEW */
         .modal-view {
             position: fixed;
             top: 0;
@@ -211,7 +206,6 @@
         }
         .modal-content { font-size: 15px; color: #333; line-height: 1.6; }
 
-        /* 1-EKRAN: PASTKI PANEL */
         .bottom-sheet {
             position: absolute;
             bottom: 0;
@@ -289,6 +283,7 @@
             border-radius: 14px;
             cursor: pointer;
         }
+        .result-item.selected { border-color: #ff3333; background: #fff5f5; }
         .result-title { font-weight: 700; font-size: 14px; color: #222; }
         .result-sub { font-size: 12px; color: #777; }
         .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
@@ -309,7 +304,6 @@
             margin-top: 4px;
         }
 
-        /* 2-EKRAN: SAFAR TAFSILOTLARI */
         .overview-sheet {
             position: absolute;
             bottom: 0;
@@ -388,7 +382,6 @@
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
 
-        /* 3-EKRAN: HAYDOVCHI QIDIRISH (SEARCHING) */
         .search-status-sheet {
             position: absolute;
             bottom: 0;
@@ -430,7 +423,6 @@
             cursor: pointer;
         }
 
-        /* 4-EKRAN: RIDEYELLOW USLUBIDA HAYDOVCHI QABUL QILGAN EKRAN */
         .driver-accepted-sheet {
             position: absolute;
             bottom: 0;
@@ -445,9 +437,7 @@
             flex-direction: column;
             gap: 14px;
             border-top: 4px solid #ffcc00;
-            animation: slideUp 0.3s ease;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
         .accepted-top {
             display: flex;
@@ -498,7 +488,6 @@
             justify-content: center;
             text-decoration: none;
             font-size: 20px;
-            box-shadow: 0 4px 12px rgba(46, 213, 115, 0.35);
         }
 
         .trip-price-row {
@@ -549,31 +538,15 @@
 
         <ul class="menu-list">
             <li class="menu-item" onclick="openModal('biznes')">
-                <div class="menu-left"><span class="menu-icon">💼</span><span id="txt_biz">Biznes-hisob</span></div>
+                <div class="menu-left"><span class="menu-icon">💼</span><span>Biznes-hisob</span></div>
                 <span>›</span>
             </li>
             <li class="menu-item" onclick="openModal('xavfsizlik')">
-                <div class="menu-left"><span class="menu-icon">🛡️</span><span id="txt_sec">Xavfsizlik</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('manzillar')">
-                <div class="menu-left"><span class="menu-icon">📍</span><span id="txt_addr">Mening manzillarim</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('tarix')">
-                <div class="menu-left"><span class="menu-icon">🕒</span><span id="txt_hist">Buyurtmalar tarixi</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('sozlamalar')">
-                <div class="menu-left"><span class="menu-icon">⚙️</span><span id="txt_set">Sozlamalar (Til)</span></div>
+                <div class="menu-left"><span class="menu-icon">🛡️</span><span>Xavfsizlik</span></div>
                 <span>›</span>
             </li>
             <li class="menu-item" onclick="openModal('yordam')">
-                <div class="menu-left"><span class="menu-icon">🎧</span><span id="txt_supp">Qo'llab-quvvatlash</span></div>
-                <span>›</span>
-            </li>
-            <li class="menu-item" onclick="openModal('info')">
-                <div class="menu-left"><span class="menu-icon">ℹ️</span><span id="txt_info">Ma'lumot</span></div>
+                <div class="menu-left"><span class="menu-icon">🎧</span><span>Qo'llab-quvvatlash</span></div>
                 <span>›</span>
             </li>
         </ul>
@@ -605,7 +578,7 @@
     </div>
 
     <div class="overview-sheet" id="overviewSheet">
-        <div style="font-size: 18px; font-weight: 700; color: #111;" id="txt_overview">Safaringiz ma'lumotlari</div>
+        <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
 
         <div class="route-points">
             <div class="point-item">
@@ -613,7 +586,6 @@
                     <div class="dot dot-start"></div>
                     <span class="point-name" id="overviewStart">Mening joylashuvim</span>
                 </div>
-                <button class="btn-note" onclick="addNote()">📝 Izoh</button>
             </div>
             <div class="point-item">
                 <div class="point-left">
@@ -648,7 +620,7 @@
         <div class="radar-spinner"></div>
         <div>
             <div style="font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px;">Haydovchi qidirilmoqda...</div>
-            <div style="font-size: 13px; color: #666;" id="searchStatusSub">Eng yaqin faol haydovchilarga so'rov yuborildi</div>
+            <div style="font-size: 13px; color: #666;">Eng yaqin faol haydovchilarga so'rov yuborildi</div>
         </div>
         <button class="btn-cancel-order" onclick="cancelTaxiOrder()">Buyurtmani bekor qilish</button>
     </div>
@@ -668,7 +640,7 @@
                     <div class="d-rating">★ 5.0 (A'lo darajada)</div>
                 </div>
             </div>
-            <a href="tel:+998883893379" class="btn-call-driver" id="callDriverBtn">📞</a>
+            <a href="tel:+998883893379" class="btn-call-driver">📞</a>
         </div>
 
         <div class="trip-price-row">
@@ -681,7 +653,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // REALTIME DATABASE BULUTI
+        // REALTIME FIREBASE DATABASE
         const firebaseConfig = {
             databaseURL: "https://express-taxi-live-default-rtdb.firebaseio.com"
         };
@@ -697,7 +669,6 @@
         let targetCoords = [39.0560, 66.8300];
         let targetName = "Shahrisabz Tumani";
         let targetDist = 1.0;
-        let currentTariff = "Standart";
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
 
@@ -732,7 +703,6 @@
             locateMe();
             checkUserAuth();
             listenToLiveDrivers();
-            listenToOrderAcceptance();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
 
@@ -760,11 +730,12 @@
             });
         });
 
-        // JONLI HAYDOVCHILARNI REAL VAQTDA KUZATISH VA XARITADA SILJITISH
+        // JONLI HAYDOVCHILARNI REAL VAQTDA KUZATISH VA XARITADA SURISH
         function listenToLiveDrivers() {
             db.ref('drivers').on('value', snapshot => {
                 const drivers = snapshot.val() || {};
                 
+                // Bazadan o'chirilgan haydovchilarni xaritadan tozalash
                 for (let id in driverMarkers) {
                     if (!drivers[id]) {
                         map.geoObjects.remove(driverMarkers[id]);
@@ -772,6 +743,7 @@
                     }
                 }
 
+                // Jonli haydovchilarni chizish va koordinatasini real vaqtda siljitish
                 for (let id in drivers) {
                     const d = drivers[id];
                     if (d.is_online && d.lat && d.lon) {
@@ -787,31 +759,10 @@
                             driverMarkers[id] = marker;
                             map.geoObjects.add(marker);
                         } else {
-                            // MASHINANI XARITADA JONLI HARAKATLANTIRISH
+                            // Mashinani xaritada jonli siljitish
                             driverMarkers[id].geometry.setCoordinates([d.lat, d.lon]);
                         }
                     }
-                }
-            });
-        }
-
-        // HAYDOVCHI BUYURTMANI QABUL QILGANINI REAL VAQTDA ANIQLASH
-        function listenToOrderAcceptance() {
-            db.ref('orders/current_status').on('value', snapshot => {
-                const data = snapshot.val();
-                if (data && data.status === 'accepted') {
-                    document.getElementById("searchStatusSheet").style.display = "none";
-                    document.getElementById("driverAcceptedSheet").style.display = "flex";
-                    document.getElementById("locBtn").style.bottom = "32vh";
-
-                    document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
-                    document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix";
-                    document.getElementById("accTripPrice").innerText = finalTripPrice;
-                    if (data.driver_phone) {
-                        document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
-                    }
-
-                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 }
             });
         }
@@ -977,7 +928,6 @@
         }
 
         function cancelTaxiOrder() {
-            db.ref('orders/current_status').remove();
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -1047,7 +997,14 @@
             map.setType(map.getType() === 'yandex#map' ? 'yandex#satellite' : 'yandex#map');
         }
 
-        function addNote() { prompt("Haydovchi uchun izoh:"); }
+        function openModal(type) {
+            toggleSideMenu();
+            document.getElementById("modalView").style.display = "flex";
+            document.getElementById("modalTitle").innerText = "Ma'lumot";
+            document.getElementById("modalContent").innerHTML = "<p>Express Taxi v2.0</p>";
+        }
+
+        function closeModal() { document.getElementById("modalView").style.display = "none"; }
     </script>
 </body>
 </html>
