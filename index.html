@@ -3,116 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taksi Chaqirish</title>
-    <!-- Yandex Maps API -->
+    <title>Ride Overview</title>
+    <!-- Yandex Xarita API -->
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; }
-        #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        .bottom-bar {
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #fff; }
+
+        #map {
+            width: 100vw;
+            height: 55vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Xaritadagi suzuvchi tugmalar */
+        .map-btn {
+            position: absolute;
+            z-index: 10;
+            background: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+        .btn-back { top: 16px; left: 16px; font-size: 20px; font-weight: bold; }
+        .btn-locate { bottom: 46vh; right: 16px; font-size: 20px; }
+
+        /* Pastki qism - Ride Overview */
+        .bottom-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: #1e1e1e;
-            border-top: 2px solid #ffcc00;
-            border-radius: 20px 20px 0 0;
-            padding: 16px 20px 28px 20px;
-            z-index: 10;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+            height: 48vh;
+            background: #ffffff;
+            border-radius: 26px 26px 0 0;
+            z-index: 20;
+            box-shadow: 0 -4px 25px rgba(0,0,0,0.12);
+            padding: 20px 22px;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sheet-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 12px;
+        }
+
+        /* Manzillar bloki */
+        .route-points {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+        .point-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .point-left {
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
-
-        .info-text {
-            font-size: 13px;
-            color: #bbb;
-            text-align: center;
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot-start { background: #ffcc00; box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2); }
+        .dot-end { background: #e91e63; }
+        .point-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #222;
+        }
+        .btn-note {
+            background: #f4f4f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #777;
+            cursor: pointer;
         }
 
-        .btn-order {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 15px;
+        /* Tarif Kartasi */
+        .tariff-card {
+            background: #ffffff;
+            border: 1.5px solid #ececec;
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 6px 0;
+        }
+        .tariff-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .car-img {
+            width: 55px;
+            height: auto;
+        }
+        .tariff-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111;
+        }
+        .tariff-seats {
+            font-size: 12px;
+            color: #888;
+        }
+        .tariff-price {
+            text-align: right;
+        }
+        .price-val {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
+            color: #111;
+        }
+        .price-old {
+            font-size: 11px;
+            color: #aaa;
+            text-decoration: line-through;
+        }
+
+        /* Choypuli va Jami */
+        .pricing-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tip-selector {
+            font-size: 13px;
+            color: #444;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .total-badge {
+            border: 1.5px solid #ffcc00;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #111;
+        }
+
+        /* Asosiy tugmalar */
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .btn-request {
+            flex: 2;
+            background: #e91e63;
+            color: #fff;
+            border: none;
+            padding: 14px;
             border-radius: 14px;
-            width: 100%;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
+            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
             transition: 0.2s;
         }
-        .btn-order:active {
+        .btn-request:active {
             transform: scale(0.98);
+        }
+        .btn-code {
+            flex: 1;
+            background: #e91e63;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(233, 30, 99, 0.3);
         }
     </style>
 </head>
 <body>
 
+    <!-- Xarita -->
     <div id="map"></div>
+    <button class="map-btn btn-back" onclick="tg.close()">←</button>
+    <button class="map-btn btn-locate" onclick="locateMe()">🎯</button>
 
-    <div class="bottom-bar">
-        <div class="info-text">📍 Xaritadan joylashuvingizni belgilang</div>
-        <button class="btn-order" id="orderBtn" onclick="sendOrder()">🚖 Shu yerdan taksi chaqirish</button>
+    <!-- Pastki Panel -->
+    <div class="bottom-sheet">
+        <div class="sheet-title">Here's your ride overview</div>
+
+        <div class="route-points">
+            <div class="point-item">
+                <div class="point-left">
+                    <div class="dot dot-start"></div>
+                    <span class="point-name" id="startLocation">Toshkent shahar markazi</span>
+                </div>
+                <button class="btn-note">📝 Trip Note</button>
+            </div>
+            <div class="point-item">
+                <div class="point-left">
+                    <div class="dot dot-end"></div>
+                    <span class="point-name" id="endLocation">Aeroport Terminal 2</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarif bloki -->
+        <div class="tariff-card">
+            <div class="tariff-left">
+                <!-- Sariq taksi mashina rasmi -->
+                <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Taxi">
+                <div>
+                    <div class="tariff-name">Standard Taxi ⌵</div>
+                    <div class="tariff-seats">4 seats</div>
+                </div>
+            </div>
+            <div class="tariff-price">
+                <div class="price-val">25 000 UZS</div>
+                <div class="price-old">30 000 UZS</div>
+            </div>
+        </div>
+
+        <!-- Choypuli va Jami -->
+        <div class="pricing-row">
+            <div class="tip-selector">🔗 Tip 2 000 UZS (5%) ⌵</div>
+            <div class="total-badge">Total: 27 000 UZS</div>
+        </div>
+
+        <!-- Buyurtma tugmalari -->
+        <div class="action-row">
+            <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">Request Standard Taxi</button>
+            <button class="btn-code">Trip Code</button>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let myMap, placemark;
-        let defaultCoords = [39.6542, 66.9597]; // Samarqand
+        let map, userPlacemark;
+        let userCoords = [41.311081, 69.240562]; // Standart koordinata (Toshkent)
 
         ymaps.ready(() => {
-            myMap = new ymaps.Map("map", {
-                center: defaultCoords,
-                zoom: 16,
-                controls: ['zoomControl']
+            map = new ymaps.Map("map", {
+                center: userCoords,
+                zoom: 15,
+                controls: []
             });
 
-            placemark = new ymaps.Placemark(defaultCoords, {
-                hintContent: "Siz shu yerdasiz"
-            }, {
-                draggable: true,
-                preset: 'islands#redDotIcon'
+            userPlacemark = new ymaps.Placemark(userCoords, {}, {
+                preset: 'islands#yellowDotIcon'
             });
+            map.geoObjects.add(userPlacemark);
 
-            myMap.geoObjects.add(placemark);
+            locateMe();
 
-            // Jonli geolokatsiyani aniqlash
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const coords = [pos.coords.latitude, pos.coords.longitude];
-                    myMap.setCenter(coords, 16);
-                    placemark.geometry.setCoordinates(coords);
-                }, null, { enableHighAccuracy: true });
-            }
-
-            // Xaritani bosganda belgini ko'chirish
-            myMap.events.add('click', e => {
-                const coords = e.get('coords');
-                placemark.geometry.setCoordinates(coords);
+            // Xarita siljiganda koordinatani olish
+            map.events.add('actionend', () => {
+                const newCoords = map.getCenter();
+                userCoords = newCoords;
+                userPlacemark.geometry.setCoordinates(newCoords);
             });
         });
 
-        function sendOrder() {
-            const coords = placemark.geometry.getCoordinates();
-            const btn = document.getElementById("orderBtn");
-            btn.innerText = "⏳ Yuborilmoqda...";
+        function locateMe() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userCoords = [pos.coords.latitude, pos.coords.longitude];
+                    map.setCenter(userCoords, 16);
+                    userPlacemark.geometry.setCoordinates(userCoords);
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+
+        function sendTaxiOrder() {
+            const btn = document.getElementById("submitOrderBtn");
+            btn.innerText = "Yuborilmoqda...";
             btn.disabled = true;
 
-            const orderData = {
+            const payload = {
                 type: "client_order",
-                lat: coords[0],
-                lon: coords[1]
+                lat: userCoords[0],
+                lon: userCoords[1]
             };
 
-            // Telegram botga to'g'ridan-to'g'ri ma'lumot yuborish
-            tg.sendData(JSON.stringify(orderData));
+            // Telegram botga to'g'ridan-to'g'ri koordinatani jo'natish
+            tg.sendData(JSON.stringify(payload));
+            setTimeout(() => {
+                tg.close();
+            }, 300);
         }
     </script>
 </body>
