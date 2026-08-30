@@ -13,7 +13,7 @@
 
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* MARKAZIY QIZIL NISHON (PIN) */
+        /* MARKAZIY QIZIL NISHON */
         .center-pin-container {
             position: absolute;
             top: 50%;
@@ -73,7 +73,7 @@
         .btn-layers { top: 18px; right: 18px; font-size: 18px; }
         .btn-locate { bottom: 220px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
-        /* 1-EKRAN: SURILUVCHI PASTKI PANEL */
+        /* 1-EKRAN: PASTKI SURILUVCHI PANEL */
         .bottom-sheet {
             position: absolute;
             bottom: 0;
@@ -87,10 +87,10 @@
             padding: 12px 20px 20px 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        .bottom-sheet.expanded { height: 82vh; }
+        .bottom-sheet.expanded { height: 85vh; }
 
         .sheet-handle-bar {
             width: 48px;
@@ -120,13 +120,14 @@
             outline: none;
         }
 
-        /* 20 KM Qidiruv natijalari */
+        /* QIDIRUV NATIJALARI */
         .search-results {
             display: none;
             flex-direction: column;
             gap: 8px;
             overflow-y: auto;
-            max-height: calc(82vh - 230px);
+            flex: 1;
+            padding: 6px 0;
         }
         .result-item {
             display: flex;
@@ -134,16 +135,39 @@
             justify-content: space-between;
             padding: 12px 14px;
             background: #f8f9fa;
-            border: 1px solid #ebebeb;
-            border-radius: 12px;
+            border: 1.5px solid transparent;
+            border-radius: 14px;
             cursor: pointer;
+            transition: 0.2s;
         }
-        .result-item:active { background: #e9ecef; }
+        .result-item.selected {
+            border-color: #ff3333;
+            background: #fff5f5;
+        }
+        .result-item:active { background: #eee; }
         .result-title { font-weight: 700; font-size: 14px; color: #222; }
-        .result-sub { font-size: 12px; color: #777; }
-        .result-dist { font-size: 12px; font-weight: 700; color: #ff3333; }
+        .result-sub { font-size: 12px; color: #777; margin-top: 2px; }
+        .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
 
-        /* 2-EKRAN (3-RASM BO'YICHA): SAFAR TAFSILOTLARI */
+        /* ENG PASTKI QIZIL BORISH TUGMASI */
+        .btn-go-action {
+            display: none;
+            width: 100%;
+            background: #ff3333;
+            color: #ffffff;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+            margin-top: 6px;
+        }
+        .btn-go-action:active { transform: scale(0.98); background: #e02424; }
+
+        /* 2-EKRAN (3-RASM): SAFAR TAFSILOTLARI */
         .overview-sheet {
             position: absolute;
             bottom: 0;
@@ -273,10 +297,14 @@
 
         <div class="search-box">
             <span>🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="searchNearby20Km(this.value)">
+            <input type="text" id="searchInput" class="search-input" placeholder="Manzil yoki joy nomini qidiring..." onfocus="expandSheet()" oninput="handleSearchInput(this.value)">
         </div>
 
+        <!-- Natijalar ro'yxati -->
         <div class="search-results" id="searchResults"></div>
+
+        <!-- QIZIL BORISH TUGMASI -->
+        <button class="btn-go-action" id="goActionBtn" onclick="goToOverview()">Borish</button>
     </div>
 
     <!-- 2-EKRAN (3-RASM): Safar tafsilotlari -->
@@ -323,11 +351,11 @@
         tg.expand();
 
         let map, multiRoute;
-        let userCoords = [39.6542, 66.9597]; // Chiqish nuqtasi
-        let destCoords = null; // Borish nuqtasi
+        let userCoords = [39.0833, 66.8333]; // Standart Miroqi / Shahrisabz hududi
+        let selectedTarget = null;
         let startAddress = "Tanlangan joy";
-        let destAddress = "";
         let finalTripPrice = "15 000 UZS";
+        let searchTimer = null;
 
         let mapTypeIndex = 0;
         const mapTypes = ['yandex#map', 'yandex#satellite', 'yandex#hybrid'];
@@ -346,7 +374,7 @@
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
                 center: userCoords,
-                zoom: 16,
+                zoom: 15,
                 type: 'yandex#map',
                 controls: []
             });
@@ -387,7 +415,7 @@
         function expandSheet() {
             document.getElementById("bottomSheet").classList.add("expanded");
             document.getElementById("searchResults").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "84vh";
+            document.getElementById("locBtn").style.bottom = "87vh";
         }
 
         function collapseSheet() {
@@ -406,74 +434,105 @@
             }
         }
 
-        // 20 KM ICHIDA MANZIL QIDIRISH
-        function searchNearby20Km(query) {
-            if (query.length < 2) return;
+        // Qidiruvni to'g'ridan-to'g'ri Geokoder orqali amalga oshirish
+        function handleSearchInput(query) {
+            clearTimeout(searchTimer);
+            if (query.trim().length < 2) {
+                document.getElementById("searchResults").innerHTML = "";
+                document.getElementById("goActionBtn").style.display = "none";
+                return;
+            }
 
-            ymaps.suggest(query, {
+            searchTimer = setTimeout(() => {
+                performGeocodeSearch(query.trim());
+            }, 300);
+        }
+
+        function performGeocodeSearch(query) {
+            const container = document.getElementById("searchResults");
+            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
+
+            ymaps.geocode(query, {
                 boundedBy: [
-                    [userCoords[0] - 0.18, userCoords[1] - 0.18],
-                    [userCoords[0] + 0.18, userCoords[1] + 0.18]
-                ]
-            }).then(items => {
-                const container = document.getElementById("searchResults");
+                    [userCoords[0] - 0.4, userCoords[1] - 0.4],
+                    [userCoords[0] + 0.4, userCoords[1] + 0.4]
+                ],
+                results: 7
+            }).then(res => {
                 container.innerHTML = "";
+                const geoObjects = res.geoObjects.toArray();
 
-                items.forEach(item => {
-                    ymaps.geocode(item.value).then(res => {
-                        const geoObj = res.geoObjects.get(0);
-                        if (!geoObj) return;
+                if (geoObjects.length === 0) {
+                    container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                    return;
+                }
 
-                        const targetCoords = geoObj.geometry.getCoordinates();
-                        const dist = getDistanceKm(userCoords[0], userCoords[1], targetCoords[0], targetCoords[1]);
+                geoObjects.forEach((geo, index) => {
+                    const coords = geo.geometry.getCoordinates();
+                    const name = geo.getName() || query;
+                    const desc = geo.getDescription() || geo.getAddressLine();
+                    const dist = getDistanceKm(userCoords[0], userCoords[1], coords[0], coords[1]);
 
-                        if (dist <= 20) {
-                            const div = document.createElement("div");
-                            div.className = "result-item";
-                            div.innerHTML = `
-                                <div>
-                                    <div class="result-title">${item.displayName.split(',')[0]}</div>
-                                    <div class="result-sub">${item.value}</div>
-                                </div>
-                                <div class="result-dist">${dist.toFixed(1)} km</div>
-                            `;
-                            // MANZIL TANLANGANDA TO'G'RIDAN-TO'G'RI 3-EKRANGA O'TISH
-                            div.onclick = () => {
-                                destCoords = targetCoords;
-                                destAddress = item.value;
-                                switchToOverview(dist);
-                            };
-                            container.appendChild(div);
-                        }
-                    });
+                    const div = document.createElement("div");
+                    div.className = "result-item";
+                    div.id = "item_" + index;
+                    div.innerHTML = `
+                        <div>
+                            <div class="result-title">${name}</div>
+                            <div class="result-sub">${desc}</div>
+                        </div>
+                        <div class="result-dist">${dist.toFixed(1)} km</div>
+                    `;
+
+                    div.onclick = () => {
+                        // Tanlangan elementni belgilash
+                        document.querySelectorAll(".result-item").forEach(el => el.classList.remove("selected"));
+                        div.classList.add("selected");
+
+                        selectedTarget = {
+                            coords: coords,
+                            name: name,
+                            address: desc,
+                            dist: dist
+                        };
+
+                        map.setCenter(coords, 16, { duration: 300 });
+                        document.getElementById("goActionBtn").style.display = "block"; // Qizil tugmani chiqarish
+                    };
+
+                    container.appendChild(div);
                 });
+            }).catch(err => {
+                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Xatolik yuz berdi</div>";
             });
         }
 
-        // 3-EKRAN: SAFAR TAFSILOTLARIGA O'TISH VA MARSHRUT CHIZISH
-        function switchToOverview(distanceKm) {
+        // QIZIL BORISH TUGMASI BOSILGANDA 3-EKRANGA O'TISH
+        function goToOverview() {
+            if (!selectedTarget) return;
+
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("centerPin").style.display = "none"; // Markaziy pinni yashirish
+            document.getElementById("centerPin").style.display = "none";
             document.getElementById("topBtn").innerText = "←";
             document.getElementById("locBtn").style.bottom = "50vh";
 
             document.getElementById("overviewStart").innerText = startAddress;
-            document.getElementById("overviewDest").innerText = destAddress;
-            document.getElementById("seatsDist").innerText = `4 kishilik • ${distanceKm.toFixed(1)} km`;
+            document.getElementById("overviewDest").innerText = selectedTarget.name + " (" + selectedTarget.address + ")";
+            document.getElementById("seatsDist").innerText = `4 kishilik • ${selectedTarget.dist.toFixed(1)} km`;
 
-            // Narxni hisoblash (5 000 min + 2 000/km + 2 000 tip)
-            const baseCalc = Math.round((5000 + (distanceKm * 2000)) / 500) * 500;
+            // Narx hisoblash
+            const baseCalc = Math.round((5000 + (selectedTarget.dist * 2000)) / 500) * 500;
             const totalCalc = baseCalc + 2000;
             
             document.getElementById("basePrice").innerText = baseCalc.toLocaleString() + " UZS";
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
 
-            // Xaritada yo'nalish chizish (Yandex MultiRoute)
+            // Xaritada yo'l chizish
             if (multiRoute) map.geoObjects.remove(multiRoute);
             multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [userCoords, destCoords],
+                referencePoints: [userCoords, selectedTarget.coords],
                 params: { results: 1 }
             }, {
                 boundsAutoApply: true,
@@ -485,7 +544,6 @@
 
         function handleTopBtnClick() {
             if (document.getElementById("overviewSheet").style.display === "flex") {
-                // Orqaga qaytish
                 document.getElementById("overviewSheet").style.display = "none";
                 document.getElementById("bottomSheet").style.display = "flex";
                 document.getElementById("centerPin").style.display = "flex";
@@ -499,7 +557,7 @@
         }
 
         function addNote() {
-            prompt("Haydovchi uchun izoh (masalan: Dom oldida kuting):");
+            prompt("Haydovchi uchun izoh:");
         }
 
         function toggleSideMenu() {
@@ -530,7 +588,7 @@
                 type: "client_order",
                 lat: userCoords[0],
                 lon: userCoords[1],
-                destination: destAddress,
+                destination: selectedTarget ? selectedTarget.name : "Tanlangan manzil",
                 price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText
