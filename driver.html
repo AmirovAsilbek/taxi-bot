@@ -490,12 +490,12 @@
             listenForIncomingOrders();
         });
 
-        function getTariffLevel(tariffStr) {
-            if (!tariffStr) return 1;
+        function normalizeTariff(tariffStr) {
+            if (!tariffStr) return 'standart';
             const t = tariffStr.toString().toLowerCase().replace(/\s+/g, '');
-            if (t.includes('plus') || t.includes('+')) return 3;
-            if (t.includes('komfort') || t.includes('comfort')) return 2;
-            return 1;
+            if (t.includes('plus') || t.includes('+')) return 'komfort_plus';
+            if (t.includes('komfort') || t.includes('comfort')) return 'komfort';
+            return 'standart';
         }
 
         function checkDriverAuth() {
@@ -508,7 +508,7 @@
             if (savedName && savedPhone && savedCar && savedPlate) {
                 document.getElementById("dName").innerText = savedName;
                 document.getElementById("dCar").innerText = `${savedCar} • ${savedPlate}`;
-                if (savedTariff) document.getElementById("regDriverTariff").value = savedTariff;
+                if (savedTariff) document.getElementById("regDriverTariff").value = normalizeTariff(savedTariff);
                 document.getElementById("driverAuthModal").style.display = "none";
             } else {
                 if (tg?.initDataUnsafe?.user) {
@@ -524,7 +524,7 @@
             const phone = document.getElementById("regDriverPhone").value.trim();
             const car = document.getElementById("regDriverCar").value.trim();
             const plate = document.getElementById("regDriverPlate").value.trim();
-            const tariff = document.getElementById("regDriverTariff").value;
+            const tariff = normalizeTariff(document.getElementById("regDriverTariff").value);
 
             if (!name || !phone || !car || !plate) {
                 alert("Iltimos, barcha maydonlarni to'liq to'ldiring!");
@@ -586,7 +586,7 @@
                     }
 
                     if (isOnline) {
-                        const dTariff = localStorage.getItem("ry_driver_tariff") || "standart";
+                        const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
                         db.ref('drivers/' + driverId).set({
                             lat: currentPos[0],
                             lon: currentPos[1],
@@ -606,12 +606,11 @@
             db.ref('orders/current_order').on('value', snapshot => {
                 const order = snapshot.val();
                 if (order && order.status === 'searching' && isOnline && !currentOrderData) {
-                    const driverTariff = localStorage.getItem("ry_driver_tariff") || "standart";
-                    const driverLevel = getTariffLevel(driverTariff);
-                    const orderLevel = getTariffLevel(order.tariff);
+                    const driverTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
+                    const orderTariff = normalizeTariff(order.tariff);
 
-                    // Faqat tarif darajasi mos kelgan haydovchilarga buyurtma yuboriladi
-                    if (driverLevel < orderLevel) {
+                    // Faqat aynan mos tarifdagi haydovchiga chaqiruv beriladi
+                    if (driverTariff !== orderTariff) {
                         return;
                     }
 
@@ -666,7 +665,7 @@
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Mijozlarga ko'rinmoqdasiz";
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                const dTariff = localStorage.getItem("ry_driver_tariff") || "standart";
+                const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
                 db.ref('drivers/' + driverId).set({
                     lat: currentPos[0],
                     lon: currentPos[1],
