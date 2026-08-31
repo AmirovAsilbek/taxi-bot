@@ -329,12 +329,23 @@
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.25s all ease;
         }
         .tariff-card.active {
             border-color: #ffcc00;
             background: #fffdf0;
         }
+
+        /* Faol bo'lmagan tarif holati */
+        .tariff-card.disabled {
+            opacity: 0.35;
+            filter: grayscale(1);
+            background: #f1f2f6;
+            border-color: #e4e7eb;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .tariff-left { display: flex; align-items: center; gap: 12px; }
         .car-img { width: 44px; height: auto; }
         .tariff-name { font-size: 15px; font-weight: 700; color: #111; }
@@ -363,6 +374,7 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+            transition: 0.2s all ease;
         }
 
         .search-status-sheet {
@@ -682,6 +694,7 @@
         let currentTariff = "Standart";
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
+        let availableTariffs = new Set();
 
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
@@ -756,18 +769,32 @@
             } catch (e) {}
         }
 
+        function normalizeTariff(tariffStr) {
+            if (!tariffStr) return 'standart';
+            const t = tariffStr.toString().toLowerCase().replace(/\s+/g, '');
+            if (t.includes('plus') || t.includes('+')) return 'komfort_plus';
+            if (t.includes('komfort') || t.includes('comfort')) return 'komfort';
+            return 'standart';
+        }
+
         function listenToLiveDrivers() {
             db.ref('drivers').on('value', snapshot => {
                 const drivers = snapshot.val() || {};
+                const activeSet = new Set();
+
                 for (let id in driverMarkers) {
                     if (!drivers[id] || !drivers[id].is_online) {
                         map.geoObjects.remove(driverMarkers[id]);
                         delete driverMarkers[id];
                     }
                 }
+
                 for (let id in drivers) {
                     const d = drivers[id];
                     if (d.is_online && d.lat && d.lon) {
+                        const normTariff = normalizeTariff(d.tariff);
+                        activeSet.add(normTariff);
+
                         const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'}`;
                         if (!driverMarkers[id]) {
                             const marker = new ymaps.Placemark([d.lat, d.lon], {
@@ -786,7 +813,53 @@
                         }
                     }
                 }
+
+                availableTariffs = activeSet;
+                syncTariffsAvailability();
             });
+        }
+
+        function syncTariffsAvailability() {
+            const tariffsList = ['standart', 'komfort', 'komfort_plus'];
+            const submitBtn = document.getElementById("submitOrderBtn");
+
+            tariffsList.forEach(type => {
+                const card = document.getElementById("tariff_" + type);
+                if (!card) return;
+
+                if (availableTariffs.has(type)) {
+                    card.classList.remove("disabled");
+                } else {
+                    card.classList.add("disabled");
+                    if (card.classList.contains("active")) {
+                        card.classList.remove("active");
+                    }
+                }
+            });
+
+            const activeCard = document.querySelector(".tariff-card.active:not(.disabled)");
+            if (!activeCard) {
+                const firstAvailable = tariffsList.find(t => availableTariffs.has(t));
+                if (firstAvailable) {
+                    selectTariff(firstAvailable);
+                }
+            }
+
+            if (availableTariffs.size === 0) {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = "0.5";
+                    submitBtn.style.cursor = "not-allowed";
+                    submitBtn.innerText = "❌ Hozirda taksilar yo'q";
+                }
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = "1";
+                    submitBtn.style.cursor = "pointer";
+                    submitBtn.innerText = "🚖 Taksi chaqirish";
+                }
+            }
         }
 
         function listenToOrderAcceptance() {
@@ -961,8 +1034,11 @@
         let prices = { standart: 5500, komfort: 9000, komfort_plus: 14000 };
 
         function selectTariff(type) {
+            if (availableTariffs.size > 0 && !availableTariffs.has(type)) return;
+
             document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
             let selectedPrice = prices.standart;
+
             if (type === 'standart') {
                 document.getElementById("tariff_standart").classList.add("active");
                 currentTariff = "Standart";
@@ -976,6 +1052,7 @@
                 currentTariff = "Komfort+";
                 selectedPrice = prices.komfort_plus;
             }
+
             const totalCalc = selectedPrice + 2000;
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
@@ -999,7 +1076,7 @@
             document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
             document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
 
-            selectTariff('standart');
+            syncTariffsAvailability();
 
             if (multiRoute) map.geoObjects.remove(multiRoute);
             if (startPlacemark) map.geoObjects.remove(startPlacemark);
@@ -1022,6 +1099,11 @@
         }
 
         function sendTaxiOrder() {
+            if (availableTariffs.size === 0) {
+                alert("Hozirda bu hududda faol taksilar mavjud emas!");
+                return;
+            }
+
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
