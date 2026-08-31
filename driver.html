@@ -447,6 +447,7 @@
 
         let map, multiRoute;
         let driverPlacemark = null;
+        let clientMarker = null; // Mijozning nuqtasi (Placemark)
         let isOnline = false;
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
@@ -691,12 +692,14 @@
         }
 
         function drawRoute(fromCoords, toCoords) {
-            if (!fromCoords || !toCoords) return;
+            if (!fromCoords || !toCoords || !map) return;
 
-            const startPoint = [parseFloat(fromCoords[0]), parseFloat(fromCoords[1])];
-            const endPoint = [parseFloat(toCoords[0]), parseFloat(toCoords[1])];
+            const startLat = parseFloat(fromCoords[0]);
+            const startLon = parseFloat(fromCoords[1]);
+            const endLat = parseFloat(toCoords[0]);
+            const endLon = parseFloat(toCoords[1]);
 
-            if (isNaN(startPoint[0]) || isNaN(endPoint[0])) return;
+            if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) return;
 
             if (multiRoute) {
                 map.geoObjects.remove(multiRoute);
@@ -704,7 +707,10 @@
             }
 
             multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [startPoint, endPoint],
+                referencePoints: [
+                    [startLat, startLon],
+                    [endLat, endLon]
+                ],
                 params: { 
                     routingMode: 'auto', 
                     results: 1 
@@ -716,7 +722,7 @@
                 pinVisible: true
             });
 
-            // Asfalt yo'l va tirbandlik asosida real yetib borish vaqtini (ETA) aniqlash
+            // Asfalt yo'l va tirbandlik asosida real yetib borish vaqtini (ETA) hisoblash
             multiRoute.model.events.add('requestsuccess', function() {
                 const activeRoute = multiRoute.getActiveRoute();
                 if (activeRoute) {
@@ -737,6 +743,13 @@
             });
 
             map.geoObjects.add(multiRoute);
+
+            try {
+                map.setBounds([[startLat, startLon], [endLat, endLon]], {
+                    checkZoomRange: true,
+                    zoomMargin: 60
+                });
+            } catch (e) {}
         }
 
         function acceptDriverOrder() {
@@ -772,9 +785,20 @@
 
             db.ref('orders/current_order').update({ status: 'accepted' });
 
-            if (currentOrderData.lat && currentOrderData.lon) {
-                drawRoute(currentPos, [currentOrderData.lat, currentOrderData.lon]);
-            }
+            const clientLat = parseFloat(currentOrderData.lat);
+            const clientLon = parseFloat(currentOrderData.lon);
+
+            // Mijoz turgan joyga xaritada ko'rinadigan qizil belgi qo'yish
+            if (clientMarker) map.geoObjects.remove(clientMarker);
+            clientMarker = new ymaps.Placemark([clientLat, clientLon], {
+                hintContent: `Mijoz: ${currentOrderData.client_name || 'Mijoz'}`
+            }, {
+                preset: 'islands#redPersonIcon'
+            });
+            map.geoObjects.add(clientMarker);
+
+            // Mijozgacha marshrut chizish
+            drawRoute(currentPos, [clientLat, clientLon]);
         }
 
         function handleStepAction() {
@@ -795,10 +819,21 @@
                 db.ref('orders/current_status').update({ step: 'in_trip' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                // Mijoz tanlagan oxirgi manzilgacha marshrut chizish
-                if (currentOrderData.dest_lat && currentOrderData.dest_lon) {
-                    drawRoute(currentPos, [currentOrderData.dest_lat, currentOrderData.dest_lon]);
-                }
+                const destLat = parseFloat(currentOrderData.dest_lat);
+                const destLon = parseFloat(currentOrderData.dest_lon);
+
+                // Mijoz belgisi o'rniga oxirgi manzil belgisini qo'yish
+                if (clientMarker) map.geoObjects.remove(clientMarker);
+                clientMarker = new ymaps.Placemark([destLat, destLon], {
+                    hintContent: `Manzil: ${currentOrderData.destination || 'Belgilangan joy'}`
+                }, {
+                    preset: 'islands#redDotIcon'
+                });
+                map.geoObjects.add(clientMarker);
+
+                // Oxirgi manzilgacha yo'l chizish
+                drawRoute(currentPos, [destLat, destLon]);
+
             } else if (tripStep === 'in_trip') {
                 completeCurrentTrip();
             }
@@ -820,7 +855,15 @@
             db.ref('orders/current_status').remove();
             db.ref('orders/current_order').remove();
 
-            if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (multiRoute) {
+                map.geoObjects.remove(multiRoute);
+                multiRoute = null;
+            }
+            if (clientMarker) {
+                map.geoObjects.remove(clientMarker);
+                clientMarker = null;
+            }
+
             currentOrderData = null;
             tripStep = 'to_client';
 
