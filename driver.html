@@ -38,6 +38,7 @@
             box-shadow: 0 12px 40px rgba(0,0,0,0.35);
             max-height: 90vh;
             overflow-y: auto;
+            text-align: center;
         }
         .auth-badge {
             width: 50px;
@@ -62,6 +63,7 @@
             outline: none;
             background: #f8f9fa;
             color: #111;
+            text-align: left;
         }
         .auth-input:focus, .auth-select:focus { border-color: #ffcc00; background: #fff; }
         .btn-auth-submit {
@@ -208,7 +210,7 @@
             border-radius: 14px;
             padding: 10px 14px;
         }
-        .client-meta { display: flex; flex-direction: column; gap: 2px; }
+        .client-meta { display: flex; flex-direction: column; gap: 2px; text-align: left; }
         .client-meta-name { font-weight: 800; font-size: 14px; color: #111; }
         .client-meta-dest { font-size: 12px; color: #666; }
         .btn-call {
@@ -305,7 +307,7 @@
             gap: 10px;
             border: 1px solid #ebebeb;
         }
-        .route-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; color: #222; }
+        .route-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; color: #222; text-align: left; }
         .dot-icon { width: 10px; height: 10px; border-radius: 50%; }
 
         .btn-yellow-main {
@@ -335,11 +337,12 @@
 </head>
 <body>
 
+    <!-- 1. Ro'yxatdan o'tish (Ariza topshirish) oynasi -->
     <div class="auth-overlay" id="driverAuthModal">
         <div class="auth-card">
             <div class="auth-badge">🚖</div>
-            <div class="auth-title">Haydovchi Ro'yxatdan o'tish</div>
-            <div class="auth-desc">Hamkor bo'lish uchun ma'lumotlaringizni to'ldiring:</div>
+            <div class="auth-title">Haydovchi bo'lib ishlash</div>
+            <div class="auth-desc">Hamkor bo'lish uchun arizangizni to'ldiring:</div>
             
             <input type="text" id="regDriverName" class="auth-input" placeholder="Ism va Familiyangiz">
             <input type="tel" id="regDriverPhone" class="auth-input" placeholder="+998 90 123 45 67">
@@ -352,7 +355,22 @@
                 <option value="komfort_plus">Komfort+ tarif</option>
             </select>
             
-            <button class="btn-auth-submit" onclick="saveDriverRegistration()">Ro'yxatdan o'tish va Boshlash</button>
+            <button class="btn-auth-submit" onclick="submitDriverApplication()">Ariza topshirish 🚀</button>
+        </div>
+    </div>
+
+    <!-- 2. Admin tasdig'ini kutish oynasi -->
+    <div class="auth-overlay" id="driverPendingModal">
+        <div class="auth-card">
+            <div class="auth-badge" style="background: #ffa502; color: #fff;">⏳</div>
+            <div class="auth-title">Arizangiz ko'rib chiqilmoqda</div>
+            <div class="auth-desc" style="line-height: 1.5; margin: 10px 0;">
+                Ma'lumotlaringiz administratorga yuborildi. <br>
+                Admin arizangizni tasdiqlagach, ilova avtomatik ishga tushadi.
+            </div>
+            <div style="background: #f1f2f6; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #555;">
+                Holat: <span style="color: #ffa502;">Tekshirilmoqda...</span>
+            </div>
         </div>
     </div>
 
@@ -449,6 +467,7 @@
         let driverPlacemark = null;
         let clientMarker = null;
         let isOnline = false;
+        let isApproved = false; // Admin tasdiqlaganlik statusi
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
         let currentOrderData = null;
@@ -486,7 +505,7 @@
                 controls: []
             });
 
-            checkDriverAuth();
+            listenForDriverAccount(); // Bazani tekshirish
             initLocationTracker();
             listenForIncomingOrders();
             listenForOrderCancellations();
@@ -500,28 +519,44 @@
             return 'standart';
         }
 
-        function checkDriverAuth() {
-            const savedName = localStorage.getItem("ry_driver_name");
-            const savedPhone = localStorage.getItem("ry_driver_phone");
-            const savedCar = localStorage.getItem("ry_driver_car");
-            const savedPlate = localStorage.getItem("ry_driver_plate");
-            const savedTariff = localStorage.getItem("ry_driver_tariff");
+        // Bazadagi holatni (Ariza / Tasdiqlangan / O'chirilgan) jonli tekshirish
+        function listenForDriverAccount() {
+            db.ref('registered_drivers/' + driverId).on('value', snapshot => {
+                const driver = snapshot.val();
+                
+                if (!driver) {
+                    // 1. Agar bazada umuman yo'q bo'lsa -> Ro'yxatdan o'tishni ochish
+                    isApproved = false;
+                    forceOffline();
+                    document.getElementById("driverPendingModal").style.display = "none";
+                    document.getElementById("driverAuthModal").style.display = "flex";
+                    
+                    if (tg?.initDataUnsafe?.user) {
+                        const u = tg.initDataUnsafe.user;
+                        document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                    }
+                } else if (driver.status === 'pending') {
+                    // 2. Agar ariza kutilayotgan bo'lsa -> Kutish oynasini ochish
+                    isApproved = false;
+                    forceOffline();
+                    document.getElementById("driverAuthModal").style.display = "none";
+                    document.getElementById("driverPendingModal").style.display = "flex";
+                } else if (driver.status === 'approved') {
+                    // 3. Admin tasdiqlagan bo'lsa -> Ilovani to'liq ochish
+                    isApproved = true;
+                    document.getElementById("driverAuthModal").style.display = "none";
+                    document.getElementById("driverPendingModal").style.display = "none";
 
-            if (savedName && savedPhone && savedCar && savedPlate) {
-                document.getElementById("dName").innerText = savedName;
-                document.getElementById("dCar").innerText = `${savedCar} • ${savedPlate}`;
-                if (savedTariff) document.getElementById("regDriverTariff").value = normalizeTariff(savedTariff);
-                document.getElementById("driverAuthModal").style.display = "none";
-            } else {
-                if (tg?.initDataUnsafe?.user) {
-                    const u = tg.initDataUnsafe.user;
-                    document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                    document.getElementById("dName").innerText = driver.name;
+                    document.getElementById("dCar").innerText = `${driver.car} • ${driver.plate}`;
+                    localStorage.setItem("ry_driver_tariff", driver.tariff || "standart");
+                    localStorage.setItem("ry_driver_phone", driver.phone || "+998900000000");
                 }
-                document.getElementById("driverAuthModal").style.display = "flex";
-            }
+            });
         }
 
-        function saveDriverRegistration() {
+        // Ariza yuborish
+        function submitDriverApplication() {
             const name = document.getElementById("regDriverName").value.trim();
             const phone = document.getElementById("regDriverPhone").value.trim();
             const car = document.getElementById("regDriverCar").value.trim();
@@ -533,26 +568,30 @@
                 return;
             }
 
-            localStorage.setItem("ry_driver_name", name);
-            localStorage.setItem("ry_driver_phone", phone);
-            localStorage.setItem("ry_driver_car", car);
-            localStorage.setItem("ry_driver_plate", plate);
-            localStorage.setItem("ry_driver_tariff", tariff);
-
-            document.getElementById("dName").innerText = name;
-            document.getElementById("dCar").innerText = `${car} • ${plate}`;
-            document.getElementById("driverAuthModal").style.display = "none";
-
             db.ref('registered_drivers/' + driverId).set({
                 name: name,
                 phone: phone,
                 car: car,
                 plate: plate,
                 tariff: tariff,
-                registered_at: Date.now()
+                status: 'pending', // Boshida kutilayotgan holatda bo'ladi
+                applied_at: Date.now()
             });
 
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function forceOffline() {
+            if (isOnline) {
+                isOnline = false;
+                const btn = document.getElementById("toggleBtn");
+                const lbl = document.getElementById("statusLabel");
+                const banner = document.getElementById("gpsStatus");
+                if (btn) btn.classList.remove("online");
+                if (lbl) lbl.innerText = "Offline";
+                if (banner) banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
+                db.ref('drivers/' + driverId).remove();
+            }
         }
 
         function playBeepSound() {
@@ -570,7 +609,6 @@
             } catch (e) {}
         }
 
-        // JONLI HARAKATNI KUZATISH VA XARITANI ERGASHTIRISH
         function initLocationTracker() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
@@ -591,11 +629,9 @@
                         driverPlacemark.geometry.setCoordinates(currentPos);
                     }
 
-                    // Haydovchi buyurtmada ketayotganda xarita uning orqasidan ergashadi
                     if (currentOrderData && (tripStep === 'to_client' || tripStep === 'in_trip')) {
                         map.setCenter(currentPos, map.getZoom(), { duration: 300 });
 
-                        // Marshrutni haydovchi o'rni bo'yicha jonli yangilab borish
                         let targetPoint = null;
                         if (tripStep === 'to_client' && currentOrderData.lat && currentOrderData.lon) {
                             targetPoint = [parseFloat(currentOrderData.lat), parseFloat(currentOrderData.lon)];
@@ -612,7 +648,7 @@
                         }
                     }
 
-                    if (isOnline) {
+                    if (isOnline && isApproved) {
                         const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
                         db.ref('drivers/' + driverId).set({
                             lat: currentPos[0],
@@ -638,7 +674,7 @@
         function listenForIncomingOrders() {
             db.ref('orders/current_order').on('value', snapshot => {
                 const order = snapshot.val();
-                if (order && order.status === 'searching' && isOnline && !currentOrderData) {
+                if (order && order.status === 'searching' && isOnline && isApproved && !currentOrderData) {
                     const driverTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
                     const orderTariff = normalizeTariff(order.tariff);
 
@@ -704,8 +740,8 @@
         }
 
         function toggleDriverOnline() {
-            if (!localStorage.getItem("ry_driver_name")) {
-                document.getElementById("driverAuthModal").style.display = "flex";
+            if (!isApproved) {
+                alert("Arizangiz hali tasdiqlanmagan!");
                 return;
             }
 
@@ -748,7 +784,6 @@
             currentOrderData = null;
         }
 
-        // XAVFSIZ VA REAL VAQTDA ISHLOVCHI MARSHRUT CHIZISH
         function drawRoute(fromCoords, toCoords) {
             if (!fromCoords || !toCoords || !map) return;
 
