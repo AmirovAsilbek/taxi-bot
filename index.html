@@ -760,7 +760,7 @@
             db.ref('drivers').on('value', snapshot => {
                 const drivers = snapshot.val() || {};
                 for (let id in driverMarkers) {
-                    if (!drivers[id]) {
+                    if (!drivers[id] || !drivers[id].is_online) {
                         map.geoObjects.remove(driverMarkers[id]);
                         delete driverMarkers[id];
                     }
@@ -768,9 +768,10 @@
                 for (let id in drivers) {
                     const d = drivers[id];
                     if (d.is_online && d.lat && d.lon) {
+                        const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'}`;
                         if (!driverMarkers[id]) {
                             const marker = new ymaps.Placemark([d.lat, d.lon], {
-                                hintContent: `${d.name} (${d.car})`
+                                hintContent: hint
                             }, {
                                 iconLayout: 'default#image',
                                 iconImageHref: topViewBlueCarSvg,
@@ -781,6 +782,7 @@
                             map.geoObjects.add(marker);
                         } else {
                             driverMarkers[id].geometry.setCoordinates([d.lat, d.lon]);
+                            driverMarkers[id].properties.set('hintContent', hint);
                         }
                     }
                 }
@@ -797,7 +799,7 @@
 
                     document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
                     document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix • 70 N 079 NN";
-                    document.getElementById("accTripPrice").innerText = finalTripPrice;
+                    document.getElementById("accTripPrice").innerText = data.price || finalTripPrice;
                     if (data.driver_phone) {
                         document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
                     }
