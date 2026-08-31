@@ -620,7 +620,6 @@
             });
         }
 
-        // Mijoz tomonidan bekor qilinganini tinglash
         function listenForOrderCancellations() {
             db.ref('orders/current_status').on('value', snapshot => {
                 const data = snapshot.val();
@@ -631,11 +630,11 @@
                     document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
 
                     if (multiRoute) {
-                        map.geoObjects.remove(multiRoute);
+                        try { map.geoObjects.remove(multiRoute); } catch(e){}
                         multiRoute = null;
                     }
                     if (clientMarker) {
-                        map.geoObjects.remove(clientMarker);
+                        try { map.geoObjects.remove(clientMarker); } catch(e){}
                         clientMarker = null;
                     }
 
@@ -729,7 +728,7 @@
             if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) return;
 
             if (multiRoute) {
-                map.geoObjects.remove(multiRoute);
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
                 multiRoute = null;
             }
 
@@ -750,19 +749,24 @@
             });
 
             multiRoute.model.events.add('requestsuccess', function() {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    const durationText = activeRoute.properties.get("duration").text;
-                    const distanceText = activeRoute.properties.get("distance").text;
+                if (!multiRoute) return;
+                try {
+                    const activeRoute = multiRoute.getActiveRoute();
+                    if (activeRoute) {
+                        const durationText = activeRoute.properties.get("duration").text;
+                        const distanceText = activeRoute.properties.get("distance").text;
 
-                    if (tripStep === 'to_client') {
-                        document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
-                        db.ref('orders/current_status').update({
-                            eta: durationText
-                        });
-                    } else if (tripStep === 'in_trip') {
-                        document.getElementById("gpsStatus").innerHTML = `🚗 Manzilgacha: <b>${durationText}</b> (${distanceText})`;
+                        if (tripStep === 'to_client') {
+                            document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
+                            db.ref('orders/current_status').update({
+                                eta: durationText
+                            });
+                        } else if (tripStep === 'in_trip') {
+                            document.getElementById("gpsStatus").innerHTML = `🚗 Manzilgacha: <b>${durationText}</b> (${distanceText})`;
+                        }
                     }
+                } catch(err) {
+                    console.warn("ETA hisoblashda xatolik:", err);
                 }
             });
 
@@ -812,7 +816,9 @@
             const clientLat = parseFloat(currentOrderData.lat);
             const clientLon = parseFloat(currentOrderData.lon);
 
-            if (clientMarker) map.geoObjects.remove(clientMarker);
+            if (clientMarker) {
+                try { map.geoObjects.remove(clientMarker); } catch(e){}
+            }
             clientMarker = new ymaps.Placemark([clientLat, clientLon], {
                 hintContent: `Mijoz: ${currentOrderData.client_name || 'Mijoz'}`
             }, {
@@ -844,7 +850,9 @@
                 const destLat = parseFloat(currentOrderData.dest_lat);
                 const destLon = parseFloat(currentOrderData.dest_lon);
 
-                if (clientMarker) map.geoObjects.remove(clientMarker);
+                if (clientMarker) {
+                    try { map.geoObjects.remove(clientMarker); } catch(e){}
+                }
                 clientMarker = new ymaps.Placemark([destLat, destLon], {
                     hintContent: `Manzil: ${currentOrderData.destination || 'Belgilangan joy'}`
                 }, {
@@ -876,11 +884,11 @@
             db.ref('orders/current_order').remove();
 
             if (multiRoute) {
-                map.geoObjects.remove(multiRoute);
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
                 multiRoute = null;
             }
             if (clientMarker) {
-                map.geoObjects.remove(clientMarker);
+                try { map.geoObjects.remove(clientMarker); } catch(e){}
                 clientMarker = null;
             }
 
