@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import os
 import sqlite3
+from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart, Command
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
@@ -59,10 +61,28 @@ async def admin_handler(message: types.Message):
         return
     await message.answer("Dispetcherlik panelini pastki menyudagi tugma orqali ochishingiz mumkin.")
 
+# --- RENDER PORT TALABINI QANOATLANTIRISH UCHUN ---
+async def handle(request):
+    return web.Response(text="Bot is running!")
+
+async def web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
 async def main():
     init_db()
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    
+    # Veb-server va Telegram botni bir vaqtda ishga tushiramiz
+    await asyncio.gather(
+        web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
