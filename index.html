@@ -587,7 +587,7 @@
         </div>
 
         <div class="tariff-list">
-            <div class="tariff-card active" id="tariff_standart" onclick="selectTariff('standart')">
+            <div class="tariff-card disabled" id="tariff_standart" onclick="selectTariff('standart')">
                 <div class="tariff-left">
                     <img src="https://cdn-icons-png.flaticon.com/512/3097/3097180.png" class="car-img" alt="Standart">
                     <div>
@@ -597,7 +597,7 @@
                 </div>
                 <div class="price-val" id="price_standart">5 500 UZS</div>
             </div>
-            <div class="tariff-card" id="tariff_komfort" onclick="selectTariff('komfort')">
+            <div class="tariff-card disabled" id="tariff_komfort" onclick="selectTariff('komfort')">
                 <div class="tariff-left">
                     <img src="https://cdn-icons-png.flaticon.com/512/3202/3202926.png" class="car-img" alt="Komfort">
                     <div>
@@ -607,7 +607,7 @@
                 </div>
                 <div class="price-val" id="price_komfort">9 000 UZS</div>
             </div>
-            <div class="tariff-card" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
+            <div class="tariff-card disabled" id="tariff_komfort_plus" onclick="selectTariff('komfort_plus')">
                 <div class="tariff-left">
                     <img src="https://cdn-icons-png.flaticon.com/512/75/75780.png" class="car-img" alt="Komfort+">
                     <div>
@@ -655,7 +655,6 @@
             <span style="color: #666;">Safar narxi:</span>
             <span style="color: #111;" id="accTripPrice">18 500 UZS</span>
         </div>
-        <!-- Haydovchi qabul qilgandan so'ng bekor qilish tugmasi -->
         <button class="btn-cancel-order" onclick="cancelAcceptedOrder()">Buyurtmani bekor qilish</button>
     </div>
 
@@ -696,7 +695,7 @@
         let searchTimer = null;
         let availableTariffs = new Set();
 
-        const MAX_NEARBY_RADIUS_KM = 35; // Faqat yaqin masofadagi haydovchilarni saralaydi
+        const MAX_NEARBY_RADIUS_KM = 35;
 
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
@@ -787,7 +786,7 @@
 
                 for (let id in driverMarkers) {
                     if (!drivers[id] || !drivers[id].is_online) {
-                        map.geoObjects.remove(driverMarkers[id]);
+                        try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
                         delete driverMarkers[id];
                     }
                 }
@@ -804,7 +803,7 @@
                             });
                         } else {
                             if (driverMarkers[id]) {
-                                map.geoObjects.remove(driverMarkers[id]);
+                                try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
                                 delete driverMarkers[id];
                             }
                         }
@@ -853,9 +852,7 @@
                     card.classList.remove("disabled");
                 } else {
                     card.classList.add("disabled");
-                    if (card.classList.contains("active")) {
-                        card.classList.remove("active");
-                    }
+                    card.classList.remove("active");
                 }
             });
 
@@ -900,11 +897,15 @@
             document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
             const currentType = currentTariff === "Komfort+" ? "komfort_plus" : (currentTariff === "Komfort" ? "komfort" : "standart");
-            selectTariff(currentType);
+            if (availableTariffs.has(currentType)) {
+                selectTariff(currentType);
+            } else {
+                syncTariffsAvailability();
+            }
         }
 
         function selectTariff(type) {
-            if (availableTariffs.size > 0 && !availableTariffs.has(type)) return;
+            if (!availableTariffs.has(type)) return;
 
             document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
             let selectedPrice = prices.standart;
@@ -944,18 +945,36 @@
             calculatePrices(targetDist);
             syncTariffsAvailability();
 
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            if (startPlacemark) map.geoObjects.remove(startPlacemark);
-            if (destPlacemark) map.geoObjects.remove(destPlacemark);
+            if (multiRoute) {
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
+                multiRoute = null;
+            }
+            if (startPlacemark) {
+                try { map.geoObjects.remove(startPlacemark); } catch(e){}
+                startPlacemark = null;
+            }
+            if (destPlacemark) {
+                try { map.geoObjects.remove(destPlacemark); } catch(e){}
+                destPlacemark = null;
+            }
 
-            startPlacemark = new ymaps.Placemark(startCoords, {}, { preset: 'islands#yellowPersonIcon' });
-            destPlacemark = new ymaps.Placemark(targetCoords, { hintContent: targetName }, { preset: 'islands#redDotIcon' });
+            const sLat = parseFloat(startCoords[0]);
+            const sLon = parseFloat(startCoords[1]);
+            const tLat = parseFloat(targetCoords[0]);
+            const tLon = parseFloat(targetCoords[1]);
+
+            if (isNaN(sLat) || isNaN(sLon) || isNaN(tLat) || isNaN(tLon)) return;
+
+            startPlacemark = new ymaps.Placemark([sLat, sLon], {}, { preset: 'islands#yellowPersonIcon' });
+            destPlacemark = new ymaps.Placemark([tLat, tLon], { hintContent: targetName }, { preset: 'islands#redDotIcon' });
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            // Asfalt yo'li bo'yicha marshrut va aniq km ni hisoblash
             multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [startCoords, targetCoords],
+                referencePoints: [
+                    [sLat, sLon],
+                    [tLat, tLon]
+                ],
                 params: { routingMode: 'auto', results: 1 }
             }, {
                 boundsAutoApply: true,
@@ -964,11 +983,16 @@
             });
 
             multiRoute.model.events.add('requestsuccess', function() {
-                const activeRoute = multiRoute.getActiveRoute();
-                if (activeRoute) {
-                    const realMeters = activeRoute.properties.get("distance").value;
-                    const realKm = realMeters / 1000;
-                    calculatePrices(realKm);
+                if (!multiRoute) return;
+                try {
+                    const routes = multiRoute.model.getRoutes();
+                    if (routes && routes.length > 0) {
+                        const distanceMeters = routes[0].properties.get("distance").value;
+                        const realKm = distanceMeters / 1000;
+                        calculatePrices(realKm);
+                    }
+                } catch(err) {
+                    console.warn("Marshrut hisoblashda xatolik:", err);
                 }
             });
 
@@ -1009,7 +1033,10 @@
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
 
-                        if (multiRoute) map.geoObjects.remove(multiRoute);
+                        if (multiRoute) {
+                            try { map.geoObjects.remove(multiRoute); } catch(e){}
+                            multiRoute = null;
+                        }
                         multiRoute = new ymaps.multiRouter.MultiRoute({
                             referencePoints: [startCoords, targetCoords],
                             params: { routingMode: 'auto', results: 1 }
@@ -1029,7 +1056,10 @@
                         document.getElementById("driverAcceptedSheet").style.display = "none";
                         document.getElementById("ratingSheet").style.display = "flex";
                         document.getElementById("locBtn").style.bottom = "32vh";
-                        if (multiRoute) map.geoObjects.remove(multiRoute);
+                        if (multiRoute) {
+                            try { map.geoObjects.remove(multiRoute); } catch(e){}
+                            multiRoute = null;
+                        }
                         playSoundChime();
                     }
                 }
@@ -1078,7 +1108,6 @@
             document.getElementById("locBtn").style.bottom = "64vh";
         }
 
-        // Qabul qilingan safarni bekor qilish
         function cancelAcceptedOrder() {
             if (confirm("Haqiqatan ham buyurtmani bekor qilmoqchimisiz?")) {
                 db.ref('orders/current_status').set({ status: 'cancelled_by_client' });
@@ -1087,7 +1116,10 @@
                 document.getElementById("driverAcceptedSheet").style.display = "none";
                 document.getElementById("overviewSheet").style.display = "flex";
                 document.getElementById("locBtn").style.bottom = "64vh";
-                if (multiRoute) map.geoObjects.remove(multiRoute);
+                if (multiRoute) {
+                    try { map.geoObjects.remove(multiRoute); } catch(e){}
+                    multiRoute = null;
+                }
 
                 setTimeout(() => {
                     db.ref('orders/current_status').remove();
@@ -1106,7 +1138,10 @@
                 document.getElementById("centerPin").style.display = "flex";
                 document.getElementById("topBtn").innerText = "☰";
                 document.getElementById("locBtn").style.bottom = "230px";
-                if (multiRoute) map.geoObjects.remove(multiRoute);
+                if (multiRoute) {
+                    try { map.geoObjects.remove(multiRoute); } catch(e){}
+                    multiRoute = null;
+                }
             } else {
                 toggleSideMenu();
             }
