@@ -447,7 +447,7 @@
 
         let map, multiRoute;
         let driverPlacemark = null;
-        let clientMarker = null; // Mijozning nuqtasi (Placemark)
+        let clientMarker = null;
         let isOnline = false;
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
@@ -489,6 +489,7 @@
             checkDriverAuth();
             initLocationTracker();
             listenForIncomingOrders();
+            listenForOrderCancellations();
         });
 
         function normalizeTariff(tariffStr) {
@@ -619,6 +620,32 @@
             });
         }
 
+        // Mijoz tomonidan bekor qilinganini tinglash
+        function listenForOrderCancellations() {
+            db.ref('orders/current_status').on('value', snapshot => {
+                const data = snapshot.val();
+                if (data && data.status === 'cancelled_by_client') {
+                    alert("❌ Mijoz buyurtmani bekor qildi!");
+
+                    document.getElementById("activeTripPanel").style.display = "none";
+                    document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+
+                    if (multiRoute) {
+                        map.geoObjects.remove(multiRoute);
+                        multiRoute = null;
+                    }
+                    if (clientMarker) {
+                        map.geoObjects.remove(clientMarker);
+                        clientMarker = null;
+                    }
+
+                    currentOrderData = null;
+                    tripStep = 'to_client';
+                    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                }
+            });
+        }
+
         function showOrderPopup(order) {
             currentOrderData = order;
             const sheet = document.getElementById("orderSheet");
@@ -722,7 +749,6 @@
                 pinVisible: true
             });
 
-            // Asfalt yo'l va tirbandlik asosida real yetib borish vaqtini (ETA) hisoblash
             multiRoute.model.events.add('requestsuccess', function() {
                 const activeRoute = multiRoute.getActiveRoute();
                 if (activeRoute) {
@@ -731,8 +757,6 @@
 
                     if (tripStep === 'to_client') {
                         document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
-                        
-                        // Vaqtni Firebase orqali mijozga yuborish
                         db.ref('orders/current_status').update({
                             eta: durationText
                         });
@@ -788,7 +812,6 @@
             const clientLat = parseFloat(currentOrderData.lat);
             const clientLon = parseFloat(currentOrderData.lon);
 
-            // Mijoz turgan joyga xaritada ko'rinadigan qizil belgi qo'yish
             if (clientMarker) map.geoObjects.remove(clientMarker);
             clientMarker = new ymaps.Placemark([clientLat, clientLon], {
                 hintContent: `Mijoz: ${currentOrderData.client_name || 'Mijoz'}`
@@ -797,7 +820,6 @@
             });
             map.geoObjects.add(clientMarker);
 
-            // Mijozgacha marshrut chizish
             drawRoute(currentPos, [clientLat, clientLon]);
         }
 
@@ -822,7 +844,6 @@
                 const destLat = parseFloat(currentOrderData.dest_lat);
                 const destLon = parseFloat(currentOrderData.dest_lon);
 
-                // Mijoz belgisi o'rniga oxirgi manzil belgisini qo'yish
                 if (clientMarker) map.geoObjects.remove(clientMarker);
                 clientMarker = new ymaps.Placemark([destLat, destLon], {
                     hintContent: `Manzil: ${currentOrderData.destination || 'Belgilangan joy'}`
@@ -831,7 +852,6 @@
                 });
                 map.geoObjects.add(clientMarker);
 
-                // Oxirgi manzilgacha yo'l chizish
                 drawRoute(currentPos, [destLat, destLon]);
 
             } else if (tripStep === 'in_trip') {
