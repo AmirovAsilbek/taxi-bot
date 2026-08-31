@@ -359,17 +359,17 @@
         </div>
     </div>
 
-    <!-- 2. Admin tasdig'ini kutish oynasi -->
+    <!-- 2. Admin tasdig'ini kutish va Rad etilgan holat oynasi -->
     <div class="auth-overlay" id="driverPendingModal">
         <div class="auth-card">
-            <div class="auth-badge" style="background: #ffa502; color: #fff;">⏳</div>
-            <div class="auth-title">Arizangiz ko'rib chiqilmoqda</div>
-            <div class="auth-desc" style="line-height: 1.5; margin: 10px 0;">
+            <div class="auth-badge" id="pendingBadgeIcon" style="background: #ffa502; color: #fff;">⏳</div>
+            <div class="auth-title" id="pendingModalTitle">Arizangiz ko'rib chiqilmoqda</div>
+            <div class="auth-desc" id="pendingModalDesc" style="line-height: 1.5; margin: 10px 0;">
                 Ma'lumotlaringiz administratorga yuborildi. <br>
                 Admin arizangizni tasdiqlagach, ilova avtomatik ishga tushadi.
             </div>
-            <div style="background: #f1f2f6; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #555;">
-                Holat: <span style="color: #ffa502;">Tekshirilmoqda...</span>
+            <div id="pendingStatusBox" style="background: #f1f2f6; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #555;">
+                Holat: <span id="pendingStatusText" style="color: #ffa502;">Tekshirilmoqda...</span>
             </div>
         </div>
     </div>
@@ -467,7 +467,7 @@
         let driverPlacemark = null;
         let clientMarker = null;
         let isOnline = false;
-        let isApproved = false; // Admin tasdiqlaganlik statusi
+        let isApproved = false;
         let currentPos = [39.0560, 66.8300];
         let offerTimer = null;
         let currentOrderData = null;
@@ -505,7 +505,7 @@
                 controls: []
             });
 
-            listenForDriverAccount(); // Bazani tekshirish
+            listenForDriverAccount();
             initLocationTracker();
             listenForIncomingOrders();
             listenForOrderCancellations();
@@ -519,13 +519,12 @@
             return 'standart';
         }
 
-        // Bazadagi holatni (Ariza / Tasdiqlangan / O'chirilgan) jonli tekshirish
         function listenForDriverAccount() {
             db.ref('registered_drivers/' + driverId).on('value', snapshot => {
                 const driver = snapshot.val();
                 
                 if (!driver) {
-                    // 1. Agar bazada umuman yo'q bo'lsa -> Ro'yxatdan o'tishni ochish
+                    // Bazada yo'q bo'lsa -> Ro'yxatdan o'tish oynasi
                     isApproved = false;
                     forceOffline();
                     document.getElementById("driverPendingModal").style.display = "none";
@@ -536,13 +535,40 @@
                         document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
                     }
                 } else if (driver.status === 'pending') {
-                    // 2. Agar ariza kutilayotgan bo'lsa -> Kutish oynasini ochish
+                    // Ariza kutilmoqda
                     isApproved = false;
                     forceOffline();
                     document.getElementById("driverAuthModal").style.display = "none";
-                    document.getElementById("driverPendingModal").style.display = "flex";
+                    
+                    const pModal = document.getElementById("driverPendingModal");
+                    pModal.style.display = "flex";
+                    document.getElementById("pendingBadgeIcon").innerText = "⏳";
+                    document.getElementById("pendingBadgeIcon").style.background = "#ffa502";
+                    document.getElementById("pendingModalTitle").innerText = "Arizangiz ko'rib chiqilmoqda";
+                    document.getElementById("pendingModalDesc").innerHTML = "Ma'lumotlaringiz administratorga yuborildi.<br>Admin arizangizni tasdiqlagach, ilova avtomatik ishga tushadi.";
+                    document.getElementById("pendingStatusBox").style.display = "block";
+                    document.getElementById("pendingStatusText").innerText = "Tekshirilmoqda...";
+                    document.getElementById("pendingStatusText").style.color = "#ffa502";
+                } else if (driver.status === 'rejected') {
+                    // Admin rad etganda
+                    isApproved = false;
+                    forceOffline();
+                    document.getElementById("driverAuthModal").style.display = "none";
+                    
+                    const pModal = document.getElementById("driverPendingModal");
+                    pModal.style.display = "flex";
+                    document.getElementById("pendingBadgeIcon").innerText = "❌";
+                    document.getElementById("pendingBadgeIcon").style.background = "#ff4757";
+                    document.getElementById("pendingModalTitle").innerText = "Arizangiz rad etildi";
+                    document.getElementById("pendingModalDesc").innerHTML = `
+                        Afsuski, arizangiz administrator tomonidan qabul qilinmadi.<br><br>
+                        <button onclick="reapplyDriver()" style="background:#ffcc00; color:#111; border:none; padding:12px 18px; border-radius:12px; font-weight:800; cursor:pointer; width:100%; box-shadow:0 4px 12px rgba(255,204,0,0.4);">
+                            🔄 Qayta ariza topshirish
+                        </button>
+                    `;
+                    document.getElementById("pendingStatusBox").style.display = "none";
                 } else if (driver.status === 'approved') {
-                    // 3. Admin tasdiqlagan bo'lsa -> Ilovani to'liq ochish
+                    // Tasdiqlangan -> ilovani to'liq ochish
                     isApproved = true;
                     document.getElementById("driverAuthModal").style.display = "none";
                     document.getElementById("driverPendingModal").style.display = "none";
@@ -555,7 +581,10 @@
             });
         }
 
-        // Ariza yuborish
+        function reapplyDriver() {
+            db.ref('registered_drivers/' + driverId).remove();
+        }
+
         function submitDriverApplication() {
             const name = document.getElementById("regDriverName").value.trim();
             const phone = document.getElementById("regDriverPhone").value.trim();
@@ -574,7 +603,7 @@
                 car: car,
                 plate: plate,
                 tariff: tariff,
-                status: 'pending', // Boshida kutilayotgan holatda bo'ladi
+                status: 'pending',
                 applied_at: Date.now()
             });
 
