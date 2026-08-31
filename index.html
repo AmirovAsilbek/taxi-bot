@@ -655,6 +655,8 @@
             <span style="color: #666;">Safar narxi:</span>
             <span style="color: #111;" id="accTripPrice">18 500 UZS</span>
         </div>
+        <!-- Haydovchi qabul qilgandan so'ng bekor qilish tugmasi -->
+        <button class="btn-cancel-order" onclick="cancelAcceptedOrder()">Buyurtmani bekor qilish</button>
     </div>
 
     <div class="rating-sheet" id="ratingSheet">
@@ -694,7 +696,7 @@
         let searchTimer = null;
         let availableTariffs = new Set();
 
-        const MAX_NEARBY_RADIUS_KM = 35; // Faqat yaqin masofadagi (hududiy) haydovchilarni saralaydi
+        const MAX_NEARBY_RADIUS_KM = 35; // Faqat yaqin masofadagi haydovchilarni saralaydi
 
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
@@ -979,7 +981,7 @@
                 if (data && data.status === 'accepted') {
                     document.getElementById("searchStatusSheet").style.display = "none";
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
-                    document.getElementById("locBtn").style.bottom = "32vh";
+                    document.getElementById("locBtn").style.bottom = "38vh";
 
                     document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
                     document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix • 70 N 079 NN";
@@ -1032,6 +1034,122 @@
                     }
                 }
             });
+        }
+
+        function sendTaxiOrder() {
+            if (availableTariffs.size === 0) {
+                alert("Hozirda bu hududda faol taksilar mavjud emas!");
+                return;
+            }
+
+            document.getElementById("overviewSheet").style.display = "none";
+            document.getElementById("searchStatusSheet").style.display = "flex";
+            document.getElementById("locBtn").style.bottom = "40vh";
+
+            const payload = {
+                type: "client_order_searching",
+                lat: startCoords[0],
+                lon: startCoords[1],
+                dest_lat: targetCoords[0],
+                dest_lon: targetCoords[1],
+                destination: targetName,
+                distance: targetDist.toFixed(1) + " km",
+                tariff: currentTariff,
+                price: finalTripPrice,
+                client_name: document.getElementById("uName").innerText,
+                client_phone: document.getElementById("uPhone").innerText
+            };
+
+            db.ref('orders/current_order').set({
+                ...payload,
+                status: "searching",
+                timestamp: Date.now()
+            });
+
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function cancelTaxiOrder() {
+            db.ref('orders/current_status').remove();
+            db.ref('orders/current_order').remove();
+            document.getElementById("searchStatusSheet").style.display = "none";
+            document.getElementById("driverAcceptedSheet").style.display = "none";
+            document.getElementById("overviewSheet").style.display = "flex";
+            document.getElementById("locBtn").style.bottom = "64vh";
+        }
+
+        // Qabul qilingan safarni bekor qilish
+        function cancelAcceptedOrder() {
+            if (confirm("Haqiqatan ham buyurtmani bekor qilmoqchimisiz?")) {
+                db.ref('orders/current_status').set({ status: 'cancelled_by_client' });
+                db.ref('orders/current_order').remove();
+
+                document.getElementById("driverAcceptedSheet").style.display = "none";
+                document.getElementById("overviewSheet").style.display = "flex";
+                document.getElementById("locBtn").style.bottom = "64vh";
+                if (multiRoute) map.geoObjects.remove(multiRoute);
+
+                setTimeout(() => {
+                    db.ref('orders/current_status').remove();
+                }, 1500);
+            }
+        }
+
+        function handleTopBtnClick() {
+            if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
+                cancelAcceptedOrder();
+            } else if (document.getElementById("searchStatusSheet").style.display === "flex") {
+                cancelTaxiOrder();
+            } else if (document.getElementById("overviewSheet").style.display === "flex") {
+                document.getElementById("overviewSheet").style.display = "none";
+                document.getElementById("bottomSheet").style.display = "flex";
+                document.getElementById("centerPin").style.display = "flex";
+                document.getElementById("topBtn").innerText = "☰";
+                document.getElementById("locBtn").style.bottom = "230px";
+                if (multiRoute) map.geoObjects.remove(multiRoute);
+            } else {
+                toggleSideMenu();
+            }
+        }
+
+        function toggleSideMenu() {
+            const menu = document.getElementById("sideMenu");
+            const overlay = document.getElementById("menuOverlay");
+            if (menu.classList.contains("open")) {
+                menu.classList.remove("open");
+                overlay.style.display = "none";
+            } else {
+                menu.classList.add("open");
+                overlay.style.display = "block";
+            }
+        }
+
+        function checkUserAuth() {
+            const savedName = localStorage.getItem("taxi_user_name");
+            const savedPhone = localStorage.getItem("taxi_user_phone");
+            if (savedName && savedPhone) {
+                document.getElementById("uName").innerText = savedName;
+                document.getElementById("uPhone").innerText = savedPhone;
+                document.getElementById("uAvatar").innerText = savedName.charAt(0).toUpperCase();
+            } else {
+                if (tg?.initDataUnsafe?.user) {
+                    const u = tg.initDataUnsafe.user;
+                    document.getElementById("regName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                }
+                document.getElementById("authModal").style.display = "flex";
+            }
+        }
+
+        function saveUserRegistration() {
+            const name = document.getElementById("regName").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+            if (!name || !phone) { alert("Ma'lumotlarni to'liq kiriting!"); return; }
+            localStorage.setItem("taxi_user_name", name);
+            localStorage.setItem("taxi_user_phone", phone);
+            document.getElementById("uName").innerText = name;
+            document.getElementById("uPhone").innerText = phone;
+            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
+            document.getElementById("authModal").style.display = "none";
         }
 
         function rateDriver(stars) {
@@ -1144,103 +1262,6 @@
                 };
                 container.appendChild(div);
             });
-        }
-
-        function sendTaxiOrder() {
-            if (availableTariffs.size === 0) {
-                alert("Hozirda bu hududda faol taksilar mavjud emas!");
-                return;
-            }
-
-            document.getElementById("overviewSheet").style.display = "none";
-            document.getElementById("searchStatusSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "40vh";
-
-            const payload = {
-                type: "client_order_searching",
-                lat: startCoords[0],
-                lon: startCoords[1],
-                dest_lat: targetCoords[0],
-                dest_lon: targetCoords[1],
-                destination: targetName,
-                distance: targetDist.toFixed(1) + " km",
-                tariff: currentTariff,
-                price: finalTripPrice,
-                client_name: document.getElementById("uName").innerText,
-                client_phone: document.getElementById("uPhone").innerText
-            };
-
-            db.ref('orders/current_order').set({
-                ...payload,
-                status: "searching",
-                timestamp: Date.now()
-            });
-
-            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-        }
-
-        function cancelTaxiOrder() {
-            db.ref('orders/current_status').remove();
-            db.ref('orders/current_order').remove();
-            document.getElementById("searchStatusSheet").style.display = "none";
-            document.getElementById("driverAcceptedSheet").style.display = "none";
-            document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "64vh";
-        }
-
-        function handleTopBtnClick() {
-            if (document.getElementById("driverAcceptedSheet").style.display === "flex" || document.getElementById("searchStatusSheet").style.display === "flex") {
-                cancelTaxiOrder();
-            } else if (document.getElementById("overviewSheet").style.display === "flex") {
-                document.getElementById("overviewSheet").style.display = "none";
-                document.getElementById("bottomSheet").style.display = "flex";
-                document.getElementById("centerPin").style.display = "flex";
-                document.getElementById("topBtn").innerText = "☰";
-                document.getElementById("locBtn").style.bottom = "230px";
-                if (multiRoute) map.geoObjects.remove(multiRoute);
-            } else {
-                toggleSideMenu();
-            }
-        }
-
-        function toggleSideMenu() {
-            const menu = document.getElementById("sideMenu");
-            const overlay = document.getElementById("menuOverlay");
-            if (menu.classList.contains("open")) {
-                menu.classList.remove("open");
-                overlay.style.display = "none";
-            } else {
-                menu.classList.add("open");
-                overlay.style.display = "block";
-            }
-        }
-
-        function checkUserAuth() {
-            const savedName = localStorage.getItem("taxi_user_name");
-            const savedPhone = localStorage.getItem("taxi_user_phone");
-            if (savedName && savedPhone) {
-                document.getElementById("uName").innerText = savedName;
-                document.getElementById("uPhone").innerText = savedPhone;
-                document.getElementById("uAvatar").innerText = savedName.charAt(0).toUpperCase();
-            } else {
-                if (tg?.initDataUnsafe?.user) {
-                    const u = tg.initDataUnsafe.user;
-                    document.getElementById("regName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                }
-                document.getElementById("authModal").style.display = "flex";
-            }
-        }
-
-        function saveUserRegistration() {
-            const name = document.getElementById("regName").value.trim();
-            const phone = document.getElementById("regPhone").value.trim();
-            if (!name || !phone) { alert("Ma'lumotlarni to'liq kiriting!"); return; }
-            localStorage.setItem("taxi_user_name", name);
-            localStorage.setItem("taxi_user_phone", phone);
-            document.getElementById("uName").innerText = name;
-            document.getElementById("uPhone").innerText = phone;
-            document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
-            document.getElementById("authModal").style.display = "none";
         }
 
         function changeMapType() {
