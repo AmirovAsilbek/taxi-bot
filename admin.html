@@ -64,18 +64,23 @@
             border-radius: 14px;
             padding: 4px;
             border: 1px solid #282c38;
+            gap: 4px;
         }
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 10px 4px;
             border: none;
             background: transparent;
             color: #8a8f9d;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             border-radius: 10px;
             cursor: pointer;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
         .tab-btn.active {
             background: #ffcc00;
@@ -150,6 +155,7 @@
         }
         .status-badge.online { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
         .status-badge.offline { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+        .status-badge.pending { background: rgba(255, 165, 2, 0.15); color: #ffa502; }
 
         .driver-meta-row {
             display: flex;
@@ -185,6 +191,28 @@
             border-radius: 10px;
             font-size: 13px;
             font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-action-approve {
+            flex: 1;
+            background: #2ed573;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-action-reject {
+            flex: 1;
+            background: #ff4757;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
             cursor: pointer;
         }
 
@@ -320,14 +348,19 @@
         <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
         <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
         <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Buyurtmalar</button>
+        <button class="tab-btn" onclick="switchTab('applicationsTab', this)">
+            📑 Arizalar <span id="pendingBadge" style="background:#ff4757; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; display:none;">0</span>
+        </button>
     </div>
 
+    <!-- 1. XARITA SAHIFASI -->
     <div class="tab-view active" id="mapTab">
         <div id="adminMap"></div>
         <div class="section-title" style="margin-bottom: 8px;">🟢 Xaritada ko'rinayotgan faol mashinalar</div>
         <div id="mapDriversSummary" style="font-size: 13px; color: #8a8f9d;">Yuklanmoqda...</div>
     </div>
 
+    <!-- 2. TASDIQLANGAN HAYDOVCHILAR -->
     <div class="tab-view" id="driversTab">
         <div class="section-header">
             <div class="section-title">Ro'yxatdan o'tgan haydovchilar</div>
@@ -337,6 +370,7 @@
         </div>
     </div>
 
+    <!-- 3. BUYURTMALAR -->
     <div class="tab-view" id="ordersTab">
         <div class="section-header">
             <div class="section-title">Jonli va Faol Buyurtmalar</div>
@@ -346,6 +380,17 @@
         </div>
     </div>
 
+    <!-- 4. ARIZALAR SAHIFASI -->
+    <div class="tab-view" id="applicationsTab">
+        <div class="section-header">
+            <div class="section-title">Kelib tushgan arizalar (<span id="applicationsCount">0</span>)</div>
+        </div>
+        <div id="applicationsListContainer">
+            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Hozircha yangi arizalar yo'q</div>
+        </div>
+    </div>
+
+    <!-- Yangi haydovchi qo'shish modali -->
     <div class="modal-overlay" id="addDriverModal">
         <div class="modal-box">
             <div class="modal-title">Yangi Haydovchi Qo'shish</div>
@@ -415,6 +460,7 @@
             db.ref('registered_drivers').on('value', snap => {
                 registeredDriversData = snap.val() || {};
                 renderDriversList();
+                renderApplicationsList();
                 updateStats();
             });
 
@@ -467,17 +513,24 @@
                 : "Ayni damda online haydovchilar yo'q";
         }
 
+        // Tasdiqlangan haydovchilarni chiqarish
         function renderDriversList() {
             const container = document.getElementById("driversListContainer");
             const allIds = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)]));
 
-            if (allIds.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha ro'yxatdan o'tgan haydovchilar mavjud emas</div>`;
+            // Faqat tasdiqlangan (status === 'approved') haydovchilarni saralash
+            const approvedIds = allIds.filter(id => {
+                const reg = registeredDriversData[id];
+                return reg && reg.status !== 'pending' && reg.status !== 'rejected';
+            });
+
+            if (approvedIds.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha tasdiqlangan haydovchilar yo'q</div>`;
                 return;
             }
 
             container.innerHTML = "";
-            allIds.forEach(id => {
+            approvedIds.forEach(id => {
                 const reg = registeredDriversData[id] || {};
                 const onl = onlineDriversData[id] || {};
                 const isOnline = onl.is_online ? true : false;
@@ -515,6 +568,86 @@
             });
         }
 
+        // Kutilayotgan arizalarni chiqarish
+        function renderApplicationsList() {
+            const container = document.getElementById("applicationsListContainer");
+            const badge = document.getElementById("pendingBadge");
+            const countLabel = document.getElementById("applicationsCount");
+            
+            const pendingIds = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status === 'pending');
+
+            countLabel.innerText = pendingIds.length;
+            if (pendingIds.length > 0) {
+                badge.innerText = pendingIds.length;
+                badge.style.display = "inline-block";
+            } else {
+                badge.style.display = "none";
+            }
+
+            if (pendingIds.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha yangi arizalar yo'q</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            pendingIds.forEach(id => {
+                const reg = registeredDriversData[id];
+                const name = reg.name || "Nomzod";
+                const phone = reg.phone || "+998900000000";
+                const car = reg.car || "Mashina";
+                const plate = reg.plate || "Raqamsiz";
+                const tariff = reg.tariff || "standart";
+
+                const card = document.createElement("div");
+                card.className = "driver-card";
+                card.innerHTML = `
+                    <div class="driver-top">
+                        <div class="driver-info-main">
+                            <div class="driver-avatar" style="background: rgba(255, 165, 2, 0.15); color: #ffa502;">⏳</div>
+                            <div>
+                                <div class="driver-name">${name}</div>
+                                <div class="driver-phone">${phone}</div>
+                            </div>
+                        </div>
+                        <span class="status-badge pending">Kutilmoqda</span>
+                    </div>
+                    <div class="driver-meta-row">
+                        <span>🚗 ${car} (${plate})</span>
+                        <span style="color:#ffcc00; font-weight:700;">${tariff.toUpperCase()}</span>
+                    </div>
+                    <div class="driver-actions">
+                        <button class="btn-action-approve" onclick="approveDriverApplication('${id}', '${name}')">✅ Tasdiqlash</button>
+                        <button class="btn-action-reject" onclick="rejectDriverApplication('${id}', '${name}')">❌ Rad etish</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Arizani tasdiqlash
+        function approveDriverApplication(id, name) {
+            db.ref('registered_drivers/' + id).update({
+                status: 'approved',
+                approved_at: Date.now()
+            }).then(() => {
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                alert(`✅ ${name} muvaffaqiyatli tasdiqlandi! Haydovchi ilovasi ishga tushdi.`);
+            });
+        }
+
+        // Arizani rad etish
+        function rejectDriverApplication(id, name) {
+            if (confirm(`Haqiqatan ham ${name} arizasini rad etmoqchimisiz?`)) {
+                db.ref('registered_drivers/' + id).update({
+                    status: 'rejected',
+                    rejected_at: Date.now()
+                }).then(() => {
+                    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                    alert(`❌ ${name} arizasi rad etildi.`);
+                });
+            }
+        }
+
         function renderOrdersList(orders) {
             const container = document.getElementById("ordersListContainer");
             const currentOrder = orders.current_order;
@@ -542,11 +675,12 @@
 
         function updateStats() {
             const onlineCount = Object.keys(onlineDriversData).filter(id => onlineDriversData[id].is_online).length;
-            const totalDrivers = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)])).length;
+            const approvedDriversCount = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status !== 'pending' && registeredDriversData[id].status !== 'rejected').length;
+            
             document.getElementById("statOnlineCount").innerText = onlineCount;
-            document.getElementById("statTotalDrivers").innerText = totalDrivers;
+            document.getElementById("statTotalDrivers").innerText = approvedDriversCount;
             document.getElementById("statActiveOrders").innerText = onlineCount > 0 ? "1" : "0";
-            document.getElementById("statSystemIncome").innerText = (totalDrivers * 18500).toLocaleString() + " UZS";
+            document.getElementById("statSystemIncome").innerText = (approvedDriversCount * 18500).toLocaleString() + " UZS";
         }
 
         function deleteDriverFromDatabase(id, name) {
@@ -588,11 +722,12 @@
                 car: car,
                 plate: plate,
                 tariff: tariff,
+                status: 'approved', // Admin qo'shgani uchun to'g'ridan-to'g'ri tasdiqlangan bo'ladi
                 registered_at: Date.now()
             });
 
             closeAddModal();
-            alert("✅ Yangi haydovchi bazaga qo'shildi!");
+            alert("✅ Yangi haydovchi bazaga qo'shildi va tasdiqlandi!");
         }
     </script>
 </body>
