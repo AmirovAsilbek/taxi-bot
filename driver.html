@@ -609,10 +609,7 @@
                     const driverTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff") || "standart");
                     const orderTariff = normalizeTariff(order.tariff);
 
-                    // Faqat aynan mos tarifdagi haydovchiga chaqiruv beriladi
-                    if (driverTariff !== orderTariff) {
-                        return;
-                    }
+                    if (driverTariff !== orderTariff) return;
 
                     showOrderPopup(order);
                 } else if (!order || order.status !== 'searching') {
@@ -694,15 +691,51 @@
         }
 
         function drawRoute(fromCoords, toCoords) {
-            if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (!fromCoords || !toCoords) return;
+
+            const startPoint = [parseFloat(fromCoords[0]), parseFloat(fromCoords[1])];
+            const endPoint = [parseFloat(toCoords[0]), parseFloat(toCoords[1])];
+
+            if (isNaN(startPoint[0]) || isNaN(endPoint[0])) return;
+
+            if (multiRoute) {
+                map.geoObjects.remove(multiRoute);
+                multiRoute = null;
+            }
+
             multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [fromCoords, toCoords],
-                params: { routingMode: 'auto', results: 1 }
+                referencePoints: [startPoint, endPoint],
+                params: { 
+                    routingMode: 'auto', 
+                    results: 1 
+                }
             }, {
                 boundsAutoApply: true,
                 routeActiveStrokeColor: "#ffcc00",
-                routeActiveStrokeWidth: 6
+                routeActiveStrokeWidth: 6,
+                pinVisible: true
             });
+
+            // Asfalt yo'l va tirbandlik asosida real yetib borish vaqtini (ETA) aniqlash
+            multiRoute.model.events.add('requestsuccess', function() {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    const durationText = activeRoute.properties.get("duration").text;
+                    const distanceText = activeRoute.properties.get("distance").text;
+
+                    if (tripStep === 'to_client') {
+                        document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
+                        
+                        // Vaqtni Firebase orqali mijozga yuborish
+                        db.ref('orders/current_status').update({
+                            eta: durationText
+                        });
+                    } else if (tripStep === 'in_trip') {
+                        document.getElementById("gpsStatus").innerHTML = `🚗 Manzilgacha: <b>${durationText}</b> (${distanceText})`;
+                    }
+                }
+            });
+
             map.geoObjects.add(multiRoute);
         }
 
@@ -733,7 +766,8 @@
                 driver_name: document.getElementById("dName").innerText,
                 driver_car: document.getElementById("dCar").innerText,
                 driver_phone: driverPhone,
-                price: currentOrderData.price || "18 500 UZS"
+                price: currentOrderData.price || "18 500 UZS",
+                eta: "3 daq"
             });
 
             db.ref('orders/current_order').update({ status: 'accepted' });
@@ -761,6 +795,7 @@
                 db.ref('orders/current_status').update({ step: 'in_trip' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
+                // Mijoz tanlagan oxirgi manzilgacha marshrut chizish
                 if (currentOrderData.dest_lat && currentOrderData.dest_lon) {
                     drawRoute(currentPos, [currentOrderData.dest_lat, currentOrderData.dest_lon]);
                 }
