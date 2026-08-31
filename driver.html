@@ -490,15 +490,25 @@
             listenForIncomingOrders();
         });
 
+        function getTariffLevel(tariffStr) {
+            if (!tariffStr) return 1;
+            const t = tariffStr.toString().toLowerCase().replace(/\s+/g, '');
+            if (t.includes('plus') || t.includes('+')) return 3;
+            if (t.includes('komfort') || t.includes('comfort')) return 2;
+            return 1;
+        }
+
         function checkDriverAuth() {
             const savedName = localStorage.getItem("ry_driver_name");
             const savedPhone = localStorage.getItem("ry_driver_phone");
             const savedCar = localStorage.getItem("ry_driver_car");
             const savedPlate = localStorage.getItem("ry_driver_plate");
+            const savedTariff = localStorage.getItem("ry_driver_tariff");
 
             if (savedName && savedPhone && savedCar && savedPlate) {
                 document.getElementById("dName").innerText = savedName;
                 document.getElementById("dCar").innerText = `${savedCar} • ${savedPlate}`;
+                if (savedTariff) document.getElementById("regDriverTariff").value = savedTariff;
                 document.getElementById("driverAuthModal").style.display = "none";
             } else {
                 if (tg?.initDataUnsafe?.user) {
@@ -596,6 +606,15 @@
             db.ref('orders/current_order').on('value', snapshot => {
                 const order = snapshot.val();
                 if (order && order.status === 'searching' && isOnline && !currentOrderData) {
+                    const driverTariff = localStorage.getItem("ry_driver_tariff") || "standart";
+                    const driverLevel = getTariffLevel(driverTariff);
+                    const orderLevel = getTariffLevel(order.tariff);
+
+                    // Faqat tarif darajasi mos kelgan haydovchilarga buyurtma yuboriladi
+                    if (driverLevel < orderLevel) {
+                        return;
+                    }
+
                     showOrderPopup(order);
                 } else if (!order || order.status !== 'searching') {
                     if (!currentOrderData) dismissOrder();
@@ -714,7 +733,8 @@
                 step: 'to_client',
                 driver_name: document.getElementById("dName").innerText,
                 driver_car: document.getElementById("dCar").innerText,
-                driver_phone: driverPhone
+                driver_phone: driverPhone,
+                price: currentOrderData.price || "18 500 UZS"
             });
 
             db.ref('orders/current_order').update({ status: 'accepted' });
