@@ -335,8 +335,6 @@
             border-color: #ffcc00;
             background: #fffdf0;
         }
-
-        /* Faol bo'lmagan tarif holati */
         .tariff-card.disabled {
             opacity: 0.35;
             filter: grayscale(1);
@@ -640,7 +638,7 @@
     <div class="driver-accepted-sheet" id="driverAcceptedSheet">
         <div class="accepted-top">
             <div style="font-size: 14px; font-weight: 800; color: #111;" id="tripStatusHeader">🚖 HAYDOVCHI YO'LGA CHIQDI</div>
-            <div class="arrival-pill" id="driverArrivalTimer">3 min</div>
+            <div class="arrival-pill" id="driverArrivalTimer">3 daq</div>
         </div>
         <div class="driver-card-info">
             <div class="driver-main">
@@ -695,6 +693,8 @@
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
         let availableTariffs = new Set();
+
+        const MAX_NEARBY_RADIUS_KM = 35; // Faqat yaqin masofadagi (hududiy) haydovchilarni saralaydi
 
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
@@ -781,6 +781,7 @@
             db.ref('drivers').on('value', snapshot => {
                 const drivers = snapshot.val() || {};
                 const activeSet = new Set();
+                let driverList = [];
 
                 for (let id in driverMarkers) {
                     if (!drivers[id] || !drivers[id].is_online) {
@@ -792,27 +793,46 @@
                 for (let id in drivers) {
                     const d = drivers[id];
                     if (d.is_online && d.lat && d.lon) {
-                        const normTariff = normalizeTariff(d.tariff);
-                        activeSet.add(normTariff);
-
-                        const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'}`;
-                        if (!driverMarkers[id]) {
-                            const marker = new ymaps.Placemark([d.lat, d.lon], {
-                                hintContent: hint
-                            }, {
-                                iconLayout: 'default#image',
-                                iconImageHref: topViewBlueCarSvg,
-                                iconImageSize: [38, 38],
-                                iconImageOffset: [-19, -19]
+                        const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
+                        if (dist <= MAX_NEARBY_RADIUS_KM) {
+                            driverList.push({
+                                id: id,
+                                ...d,
+                                distance: dist
                             });
-                            driverMarkers[id] = marker;
-                            map.geoObjects.add(marker);
                         } else {
-                            driverMarkers[id].geometry.setCoordinates([d.lat, d.lon]);
-                            driverMarkers[id].properties.set('hintContent', hint);
+                            if (driverMarkers[id]) {
+                                map.geoObjects.remove(driverMarkers[id]);
+                                delete driverMarkers[id];
+                            }
                         }
                     }
                 }
+
+                driverList.sort((a, b) => a.distance - b.distance);
+
+                driverList.forEach(d => {
+                    const normTariff = normalizeTariff(d.tariff);
+                    activeSet.add(normTariff);
+
+                    const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'} (${d.distance.toFixed(1)} km)`;
+                    
+                    if (!driverMarkers[d.id]) {
+                        const marker = new ymaps.Placemark([d.lat, d.lon], {
+                            hintContent: hint
+                        }, {
+                            iconLayout: 'default#image',
+                            iconImageHref: topViewBlueCarSvg,
+                            iconImageSize: [38, 38],
+                            iconImageOffset: [-19, -19]
+                        });
+                        driverMarkers[d.id] = marker;
+                        map.geoObjects.add(marker);
+                    } else {
+                        driverMarkers[d.id].geometry.setCoordinates([d.lat, d.lon]);
+                        driverMarkers[d.id].properties.set('hintContent', hint);
+                    }
+                });
 
                 availableTariffs = activeSet;
                 syncTariffsAvailability();
@@ -862,6 +882,97 @@
             }
         }
 
+        let prices = { standart: 5500, komfort: 9000, komfort_plus: 14000 };
+
+        function calculatePrices(roadDistKm) {
+            targetDist = roadDistKm > 0.2 ? roadDistKm : 0.5;
+
+            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
+            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
+            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
+
+            document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
+            document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
+            document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
+            
+            document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+
+            const currentType = currentTariff === "Komfort+" ? "komfort_plus" : (currentTariff === "Komfort" ? "komfort" : "standart");
+            selectTariff(currentType);
+        }
+
+        function selectTariff(type) {
+            if (availableTariffs.size > 0 && !availableTariffs.has(type)) return;
+
+            document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
+            let selectedPrice = prices.standart;
+
+            if (type === 'standart') {
+                const el = document.getElementById("tariff_standart");
+                if (el) el.classList.add("active");
+                currentTariff = "Standart";
+                selectedPrice = prices.standart;
+            } else if (type === 'komfort') {
+                const el = document.getElementById("tariff_komfort");
+                if (el) el.classList.add("active");
+                currentTariff = "Komfort";
+                selectedPrice = prices.komfort;
+            } else if (type === 'komfort_plus') {
+                const el = document.getElementById("tariff_komfort_plus");
+                if (el) el.classList.add("active");
+                currentTariff = "Komfort+";
+                selectedPrice = prices.komfort_plus;
+            }
+
+            const totalCalc = selectedPrice + 2000;
+            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
+            finalTripPrice = totalCalc.toLocaleString() + " UZS";
+        }
+
+        function goToOverview() {
+            document.getElementById("bottomSheet").style.display = "none";
+            document.getElementById("overviewSheet").style.display = "flex";
+            document.getElementById("centerPin").style.display = "none";
+            document.getElementById("topBtn").innerText = "←";
+            document.getElementById("locBtn").style.bottom = "64vh";
+
+            document.getElementById("overviewStart").innerText = "Mening joylashuvim";
+            document.getElementById("overviewDest").innerText = targetName;
+
+            calculatePrices(targetDist);
+            syncTariffsAvailability();
+
+            if (multiRoute) map.geoObjects.remove(multiRoute);
+            if (startPlacemark) map.geoObjects.remove(startPlacemark);
+            if (destPlacemark) map.geoObjects.remove(destPlacemark);
+
+            startPlacemark = new ymaps.Placemark(startCoords, {}, { preset: 'islands#yellowPersonIcon' });
+            destPlacemark = new ymaps.Placemark(targetCoords, { hintContent: targetName }, { preset: 'islands#redDotIcon' });
+            map.geoObjects.add(startPlacemark);
+            map.geoObjects.add(destPlacemark);
+
+            // Asfalt yo'li bo'yicha marshrut va aniq km ni hisoblash
+            multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [startCoords, targetCoords],
+                params: { routingMode: 'auto', results: 1 }
+            }, {
+                boundsAutoApply: true,
+                routeActiveStrokeColor: "#ff4757",
+                routeActiveStrokeWidth: 6
+            });
+
+            multiRoute.model.events.add('requestsuccess', function() {
+                const activeRoute = multiRoute.getActiveRoute();
+                if (activeRoute) {
+                    const realMeters = activeRoute.properties.get("distance").value;
+                    const realKm = realMeters / 1000;
+                    calculatePrices(realKm);
+                }
+            });
+
+            map.geoObjects.add(multiRoute);
+        }
+
         function listenToOrderAcceptance() {
             db.ref('orders/current_status').on('value', snapshot => {
                 const data = snapshot.val();
@@ -873,12 +984,15 @@
                     document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
                     document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix • 70 N 079 NN";
                     document.getElementById("accTripPrice").innerText = data.price || finalTripPrice;
+                    
+                    const timerPill = document.getElementById("driverArrivalTimer");
+                    timerPill.innerText = data.eta || "3 daq";
+
                     if (data.driver_phone) {
                         document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
                     }
 
                     const header = document.getElementById("tripStatusHeader");
-                    const timerPill = document.getElementById("driverArrivalTimer");
 
                     if (data.step === 'arrived') {
                         header.innerText = "📍 HAYDOVCHI YETIB KELDI!";
@@ -951,6 +1065,7 @@
                     startCoords = [pos.coords.latitude, pos.coords.longitude];
                     targetCoords = startCoords;
                     map.setCenter(startCoords, 16, { duration: 300 });
+                    listenToLiveDrivers();
                 }, null, { enableHighAccuracy: true });
             }
         }
@@ -1029,73 +1144,6 @@
                 };
                 container.appendChild(div);
             });
-        }
-
-        let prices = { standart: 5500, komfort: 9000, komfort_plus: 14000 };
-
-        function selectTariff(type) {
-            if (availableTariffs.size > 0 && !availableTariffs.has(type)) return;
-
-            document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
-            let selectedPrice = prices.standart;
-
-            if (type === 'standart') {
-                document.getElementById("tariff_standart").classList.add("active");
-                currentTariff = "Standart";
-                selectedPrice = prices.standart;
-            } else if (type === 'komfort') {
-                document.getElementById("tariff_komfort").classList.add("active");
-                currentTariff = "Komfort";
-                selectedPrice = prices.komfort;
-            } else if (type === 'komfort_plus') {
-                document.getElementById("tariff_komfort_plus").classList.add("active");
-                currentTariff = "Komfort+";
-                selectedPrice = prices.komfort_plus;
-            }
-
-            const totalCalc = selectedPrice + 2000;
-            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
-            finalTripPrice = totalCalc.toLocaleString() + " UZS";
-        }
-
-        function goToOverview() {
-            document.getElementById("bottomSheet").style.display = "none";
-            document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("centerPin").style.display = "none";
-            document.getElementById("topBtn").innerText = "←";
-            document.getElementById("locBtn").style.bottom = "64vh";
-
-            document.getElementById("overviewStart").innerText = "Mening joylashuvim";
-            document.getElementById("overviewDest").innerText = targetName;
-
-            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
-            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
-            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
-
-            document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
-            document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
-            document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
-
-            syncTariffsAvailability();
-
-            if (multiRoute) map.geoObjects.remove(multiRoute);
-            if (startPlacemark) map.geoObjects.remove(startPlacemark);
-            if (destPlacemark) map.geoObjects.remove(destPlacemark);
-
-            startPlacemark = new ymaps.Placemark(startCoords, {}, { preset: 'islands#yellowPersonIcon' });
-            destPlacemark = new ymaps.Placemark(targetCoords, { hintContent: targetName }, { preset: 'islands#redDotIcon' });
-            map.geoObjects.add(startPlacemark);
-            map.geoObjects.add(destPlacemark);
-
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [startCoords, targetCoords],
-                params: { routingMode: 'auto', results: 1 }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#ff4757",
-                routeActiveStrokeWidth: 6
-            });
-            map.geoObjects.add(multiRoute);
         }
 
         function sendTaxiOrder() {
