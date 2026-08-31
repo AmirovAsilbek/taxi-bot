@@ -570,10 +570,14 @@
             } catch (e) {}
         }
 
+        // JONLI HARAKATNI KUZATISH VA XARITANI ERGASHTIRISH
         function initLocationTracker() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
-                    currentPos = [pos.coords.latitude, pos.coords.longitude];
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    currentPos = [lat, lon];
+
                     if (!driverPlacemark) {
                         driverPlacemark = new ymaps.Placemark(currentPos, {}, {
                             iconLayout: 'default#image',
@@ -585,6 +589,27 @@
                         map.setCenter(currentPos, 16);
                     } else {
                         driverPlacemark.geometry.setCoordinates(currentPos);
+                    }
+
+                    // Haydovchi buyurtmada ketayotganda xarita uning orqasidan ergashadi
+                    if (currentOrderData && (tripStep === 'to_client' || tripStep === 'in_trip')) {
+                        map.setCenter(currentPos, map.getZoom(), { duration: 300 });
+
+                        // Marshrutni haydovchi o'rni bo'yicha jonli yangilab borish
+                        let targetPoint = null;
+                        if (tripStep === 'to_client' && currentOrderData.lat && currentOrderData.lon) {
+                            targetPoint = [parseFloat(currentOrderData.lat), parseFloat(currentOrderData.lon)];
+                        } else if (tripStep === 'in_trip' && currentOrderData.dest_lat && currentOrderData.dest_lon) {
+                            targetPoint = [parseFloat(currentOrderData.dest_lat), parseFloat(currentOrderData.dest_lon)];
+                        }
+
+                        if (targetPoint && !isNaN(targetPoint[0]) && !isNaN(targetPoint[1])) {
+                            if (multiRoute) {
+                                multiRoute.model.setReferencePoints([currentPos, targetPoint]);
+                            } else {
+                                drawRoute(currentPos, targetPoint);
+                            }
+                        }
                     }
 
                     if (isOnline) {
@@ -600,7 +625,13 @@
                             updated_at: Date.now()
                         });
                     }
-                }, null, { enableHighAccuracy: true });
+                }, err => {
+                    console.warn("Geolokatsiya olishda xatolik:", err);
+                }, { 
+                    enableHighAccuracy: true,
+                    maximumAge: 1000,
+                    timeout: 10000
+                });
             }
         }
 
@@ -717,6 +748,7 @@
             currentOrderData = null;
         }
 
+        // XAVFSIZ VA REAL VAQTDA ISHLOVCHI MARSHRUT CHIZISH
         function drawRoute(fromCoords, toCoords) {
             if (!fromCoords || !toCoords || !map) return;
 
