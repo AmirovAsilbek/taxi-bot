@@ -695,7 +695,7 @@
         let searchTimer = null;
         let availableTariffs = new Set();
         let acceptedDriverData = null;
-        let orderTimeoutTimer = null; // Taymerni belgilash
+        let orderTimeoutTimer = null; // Taymer
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
@@ -888,15 +888,25 @@
         function calculatePrices(roadDistKm) {
             targetDist = roadDistKm > 0.2 ? roadDistKm : 0.5;
 
-            prices.standart = Math.round((5000 + (targetDist * 2000)) / 500) * 500;
-            prices.komfort = Math.round((8000 + (targetDist * 2500)) / 500) * 500;
-            prices.komfort_plus = Math.round((12000 + (targetDist * 3200)) / 500) * 500;
+            // XATOLIK 1 TUZATILDI: 1 km uchun mos ravishda 5000, 6000, 7500 so'm hisoblanadi
+            prices.standart = Math.round((5000 + (targetDist * 5000)) / 500) * 500;
+            prices.komfort = Math.round((8000 + (targetDist * 6000)) / 500) * 500;
+            prices.komfort_plus = Math.round((12000 + (targetDist * 7500)) / 500) * 500;
 
             document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
             document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
             document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
             
             document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
+
+            // XATOLIK 2 TUZATILDI: Taksi yo'q bo'lsa ham Jami narx to'g'ri yangilanib turadi
+            let fallbackPrice = prices.standart;
+            if (currentTariff === "Komfort") fallbackPrice = prices.komfort;
+            if (currentTariff === "Komfort+") fallbackPrice = prices.komfort_plus;
+            const totalCalc = fallbackPrice + 2000; // +2000 UZS Choypuli
+            
+            document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
+            finalTripPrice = totalCalc.toLocaleString() + " UZS";
 
             const currentType = currentTariff === "Komfort+" ? "komfort_plus" : (currentTariff === "Komfort" ? "komfort" : "standart");
             if (availableTariffs.has(currentType)) {
@@ -992,6 +1002,13 @@
                         const distanceMeters = routes[0].properties.get("distance").value;
                         const realKm = distanceMeters / 1000;
                         calculatePrices(realKm);
+                    } else {
+                        // XATOLIK 3 TUZATILDI: Yandex avtomobil yo'lini topa olmagan holat (Pereval/Tog' uchun aylanma koeffitsiyent 1.8)
+                        const estimatedKm = targetDist * 1.8;
+                        calculatePrices(estimatedKm);
+                        
+                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                        alert("⚠️ Diqqat: Ushbu manzilgacha xaritada aniq avtomobil yo'li topilmadi. Masofa va narx taxminiy aylanma yo'l orqali hisoblandi.");
                     }
                 } catch(err) {
                     console.warn("Marshrut hisoblashda xatolik:", err);
