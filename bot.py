@@ -31,12 +31,17 @@ def init_db():
     conn.close()
 
 def get_main_keyboard(user_id: int):
+    # Har bir foydalanuvchi uchun individual parametr uzatiladi
+    client_url = f"{WEBAPP_CLIENT_URL}?user_id={user_id}"
+    driver_url = f"{WEBAPP_DRIVER_URL}?user_id={user_id}"
+    admin_url = f"{WEBAPP_ADMIN_URL}?user_id={user_id}"
+
     buttons = [
-        [KeyboardButton(text="🚖 Taksi chaqirish", web_app=WebAppInfo(url=WEBAPP_CLIENT_URL))],
-        [KeyboardButton(text="🚗 Haydovchi kabineti", web_app=WebAppInfo(url=WEBAPP_DRIVER_URL))]
+        [KeyboardButton(text="🚖 Taksi chaqirish", web_app=WebAppInfo(url=client_url))],
+        [KeyboardButton(text="🚗 Haydovchi kabineti", web_app=WebAppInfo(url=driver_url))]
     ]
     if user_id in ADMIN_ID:
-        buttons.append([KeyboardButton(text="⚙️ Admin Dispetcher", web_app=WebAppInfo(url=WEBAPP_ADMIN_URL))])
+        buttons.append([KeyboardButton(text="⚙️ Admin Dispetcher", web_app=WebAppInfo(url=admin_url))])
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 @dp.message(CommandStart())
