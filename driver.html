@@ -510,7 +510,7 @@
         let offerTimer = null;
         let currentOrderData = null;
         let tripStep = 'to_client';
-        let ignoredOrderTimestamp = 0; // Rad etilgan buyurtmani eslab qolish uchun
+        let ignoredOrderTimestamp = 0; // Rad etilgan buyurtmani qayta ko'rsatmaslik uchun
         
         let completedRides = parseInt(localStorage.getItem('ry_driver_trips_' + driverId) || '0');
         let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings_' + driverId) || '0');
@@ -750,7 +750,6 @@
                 const order = snapshot.val();
                 
                 if (order && order.status === 'searching' && isOnline && isApproved && !currentOrderData) {
-                    // Agar bu buyurtmani haydovchi oldin rad etgan bo'lsa, qayta ko'rsatmaymiz
                     if (order.timestamp === ignoredOrderTimestamp) {
                         return;
                     }
@@ -867,7 +866,7 @@
 
         function dismissOrder() {
             if (currentOrderData && currentOrderData.timestamp) {
-                ignoredOrderTimestamp = currentOrderData.timestamp; // Shu buyurtmani eslab qolamiz
+                ignoredOrderTimestamp = currentOrderData.timestamp;
             }
 
             db.ref('orders/pass_signal').set({
