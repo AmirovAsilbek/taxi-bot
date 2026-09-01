@@ -509,6 +509,22 @@
             listenForOrderCancellations();
         });
 
+        // Masofani metrda hisoblash (Geofencing tekshiruvi)
+        function getDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const phi1 = lat1 * Math.PI / 180;
+            const phi2 = lat2 * Math.PI / 180;
+            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return Math.round(R * c);
+        }
+
         function normalizeTariff(tariffStr) {
             if (!tariffStr) return 'standart';
             const t = tariffStr.toString().toLowerCase().replace(/\s+/g, '');
@@ -919,9 +935,24 @@
             drawRoute(currentPos, [clientLat, clientLon]);
         }
 
+        // Bosqichlarni boshqarish (Ikkala nuqta bo'yicha GPS masofa tekshiruvi)
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
+            
+            // 1-bosqich: Mijoz oldiga yetib kelganda
             if (tripStep === 'to_client') {
+                if (currentOrderData && currentOrderData.lat && currentOrderData.lon) {
+                    const clientLat = parseFloat(currentOrderData.lat);
+                    const clientLon = parseFloat(currentOrderData.lon);
+                    const distanceToClient = getDistanceMeters(currentPos[0], currentPos[1], clientLat, clientLon);
+
+                    if (distanceToClient > 300) {
+                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                        alert(`⚠️ Siz mijozdan hali uzoqdasiz!\n\nMijozgacha masofa: ${distanceToClient} metr.\nIltimos, mijoz oldiga yetib borganingizda bosing.`);
+                        return;
+                    }
+                }
+
                 tripStep = 'waiting';
                 btn.className = "btn-step-action";
                 btn.innerText = "🚀 SAFARNI BOSHLASH";
@@ -929,6 +960,7 @@
                 db.ref('orders/current_status').update({ step: 'arrived' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
+            // 2-bosqich: Safarni boshlash
             } else if (tripStep === 'waiting') {
                 tripStep = 'in_trip';
                 btn.className = "btn-finish-trip";
@@ -952,7 +984,20 @@
 
                 drawRoute(currentPos, [destLat, destLon]);
 
+            // 3-bosqich: Manzilga yetganda safarni yakunlash
             } else if (tripStep === 'in_trip') {
+                if (currentOrderData && currentOrderData.dest_lat && currentOrderData.dest_lon) {
+                    const destLat = parseFloat(currentOrderData.dest_lat);
+                    const destLon = parseFloat(currentOrderData.dest_lon);
+                    const distanceToDest = getDistanceMeters(currentPos[0], currentPos[1], destLat, destLon);
+
+                    if (distanceToDest > 300) {
+                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                        alert(`⚠️ Siz manzilga hali yetib bormadingiz!\n\nManzilgacha qolgan masofa: ${distanceToDest} metr.\nIltimos, mijozni manziliga yetkazgach safarni yakunlang.`);
+                        return;
+                    }
+                }
+
                 completeCurrentTrip();
             }
         }
@@ -970,7 +1015,6 @@
             document.getElementById("activeTripPanel").style.display = "none";
             document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
 
-            // Tarixga muvaffaqiyatli safar sifatida yozish
             const historyId = "trip_" + Date.now();
             db.ref('order_history/' + historyId).set({
                 ...(currentOrderData || {}),
