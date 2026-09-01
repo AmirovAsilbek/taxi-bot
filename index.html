@@ -695,6 +695,7 @@
         let searchTimer = null;
         let availableTariffs = new Set();
         let acceptedDriverData = null;
+        let orderTimeoutTimer = null; // Taymerni belgilash
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
@@ -1006,6 +1007,9 @@
                 acceptedDriverData = data;
 
                 if (data && data.status === 'accepted') {
+                    // HAYDOVCHI TOPILDI, AVTOMATIK BEKOR QILISHNI TO'XTATAMIZ
+                    clearTimeout(orderTimeoutTimer);
+
                     document.getElementById("searchStatusSheet").style.display = "none";
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
                     document.getElementById("locBtn").style.bottom = "38vh";
@@ -1119,9 +1123,43 @@
             });
 
             if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+            // TIZIM TOMONIDAN AVTOMATIK BEKOR QILISH (2 daqiqa = 120000 ms)
+            clearTimeout(orderTimeoutTimer);
+            orderTimeoutTimer = setTimeout(() => {
+                autoCancelOrderBySystem();
+            }, 120000); 
+        }
+
+        function autoCancelOrderBySystem() {
+            const histId = "trip_" + Date.now();
+            db.ref('order_history/' + histId).set({
+                client_name: document.getElementById("uName").innerText,
+                client_phone: document.getElementById("uPhone").innerText,
+                destination: targetName,
+                price: finalTripPrice,
+                tariff: currentTariff,
+                distance: targetDist.toFixed(1) + " km",
+                status: 'cancelled',
+                cancel_reason: "Atrofda bo'sh mashina topilmadi (Tizim bekor qildi)",
+                timestamp: Date.now()
+            });
+
+            db.ref('orders/current_status').remove();
+            db.ref('orders/current_order').remove();
+            
+            document.getElementById("searchStatusSheet").style.display = "none";
+            document.getElementById("driverAcceptedSheet").style.display = "none";
+            document.getElementById("overviewSheet").style.display = "flex";
+            document.getElementById("locBtn").style.bottom = "64vh";
+
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            alert("😔 Kechirasiz, atrofda bo'sh taksilar topilmadi yoki barcha haydovchilar band.\nIltimos, birozdan so'ng qayta urinib ko'ring.");
         }
 
         function cancelTaxiOrder() {
+            clearTimeout(orderTimeoutTimer); // Mijoz o'zi bekor qilsa taymer to'xtaydi
+
             const histId = "trip_" + Date.now();
             db.ref('order_history/' + histId).set({
                 client_name: document.getElementById("uName").innerText,
