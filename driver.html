@@ -145,7 +145,7 @@
         .btn-recenter {
             position: absolute;
             right: 16px;
-            bottom: 270px;
+            bottom: 290px;
             width: 46px;
             height: 46px;
             border-radius: 50%;
@@ -213,18 +213,35 @@
         .client-meta { display: flex; flex-direction: column; gap: 2px; text-align: left; }
         .client-meta-name { font-weight: 800; font-size: 14px; color: #111; }
         .client-meta-dest { font-size: 12px; color: #666; }
+        
+        .action-btns-row { display: flex; gap: 8px; }
         .btn-call {
             background: #2ed573;
             color: #fff;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
             font-size: 18px;
             box-shadow: 0 4px 10px rgba(46, 213, 115, 0.3);
+        }
+        .btn-navi {
+            background: #007aff;
+            color: #fff;
+            padding: 0 12px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
         }
 
         .btn-step-action {
@@ -417,7 +434,10 @@
                     <span class="client-meta-name" id="actClientName">Mijoz</span>
                     <span class="client-meta-dest" id="actClientDest">Manzil</span>
                 </div>
-                <a href="tel:+998900000000" class="btn-call" id="actCallBtn">📞</a>
+                <div class="action-btns-row">
+                    <a href="#" target="_blank" class="btn-navi" id="actNaviBtn">🧭 Xarita</a>
+                    <a href="tel:+998900000000" class="btn-call" id="actCallBtn">📞</a>
+                </div>
             </div>
             <button class="btn-step-action" id="stepActionBtn" onclick="handleStepAction()">📍 YETIB KELDIM</button>
         </div>
@@ -509,7 +529,6 @@
             listenForOrderCancellations();
         });
 
-        // Masofani metrda hisoblash (Geofencing tekshiruvi)
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
             const phi1 = lat1 * Math.PI / 180;
@@ -669,8 +688,6 @@
                     }
 
                     if (currentOrderData && (tripStep === 'to_client' || tripStep === 'in_trip')) {
-                        map.setCenter(currentPos, map.getZoom(), { duration: 300 });
-
                         let targetPoint = null;
                         if (tripStep === 'to_client' && currentOrderData.lat && currentOrderData.lon) {
                             targetPoint = [parseFloat(currentOrderData.lat), parseFloat(currentOrderData.lon)];
@@ -849,7 +866,7 @@
                 }
             }, {
                 boundsAutoApply: true,
-                routeActiveStrokeColor: "#ffcc00",
+                routeActiveStrokeColor: "#007aff",
                 routeActiveStrokeWidth: 6,
                 pinVisible: true
             });
@@ -881,7 +898,7 @@
             try {
                 map.setBounds([[startLat, startLon], [endLat, endLon]], {
                     checkZoomRange: true,
-                    zoomMargin: 60
+                    zoomMargin: 70
                 });
             } catch (e) {}
         }
@@ -890,7 +907,7 @@
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
             document.getElementById("activeTripPanel").style.display = "flex";
-            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
+            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon yo'l chizilmoqda...";
 
             tripStep = 'to_client';
             const btn = document.getElementById("stepActionBtn");
@@ -899,9 +916,15 @@
 
             document.getElementById("actClientName").innerText = currentOrderData.client_name || "Mijoz";
             document.getElementById("actClientDest").innerText = currentOrderData.destination || "Manzil";
+            
             if (currentOrderData.client_phone) {
                 document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
             }
+
+            const clientLat = parseFloat(currentOrderData.lat);
+            const clientLon = parseFloat(currentOrderData.lon);
+
+            document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${clientLat},${clientLon}&rtt=auto`;
 
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
@@ -914,13 +937,12 @@
                 driver_car: document.getElementById("dCar").innerText,
                 driver_phone: driverPhone,
                 price: currentOrderData.price || "18 500 UZS",
-                eta: "3 daq"
+                eta: "3 daq",
+                driver_lat: currentPos[0],
+                driver_lon: currentPos[1]
             });
 
             db.ref('orders/current_order').update({ status: 'accepted' });
-
-            const clientLat = parseFloat(currentOrderData.lat);
-            const clientLon = parseFloat(currentOrderData.lon);
 
             if (clientMarker) {
                 try { map.geoObjects.remove(clientMarker); } catch(e){}
@@ -935,11 +957,9 @@
             drawRoute(currentPos, [clientLat, clientLon]);
         }
 
-        // Bosqichlarni boshqarish (Ikkala nuqta bo'yicha GPS masofa tekshiruvi)
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
             
-            // 1-bosqich: Mijoz oldiga yetib kelganda
             if (tripStep === 'to_client') {
                 if (currentOrderData && currentOrderData.lat && currentOrderData.lon) {
                     const clientLat = parseFloat(currentOrderData.lat);
@@ -960,17 +980,18 @@
                 db.ref('orders/current_status').update({ step: 'arrived' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            // 2-bosqich: Safarni boshlash
             } else if (tripStep === 'waiting') {
                 tripStep = 'in_trip';
                 btn.className = "btn-finish-trip";
                 btn.innerText = "🏁 SAFARNI YAKUNLASH";
-                document.getElementById("gpsStatus").innerHTML = "🚗 Safar davom etmoqda...";
+                document.getElementById("gpsStatus").innerHTML = "🚗 Manzil tomon harakatlanmoqdasiz...";
                 db.ref('orders/current_status').update({ step: 'in_trip' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
                 const destLat = parseFloat(currentOrderData.dest_lat);
                 const destLon = parseFloat(currentOrderData.dest_lon);
+
+                document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${destLat},${destLon}&rtt=auto`;
 
                 if (clientMarker) {
                     try { map.geoObjects.remove(clientMarker); } catch(e){}
@@ -984,7 +1005,6 @@
 
                 drawRoute(currentPos, [destLat, destLon]);
 
-            // 3-bosqich: Manzilga yetganda safarni yakunlash
             } else if (tripStep === 'in_trip') {
                 if (currentOrderData && currentOrderData.dest_lat && currentOrderData.dest_lon) {
                     const destLat = parseFloat(currentOrderData.dest_lat);
