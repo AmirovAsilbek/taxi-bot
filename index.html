@@ -705,7 +705,7 @@
         let sortedDriversQueue = [];
         let currentDriverQueueIndex = 0;
         let queueTimer = null;
-        let passedDrivers = []; // Rad etgan haydovchilar ro'yxati
+        let passedDrivers = [];
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
@@ -1161,7 +1161,7 @@
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
-            passedDrivers = []; // Yangi qidiruv uchun tozalash
+            passedDrivers = [];
 
             db.ref('drivers').once('value', snapshot => {
                 const drivers = snapshot.val() || {};
@@ -1194,8 +1194,13 @@
         function dispatchOrderToNextCandidate() {
             clearTimeout(queueTimer);
 
-            // Rad etganlarni chiqarib tashlaymiz
             const availableQueue = sortedDriversQueue.filter(id => !passedDrivers.includes(id));
+
+            // Agar barcha haydovchilar (yoki navbatdagilar) o'tkazib yuborgan bo'lsa -> Darhol "haydovchilar yo'q" deb to'xtatamiz
+            if (availableQueue.length === 0) {
+                autoCancelOrderBySystem();
+                return;
+            }
 
             const basePayload = {
                 type: "client_order_searching",
@@ -1215,7 +1220,7 @@
             };
 
             // 1-BOSQICH: Ro'yxatdagi 1-haydovchiga (15s)
-            if (availableQueue.length > 0 && currentDriverQueueIndex === 0) {
+            if (currentDriverQueueIndex === 0 && availableQueue.length > 0) {
                 basePayload.target_driver = availableQueue[0];
                 db.ref('orders/current_order').set(basePayload);
 
@@ -1225,7 +1230,7 @@
                 }, 15000);
             } 
             // 2-BOSQICH: Ro'yxatdagi 2-haydovchiga (15s)
-            else if (availableQueue.length > 1 && currentDriverQueueIndex === 1) {
+            else if (currentDriverQueueIndex === 1 && availableQueue.length > 1) {
                 basePayload.target_driver = availableQueue[1];
                 db.ref('orders/current_order').set(basePayload);
 
