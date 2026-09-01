@@ -54,7 +54,7 @@
             flex-direction: column;
             gap: 4px;
         }
-        .stat-num { font-size: 22px; font-weight: 900; color: #ffcc00; }
+        .stat-num { font-size: 20px; font-weight: 900; color: #ffcc00; }
         .stat-title { font-size: 11px; font-weight: 700; color: #8a8f9d; text-transform: uppercase; }
 
         .tab-bar {
@@ -65,14 +65,16 @@
             padding: 4px;
             border: 1px solid #282c38;
             gap: 4px;
+            overflow-x: auto;
         }
         .tab-btn {
             flex: 1;
+            min-width: 75px;
             padding: 10px 4px;
             border: none;
             background: transparent;
             color: #8a8f9d;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 700;
             border-radius: 10px;
             cursor: pointer;
@@ -81,6 +83,7 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
+            white-space: nowrap;
         }
         .tab-btn.active {
             background: #ffcc00;
@@ -92,7 +95,7 @@
 
         #adminMap {
             width: 100%;
-            height: 380px;
+            height: 360px;
             border-radius: 20px;
             border: 1px solid #282c38;
             overflow: hidden;
@@ -220,22 +223,24 @@
             background: #181b24;
             border: 1px solid #282c38;
             border-radius: 18px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 12px;
         }
         .order-head { display: flex; justify-content: space-between; align-items: center; }
-        .order-price { font-size: 20px; font-weight: 900; color: #ffcc00; }
+        .order-price { font-size: 18px; font-weight: 900; color: #ffcc00; }
         .order-badge {
-            background: rgba(255, 204, 0, 0.15);
-            color: #ffcc00;
             font-size: 11px;
             font-weight: 800;
             padding: 4px 10px;
             border-radius: 8px;
         }
+        .order-badge.completed { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+        .order-badge.cancelled { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+        .order-badge.active { background: rgba(255, 204, 0, 0.15); color: #ffcc00; }
+
         .order-details {
             background: #13151c;
             padding: 12px;
@@ -254,6 +259,28 @@
             font-weight: 800;
             font-size: 13px;
             cursor: pointer;
+        }
+
+        /* Tarix filtri */
+        .history-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .filter-btn {
+            background: #181b24;
+            color: #8a8f9d;
+            border: 1px solid #282c38;
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .filter-btn.active {
+            background: #ffcc00;
+            color: #111;
+            border-color: #ffcc00;
         }
 
         .modal-overlay {
@@ -325,6 +352,7 @@
         <button class="btn-add-driver" onclick="openAddModal()">+ Haydovchi</button>
     </div>
 
+    <!-- Statistika kartalari -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-num" id="statOnlineCount">0</div>
@@ -335,19 +363,21 @@
             <div class="stat-title">Jami Haydovchilar</div>
         </div>
         <div class="stat-card">
-            <div class="stat-num" id="statActiveOrders">0</div>
-            <div class="stat-title">Faol Buyurtmalar</div>
+            <div class="stat-num" id="statCompletedCount" style="color: #2ed573;">0</div>
+            <div class="stat-title">Yetkazilgan Safarlar</div>
         </div>
         <div class="stat-card">
-            <div class="stat-num" id="statSystemIncome">0 UZS</div>
-            <div class="stat-title">Umumiy Tushum</div>
+            <div class="stat-num" id="statCancelledCount" style="color: #ff4757;">0</div>
+            <div class="stat-title">Bekor qilinganlar</div>
         </div>
     </div>
 
+    <!-- Menyu tablari -->
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
         <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
-        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Buyurtmalar</button>
+        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Faol</button>
+        <button class="tab-btn" onclick="switchTab('historyTab', this)">📊 Tarix</button>
         <button class="tab-btn" onclick="switchTab('applicationsTab', this)">
             📑 Arizalar <span id="pendingBadge" style="background:#ff4757; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; display:none;">0</span>
         </button>
@@ -370,17 +400,32 @@
         </div>
     </div>
 
-    <!-- 3. BUYURTMALAR -->
+    <!-- 3. FAOL BUYURTMA -->
     <div class="tab-view" id="ordersTab">
         <div class="section-header">
-            <div class="section-title">Jonli va Faol Buyurtmalar</div>
+            <div class="section-title">Jonli va Faol Buyurtma</div>
         </div>
         <div id="ordersListContainer">
             <div style="text-align: center; color: #8a8f9d; padding: 20px;">Hozircha faol buyurtmalar yo'q</div>
         </div>
     </div>
 
-    <!-- 4. ARIZALAR SAHIFASI -->
+    <!-- 4. BUYURTMALAR TARIXI -->
+    <div class="tab-view" id="historyTab">
+        <div class="section-header">
+            <div class="section-title">Safarlar va Buyurtmalar Tarixi</div>
+        </div>
+        <div class="history-filters">
+            <button class="filter-btn active" onclick="filterHistory('all', this)">Barchasi</button>
+            <button class="filter-btn" onclick="filterHistory('completed', this)">✅ Yetkazilgan</button>
+            <button class="filter-btn" onclick="filterHistory('cancelled', this)">❌ Bekor qilingan</button>
+        </div>
+        <div id="historyListContainer">
+            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Tarix yuklanmoqda...</div>
+        </div>
+    </div>
+
+    <!-- 5. ARIZALAR SAHIFASI -->
     <div class="tab-view" id="applicationsTab">
         <div class="section-header">
             <div class="section-title">Kelib tushgan arizalar (<span id="applicationsCount">0</span>)</div>
@@ -422,6 +467,8 @@
         let driverMarkers = {};
         let registeredDriversData = {};
         let onlineDriversData = {};
+        let orderHistoryData = {};
+        let currentFilter = 'all';
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -474,6 +521,12 @@
             db.ref('orders').on('value', snap => {
                 const orders = snap.val() || {};
                 renderOrdersList(orders);
+            });
+
+            // Safarlar tarixi sinxronizatsiyasi
+            db.ref('order_history').on('value', snap => {
+                orderHistoryData = snap.val() || {};
+                renderHistoryList();
                 updateStats();
             });
         }
@@ -513,12 +566,10 @@
                 : "Ayni damda online haydovchilar yo'q";
         }
 
-        // Tasdiqlangan haydovchilarni chiqarish
         function renderDriversList() {
             const container = document.getElementById("driversListContainer");
             const allIds = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)]));
 
-            // Faqat tasdiqlangan (status === 'approved') haydovchilarni saralash
             const approvedIds = allIds.filter(id => {
                 const reg = registeredDriversData[id];
                 return reg && reg.status !== 'pending' && reg.status !== 'rejected';
@@ -568,7 +619,6 @@
             });
         }
 
-        // Kutilayotgan arizalarni chiqarish
         function renderApplicationsList() {
             const container = document.getElementById("applicationsListContainer");
             const badge = document.getElementById("pendingBadge");
@@ -624,18 +674,16 @@
             });
         }
 
-        // Arizani tasdiqlash
         function approveDriverApplication(id, name) {
             db.ref('registered_drivers/' + id).update({
                 status: 'approved',
                 approved_at: Date.now()
             }).then(() => {
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                alert(`✅ ${name} muvaffaqiyatli tasdiqlandi! Haydovchi ilovasi ishga tushdi.`);
+                alert(`✅ ${name} tasdiqlandi!`);
             });
         }
 
-        // Arizani rad etish
         function rejectDriverApplication(id, name) {
             if (confirm(`Haqiqatan ham ${name} arizasini rad etmoqchimisiz?`)) {
                 db.ref('registered_drivers/' + id).update({
@@ -661,7 +709,7 @@
             card.innerHTML = `
                 <div class="order-head">
                     <div class="order-price">${currentOrder.price || '0 UZS'}</div>
-                    <span class="order-badge">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
+                    <span class="order-badge active">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
                 </div>
                 <div class="order-details">
                     <div>👤 <b>Mijoz:</b> ${currentOrder.client_name || 'Noma\'lum'} (${currentOrder.client_phone || ''})</div>
@@ -673,14 +721,75 @@
             container.appendChild(card);
         }
 
+        // Safarlar tarixini chiqarish
+        function renderHistoryList() {
+            const container = document.getElementById("historyListContainer");
+            const historyKeys = Object.keys(orderHistoryData).reverse(); // Eng so'nggilari tepada
+
+            let filteredKeys = historyKeys.filter(k => {
+                const item = orderHistoryData[k];
+                if (currentFilter === 'completed') return item.status === 'completed';
+                if (currentFilter === 'cancelled') return item.status === 'cancelled' || item.status === 'cancelled_by_client' || item.status === 'cancelled_by_admin';
+                return true;
+            });
+
+            if (filteredKeys.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Bu toifada buyurtmalar mavjud emas</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            filteredKeys.forEach(key => {
+                const item = orderHistoryData[key];
+                const dateObj = new Date(item.timestamp || Date.now());
+                const dateStr = dateObj.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const timeStr = dateObj.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+
+                const isDone = item.status === 'completed';
+                const statusLabel = isDone ? '✅ YETKAZILDI' : '❌ BEKOR QILINDI';
+                const badgeClass = isDone ? 'completed' : 'cancelled';
+
+                const card = document.createElement("div");
+                card.className = "order-card";
+                card.innerHTML = `
+                    <div class="order-head">
+                        <div>
+                            <div class="order-price">${item.price || '0 UZS'}</div>
+                            <div style="font-size: 11px; color: #8a8f9d; margin-top: 2px;">📅 ${dateStr} • ⏰ ${timeStr}</div>
+                        </div>
+                        <span class="order-badge ${badgeClass}">${statusLabel}</span>
+                    </div>
+                    <div class="order-details">
+                        <div>👤 <b>Mijoz:</b> ${item.client_name || 'Noma\'lum'} (<a href="tel:${item.client_phone || ''}" style="color:#ffcc00; text-decoration:none;">${item.client_phone || '-'}</a>)</div>
+                        <div>🚖 <b>Haydovchi:</b> ${item.driver_name || 'Topilmadi'} ${item.driver_car ? `(${item.driver_car})` : ''}</div>
+                        <div>📍 <b>Manzil:</b> ${item.destination || 'Belgilanmagan'}</div>
+                        <div>📏 <b>Masofa:</b> ${item.distance || '-'} • <b>Tarif:</b> ${item.tariff || 'Standart'}</div>
+                        ${item.cancel_reason ? `<div style="color:#ff4757; font-size:12px;">⚠️ Sabab: ${item.cancel_reason}</div>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterHistory(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            renderHistoryList();
+        }
+
         function updateStats() {
             const onlineCount = Object.keys(onlineDriversData).filter(id => onlineDriversData[id].is_online).length;
             const approvedDriversCount = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status !== 'pending' && registeredDriversData[id].status !== 'rejected').length;
             
+            const historyList = Object.values(orderHistoryData);
+            const completedCount = historyList.filter(o => o.status === 'completed').length;
+            const cancelledCount = historyList.filter(o => o.status === 'cancelled' || o.status === 'cancelled_by_client' || o.status === 'cancelled_by_admin').length;
+
             document.getElementById("statOnlineCount").innerText = onlineCount;
             document.getElementById("statTotalDrivers").innerText = approvedDriversCount;
-            document.getElementById("statActiveOrders").innerText = onlineCount > 0 ? "1" : "0";
-            document.getElementById("statSystemIncome").innerText = (approvedDriversCount * 18500).toLocaleString() + " UZS";
+            document.getElementById("statCompletedCount").innerText = completedCount;
+            document.getElementById("statCancelledCount").innerText = cancelledCount;
         }
 
         function deleteDriverFromDatabase(id, name) {
@@ -688,15 +797,27 @@
                 db.ref('registered_drivers/' + id).remove();
                 db.ref('drivers/' + id).remove();
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                alert(`✅ ${name} bazadan muvaffaqiyatli o'chirildi!`);
+                alert(`✅ ${name} bazadan o'chirildi!`);
             }
         }
 
         function forceCancelOrder() {
-            if (confirm("Ushbu faol buyurtmani majburiy bekor qilib, bazadan o'chirmoqchimisiz?")) {
-                db.ref('orders/current_status').remove();
-                db.ref('orders/current_order').remove();
-                alert("✅ Buyurtma bekor qilindi!");
+            if (confirm("Ushbu faol buyurtmani majburiy bekor qilib, tarixga yozmoqchimisiz?")) {
+                db.ref('orders/current_order').once('value', snap => {
+                    const currentOrder = snap.val() || {};
+                    const histId = "ord_" + Date.now();
+                    
+                    db.ref('order_history/' + histId).set({
+                        ...currentOrder,
+                        status: 'cancelled_by_admin',
+                        cancel_reason: "Admin tomonidan bekor qilindi",
+                        timestamp: Date.now()
+                    });
+
+                    db.ref('orders/current_status').remove();
+                    db.ref('orders/current_order').remove();
+                    alert("✅ Buyurtma bekor qilindi va tarixga saqlandi!");
+                });
             }
         }
 
@@ -722,12 +843,12 @@
                 car: car,
                 plate: plate,
                 tariff: tariff,
-                status: 'approved', // Admin qo'shgani uchun to'g'ridan-to'g'ri tasdiqlangan bo'ladi
+                status: 'approved',
                 registered_at: Date.now()
             });
 
             closeAddModal();
-            alert("✅ Yangi haydovchi bazaga qo'shildi va tasdiqlandi!");
+            alert("✅ Yangi haydovchi bazaga qo'shildi!");
         }
     </script>
 </body>
