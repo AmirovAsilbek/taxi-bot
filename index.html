@@ -705,6 +705,7 @@
         let sortedDriversQueue = [];
         let currentDriverQueueIndex = 0;
         let queueTimer = null;
+        let passedDrivers = []; // Rad etgan haydovchilar ro'yxati
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
@@ -734,6 +735,7 @@
             listenToLiveDrivers();
             listenToOrderAcceptance();
             listenForDriverRejections();
+            listenForOrderClearing();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
             map.events.add('actionend', () => {
@@ -1126,9 +1128,26 @@
             db.ref('orders/pass_signal').on('value', snap => {
                 const data = snap.val();
                 if (data && data.order_time) {
-                    currentDriverQueueIndex++;
+                    if (data.rejected_by && !passedDrivers.includes(data.rejected_by)) {
+                        passedDrivers.push(data.rejected_by);
+                    }
                     dispatchOrderToNextCandidate();
                     db.ref('orders/pass_signal').remove();
+                }
+            });
+        }
+
+        function listenForOrderClearing() {
+            db.ref('orders/current_order').on('value', snapshot => {
+                const order = snapshot.val();
+                const searchSheet = document.getElementById("searchStatusSheet");
+                
+                if (!order && searchSheet && searchSheet.style.display === "flex") {
+                    clearTimeout(queueTimer);
+                    searchSheet.style.display = "none";
+                    document.getElementById("driverAcceptedSheet").style.display = "none";
+                    document.getElementById("overviewSheet").style.display = "flex";
+                    document.getElementById("locBtn").style.bottom = "64vh";
                 }
             });
         }
@@ -1142,6 +1161,7 @@
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
+            passedDrivers = []; // Yangi qidiruv uchun tozalash
 
             db.ref('drivers').once('value', snapshot => {
                 const drivers = snapshot.val() || {};
@@ -1174,6 +1194,9 @@
         function dispatchOrderToNextCandidate() {
             clearTimeout(queueTimer);
 
+            // Rad etganlarni chiqarib tashlaymiz
+            const availableQueue = sortedDriversQueue.filter(id => !passedDrivers.includes(id));
+
             const basePayload = {
                 type: "client_order_searching",
                 client_id: currentUserId,
@@ -1191,38 +1214,34 @@
                 timestamp: Date.now()
             };
 
-            // 1-BOSQICH: Eng yaqin 1-haydovchiga (15 soniya)
-            if (currentDriverQueueIndex === 0 && sortedDriversQueue.length > 0) {
-                basePayload.target_driver = sortedDriversQueue[0];
+            // 1-BOSQICH: Ro'yxatdagi 1-haydovchiga (15s)
+            if (availableQueue.length > 0 && currentDriverQueueIndex === 0) {
+                basePayload.target_driver = availableQueue[0];
                 db.ref('orders/current_order').set(basePayload);
 
                 queueTimer = setTimeout(() => {
-                    currentDriverQueueIndex++;
+                    currentDriverQueueIndex = 1;
                     dispatchOrderToNextCandidate();
                 }, 15000);
             } 
-            // 2-BOSQICH: Eng yaqin 2-haydovchiga (15 soniya)
-            else if (currentDriverQueueIndex === 1 && sortedDriversQueue.length > 1) {
-                basePayload.target_driver = sortedDriversQueue[1];
+            // 2-BOSQICH: Ro'yxatdagi 2-haydovchiga (15s)
+            else if (availableQueue.length > 1 && currentDriverQueueIndex === 1) {
+                basePayload.target_driver = availableQueue[1];
                 db.ref('orders/current_order').set(basePayload);
 
                 queueTimer = setTimeout(() => {
-                    currentDriverQueueIndex++;
+                    currentDriverQueueIndex = 2;
                     dispatchOrderToNextCandidate();
                 }, 15000);
             } 
-            // 3-BOSQICH: Qolgan barcha haydovchilarga baravar chiqarish (Broadcast - 20 soniya)
-            else if (currentDriverQueueIndex === 2 || (sortedDriversQueue.length <= 2 && currentDriverQueueIndex >= sortedDriversQueue.length)) {
+            // 3-BOSQICH: Qolgan barcha rad etmaganlarga baravar (ALL - 20s)
+            else {
                 basePayload.target_driver = "ALL";
                 db.ref('orders/current_order').set(basePayload);
 
                 queueTimer = setTimeout(() => {
                     autoCancelOrderBySystem();
                 }, 20000);
-            } 
-            // 4-BOSQICH: Hech kim qabul qilmadi -> Avtomatik to'xtatiladi
-            else {
-                autoCancelOrderBySystem();
             }
         }
 
