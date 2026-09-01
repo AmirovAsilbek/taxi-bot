@@ -694,10 +694,11 @@
         let finalTripPrice = "0 UZS";
         let searchTimer = null;
         let availableTariffs = new Set();
+        let acceptedDriverData = null;
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
-       const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+        const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
         <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
         <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
@@ -1002,6 +1003,8 @@
         function listenToOrderAcceptance() {
             db.ref('orders/current_status').on('value', snapshot => {
                 const data = snapshot.val();
+                acceptedDriverData = data;
+
                 if (data && data.status === 'accepted') {
                     document.getElementById("searchStatusSheet").style.display = "none";
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
@@ -1050,6 +1053,25 @@
                         header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
+
+                        if (data.driver_lat && data.driver_lon) {
+                            if (multiRoute) {
+                                try { map.geoObjects.remove(multiRoute); } catch(e){}
+                                multiRoute = null;
+                            }
+                            multiRoute = new ymaps.multiRouter.MultiRoute({
+                                referencePoints: [
+                                    [data.driver_lat, data.driver_lon],
+                                    startCoords
+                                ],
+                                params: { routingMode: 'auto', results: 1 }
+                            }, {
+                                boundsAutoApply: true,
+                                routeActiveStrokeColor: "#007aff",
+                                routeActiveStrokeWidth: 6
+                            });
+                            map.geoObjects.add(multiRoute);
+                        }
                     }
                 } else if (!data) {
                     if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
@@ -1100,6 +1122,19 @@
         }
 
         function cancelTaxiOrder() {
+            const histId = "trip_" + Date.now();
+            db.ref('order_history/' + histId).set({
+                client_name: document.getElementById("uName").innerText,
+                client_phone: document.getElementById("uPhone").innerText,
+                destination: targetName,
+                price: finalTripPrice,
+                tariff: currentTariff,
+                distance: targetDist.toFixed(1) + " km",
+                status: 'cancelled_by_client',
+                cancel_reason: "Qidiruv paytida mijoz bekor qildi",
+                timestamp: Date.now()
+            });
+
             db.ref('orders/current_status').remove();
             db.ref('orders/current_order').remove();
             document.getElementById("searchStatusSheet").style.display = "none";
@@ -1110,6 +1145,21 @@
 
         function cancelAcceptedOrder() {
             if (confirm("Haqiqatan ham buyurtmani bekor qilmoqchimisiz?")) {
+                const histId = "trip_" + Date.now();
+                db.ref('order_history/' + histId).set({
+                    client_name: document.getElementById("uName").innerText,
+                    client_phone: document.getElementById("uPhone").innerText,
+                    driver_name: acceptedDriverData?.driver_name || "Noma'lum",
+                    driver_car: acceptedDriverData?.driver_car || "-",
+                    destination: targetName,
+                    price: finalTripPrice,
+                    tariff: currentTariff,
+                    distance: targetDist.toFixed(1) + " km",
+                    status: 'cancelled_by_client',
+                    cancel_reason: "Haydovchi qabul qilgach mijoz bekor qildi",
+                    timestamp: Date.now()
+                });
+
                 db.ref('orders/current_status').set({ status: 'cancelled_by_client' });
                 db.ref('orders/current_order').remove();
 
