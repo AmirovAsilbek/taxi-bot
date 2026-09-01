@@ -337,7 +337,6 @@
 </head>
 <body>
 
-    <!-- 1. Ro'yxatdan o'tish (Ariza topshirish) oynasi -->
     <div class="auth-overlay" id="driverAuthModal">
         <div class="auth-card">
             <div class="auth-badge">🚖</div>
@@ -359,7 +358,6 @@
         </div>
     </div>
 
-    <!-- 2. Admin tasdig'ini kutish va Rad etilgan holat oynasi -->
     <div class="auth-overlay" id="driverPendingModal">
         <div class="auth-card">
             <div class="auth-badge" id="pendingBadgeIcon" style="background: #ffa502; color: #fff;">⏳</div>
@@ -524,7 +522,6 @@
                 const driver = snapshot.val();
                 
                 if (!driver) {
-                    // Bazada yo'q bo'lsa -> Ro'yxatdan o'tish oynasi
                     isApproved = false;
                     forceOffline();
                     document.getElementById("driverPendingModal").style.display = "none";
@@ -535,7 +532,6 @@
                         document.getElementById("regDriverName").value = `${u.first_name || ''} ${u.last_name || ''}`.trim();
                     }
                 } else if (driver.status === 'pending') {
-                    // Ariza kutilmoqda
                     isApproved = false;
                     forceOffline();
                     document.getElementById("driverAuthModal").style.display = "none";
@@ -550,7 +546,6 @@
                     document.getElementById("pendingStatusText").innerText = "Tekshirilmoqda...";
                     document.getElementById("pendingStatusText").style.color = "#ffa502";
                 } else if (driver.status === 'rejected') {
-                    // Admin rad etganda
                     isApproved = false;
                     forceOffline();
                     document.getElementById("driverAuthModal").style.display = "none";
@@ -568,7 +563,6 @@
                     `;
                     document.getElementById("pendingStatusBox").style.display = "none";
                 } else if (driver.status === 'approved') {
-                    // Tasdiqlangan -> ilovani to'liq ochish
                     isApproved = true;
                     document.getElementById("driverAuthModal").style.display = "none";
                     document.getElementById("driverPendingModal").style.display = "none";
@@ -975,6 +969,17 @@
             document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
             document.getElementById("activeTripPanel").style.display = "none";
             document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+
+            // Tarixga muvaffaqiyatli safar sifatida yozish
+            const historyId = "trip_" + Date.now();
+            db.ref('order_history/' + historyId).set({
+                ...(currentOrderData || {}),
+                driver_name: document.getElementById("dName").innerText,
+                driver_car: document.getElementById("dCar").innerText,
+                driver_phone: localStorage.getItem("ry_driver_phone") || "+998900000000",
+                status: 'completed',
+                timestamp: Date.now()
+            });
 
             db.ref('orders/current_status').remove();
             db.ref('orders/current_order').remove();
