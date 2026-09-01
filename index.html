@@ -678,8 +678,14 @@
         const firebaseConfig = {
             databaseURL: "https://express-taxi-83af2-default-rtdb.firebaseio.com"
         };
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let paramUserId = urlParams.get('user_id');
+        let currentUserId = paramUserId || tg?.initDataUnsafe?.user?.id || "guest_" + Date.now();
 
         let map, multiRoute;
         let startPlacemark = null;
@@ -695,7 +701,10 @@
         let searchTimer = null;
         let availableTariffs = new Set();
         let acceptedDriverData = null;
-        let orderTimeoutTimer = null; // Taymer
+        
+        let sortedDriversQueue = [];
+        let currentDriverQueueIndex = 0;
+        let queueTimer = null;
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
@@ -724,6 +733,7 @@
             checkUserAuth();
             listenToLiveDrivers();
             listenToOrderAcceptance();
+            listenForDriverRejections();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
             map.events.add('actionend', () => {
@@ -888,7 +898,6 @@
         function calculatePrices(roadDistKm) {
             targetDist = roadDistKm > 0.2 ? roadDistKm : 0.5;
 
-            // XATOLIK 1 TUZATILDI: 1 km uchun mos ravishda 5000, 6000, 7500 so'm hisoblanadi
             prices.standart = Math.round((5000 + (targetDist * 5000)) / 500) * 500;
             prices.komfort = Math.round((8000 + (targetDist * 6000)) / 500) * 500;
             prices.komfort_plus = Math.round((12000 + (targetDist * 7500)) / 500) * 500;
@@ -899,11 +908,10 @@
             
             document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
-            // XATOLIK 2 TUZATILDI: Taksi yo'q bo'lsa ham Jami narx to'g'ri yangilanib turadi
             let fallbackPrice = prices.standart;
             if (currentTariff === "Komfort") fallbackPrice = prices.komfort;
             if (currentTariff === "Komfort+") fallbackPrice = prices.komfort_plus;
-            const totalCalc = fallbackPrice + 2000; // +2000 UZS Choypuli
+            const totalCalc = fallbackPrice + 2000;
             
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
@@ -1003,10 +1011,8 @@
                         const realKm = distanceMeters / 1000;
                         calculatePrices(realKm);
                     } else {
-                        // XATOLIK 3 TUZATILDI: Yandex avtomobil yo'lini topa olmagan holat (Pereval/Tog' uchun aylanma koeffitsiyent 1.8)
                         const estimatedKm = targetDist * 1.8;
                         calculatePrices(estimatedKm);
-                        
                         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
                         alert("⚠️ Diqqat: Ushbu manzilgacha xaritada aniq avtomobil yo'li topilmadi. Masofa va narx taxminiy aylanma yo'l orqali hisoblandi.");
                     }
@@ -1024,8 +1030,7 @@
                 acceptedDriverData = data;
 
                 if (data && data.status === 'accepted') {
-                    // HAYDOVCHI TOPILDI, AVTOMATIK BEKOR QILISHNI TO'XTATAMIZ
-                    clearTimeout(orderTimeoutTimer);
+                    clearTimeout(queueTimer);
 
                     document.getElementById("searchStatusSheet").style.display = "none";
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
@@ -1094,17 +1099,36 @@
                             map.geoObjects.add(multiRoute);
                         }
                     }
-                } else if (!data) {
-                    if (document.getElementById("driverAcceptedSheet").style.display === "flex") {
-                        document.getElementById("driverAcceptedSheet").style.display = "none";
-                        document.getElementById("ratingSheet").style.display = "flex";
-                        document.getElementById("locBtn").style.bottom = "32vh";
-                        if (multiRoute) {
-                            try { map.geoObjects.remove(multiRoute); } catch(e){}
-                            multiRoute = null;
-                        }
-                        playSoundChime();
+                } else if (data && data.status === 'completed') {
+                    document.getElementById("driverAcceptedSheet").style.display = "none";
+                    document.getElementById("ratingSheet").style.display = "flex";
+                    document.getElementById("locBtn").style.bottom = "32vh";
+                    if (multiRoute) {
+                        try { map.geoObjects.remove(multiRoute); } catch(e){}
+                        multiRoute = null;
                     }
+                    playSoundChime();
+                } else if (data && (data.status === 'cancelled_by_admin' || data.status === 'cancelled_by_driver')) {
+                    alert("⚠️ Buyurtma bekor qilindi!");
+                    document.getElementById("searchStatusSheet").style.display = "none";
+                    document.getElementById("driverAcceptedSheet").style.display = "none";
+                    document.getElementById("overviewSheet").style.display = "flex";
+                    document.getElementById("locBtn").style.bottom = "64vh";
+                    if (multiRoute) {
+                        try { map.geoObjects.remove(multiRoute); } catch(e){}
+                        multiRoute = null;
+                    }
+                }
+            });
+        }
+
+        function listenForDriverRejections() {
+            db.ref('orders/pass_signal').on('value', snap => {
+                const data = snap.val();
+                if (data && data.order_time) {
+                    currentDriverQueueIndex++;
+                    dispatchOrderToNextCandidate();
+                    db.ref('orders/pass_signal').remove();
                 }
             });
         }
@@ -1119,8 +1143,40 @@
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
 
-            const payload = {
+            db.ref('drivers').once('value', snapshot => {
+                const drivers = snapshot.val() || {};
+                const reqTariff = normalizeTariff(currentTariff);
+                let list = [];
+
+                for (let id in drivers) {
+                    const d = drivers[id];
+                    if (d.is_online && d.lat && d.lon && normalizeTariff(d.tariff) === reqTariff) {
+                        const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
+                        list.push({ id: id, distance: dist });
+                    }
+                }
+
+                list.sort((a, b) => a.distance - b.distance);
+                sortedDriversQueue = list.map(item => item.id);
+                currentDriverQueueIndex = 0;
+
+                if (sortedDriversQueue.length === 0) {
+                    autoCancelOrderBySystem();
+                    return;
+                }
+
+                dispatchOrderToNextCandidate();
+            });
+
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function dispatchOrderToNextCandidate() {
+            clearTimeout(queueTimer);
+
+            const basePayload = {
                 type: "client_order_searching",
+                client_id: currentUserId,
                 lat: startCoords[0],
                 lon: startCoords[1],
                 dest_lat: targetCoords[0],
@@ -1130,25 +1186,49 @@
                 tariff: currentTariff,
                 price: finalTripPrice,
                 client_name: document.getElementById("uName").innerText,
-                client_phone: document.getElementById("uPhone").innerText
-            };
-
-            db.ref('orders/current_order').set({
-                ...payload,
+                client_phone: document.getElementById("uPhone").innerText,
                 status: "searching",
                 timestamp: Date.now()
-            });
+            };
 
-            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            // 1-BOSQICH: Eng yaqin 1-haydovchiga (15 soniya)
+            if (currentDriverQueueIndex === 0 && sortedDriversQueue.length > 0) {
+                basePayload.target_driver = sortedDriversQueue[0];
+                db.ref('orders/current_order').set(basePayload);
 
-            // TIZIM TOMONIDAN AVTOMATIK BEKOR QILISH (2 daqiqa = 120000 ms)
-            clearTimeout(orderTimeoutTimer);
-            orderTimeoutTimer = setTimeout(() => {
+                queueTimer = setTimeout(() => {
+                    currentDriverQueueIndex++;
+                    dispatchOrderToNextCandidate();
+                }, 15000);
+            } 
+            // 2-BOSQICH: Eng yaqin 2-haydovchiga (15 soniya)
+            else if (currentDriverQueueIndex === 1 && sortedDriversQueue.length > 1) {
+                basePayload.target_driver = sortedDriversQueue[1];
+                db.ref('orders/current_order').set(basePayload);
+
+                queueTimer = setTimeout(() => {
+                    currentDriverQueueIndex++;
+                    dispatchOrderToNextCandidate();
+                }, 15000);
+            } 
+            // 3-BOSQICH: Qolgan barcha haydovchilarga baravar chiqarish (Broadcast - 20 soniya)
+            else if (currentDriverQueueIndex === 2 || (sortedDriversQueue.length <= 2 && currentDriverQueueIndex >= sortedDriversQueue.length)) {
+                basePayload.target_driver = "ALL";
+                db.ref('orders/current_order').set(basePayload);
+
+                queueTimer = setTimeout(() => {
+                    autoCancelOrderBySystem();
+                }, 20000);
+            } 
+            // 4-BOSQICH: Hech kim qabul qilmadi -> Avtomatik to'xtatiladi
+            else {
                 autoCancelOrderBySystem();
-            }, 120000); 
+            }
         }
 
         function autoCancelOrderBySystem() {
+            clearTimeout(queueTimer);
+
             const histId = "trip_" + Date.now();
             db.ref('order_history/' + histId).set({
                 client_name: document.getElementById("uName").innerText,
@@ -1158,7 +1238,7 @@
                 tariff: currentTariff,
                 distance: targetDist.toFixed(1) + " km",
                 status: 'cancelled',
-                cancel_reason: "Atrofda bo'sh mashina topilmadi (Tizim bekor qildi)",
+                cancel_reason: "Haydovchilar qabul qilmadi (Tizim bekor qildi)",
                 timestamp: Date.now()
             });
 
@@ -1171,11 +1251,11 @@
             document.getElementById("locBtn").style.bottom = "64vh";
 
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-            alert("😔 Kechirasiz, atrofda bo'sh taksilar topilmadi yoki barcha haydovchilar band.\nIltimos, birozdan so'ng qayta urinib ko'ring.");
+            alert("😔 Kechirasiz, barcha haydovchilar band yoki buyurtma qabul qilinmadi.\nIltimos, birozdan so'ng qayta urinib ko'ring.");
         }
 
         function cancelTaxiOrder() {
-            clearTimeout(orderTimeoutTimer); // Mijoz o'zi bekor qilsa taymer to'xtaydi
+            clearTimeout(queueTimer);
 
             const histId = "trip_" + Date.now();
             db.ref('order_history/' + histId).set({
@@ -1265,8 +1345,8 @@
         }
 
         function checkUserAuth() {
-            const savedName = localStorage.getItem("taxi_user_name");
-            const savedPhone = localStorage.getItem("taxi_user_phone");
+            const savedName = localStorage.getItem("taxi_user_name_" + currentUserId);
+            const savedPhone = localStorage.getItem("taxi_user_phone_" + currentUserId);
             if (savedName && savedPhone) {
                 document.getElementById("uName").innerText = savedName;
                 document.getElementById("uPhone").innerText = savedPhone;
@@ -1284,8 +1364,8 @@
             const name = document.getElementById("regName").value.trim();
             const phone = document.getElementById("regPhone").value.trim();
             if (!name || !phone) { alert("Ma'lumotlarni to'liq kiriting!"); return; }
-            localStorage.setItem("taxi_user_name", name);
-            localStorage.setItem("taxi_user_phone", phone);
+            localStorage.setItem("taxi_user_name_" + currentUserId, name);
+            localStorage.setItem("taxi_user_phone_" + currentUserId, phone);
             document.getElementById("uName").innerText = name;
             document.getElementById("uPhone").innerText = phone;
             document.getElementById("uAvatar").innerText = name.charAt(0).toUpperCase();
@@ -1304,6 +1384,7 @@
             document.getElementById("centerPin").style.display = "flex";
             document.getElementById("topBtn").innerText = "☰";
             document.getElementById("locBtn").style.bottom = "230px";
+            db.ref('orders/current_status').remove();
         }
 
         function getDistanceKm(lat1, lon1, lat2, lon2) {
