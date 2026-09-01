@@ -483,7 +483,6 @@
         }
         const db = firebase.database();
 
-        // 1. Shaxsiy ID ni URL parametri yoki Telegram orqali aniqlash
         const urlParams = new URLSearchParams(window.location.search);
         let paramUserId = urlParams.get('user_id');
 
@@ -502,8 +501,6 @@
             driverId = "driver_" + localId;
         }
 
-        console.log("Faol Haydovchi ID:", driverId);
-
         let map, multiRoute;
         let driverPlacemark = null;
         let clientMarker = null;
@@ -514,7 +511,6 @@
         let currentOrderData = null;
         let tripStep = 'to_client';
         
-        // 2. Har bir haydovchining shaxsiy hisob-kitobini driverId orqali yuklash
         let completedRides = parseInt(localStorage.getItem('ry_driver_trips_' + driverId) || '0');
         let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings_' + driverId) || '0');
 
@@ -725,7 +721,8 @@
 
                     if (isOnline && isApproved) {
                         const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
-                        db.ref('drivers/' + driverId).set({
+                        const driverRef = db.ref('drivers/' + driverId);
+                        driverRef.set({
                             lat: currentPos[0],
                             lon: currentPos[1],
                             name: document.getElementById("dName").innerText,
@@ -735,6 +732,7 @@
                             is_online: true,
                             updated_at: Date.now()
                         });
+                        driverRef.onDisconnect().remove();
                     }
                 }, err => {
                     console.warn("Geolokatsiya olishda xatolik:", err);
@@ -749,15 +747,21 @@
         function listenForIncomingOrders() {
             db.ref('orders/current_order').on('value', snapshot => {
                 const order = snapshot.val();
+                
                 if (order && order.status === 'searching' && isOnline && isApproved && !currentOrderData) {
                     const driverTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
                     const orderTariff = normalizeTariff(order.tariff);
 
                     if (driverTariff !== orderTariff) return;
 
+                    if (order.target_driver && order.target_driver !== driverId && order.target_driver !== 'ALL') {
+                        dismissOrderUI();
+                        return;
+                    }
+
                     showOrderPopup(order);
                 } else if (!order || order.status !== 'searching') {
-                    if (!currentOrderData) dismissOrder();
+                    dismissOrderUI();
                 }
             });
         }
@@ -832,7 +836,8 @@
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
                 const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
-                db.ref('drivers/' + driverId).set({
+                const driverRef = db.ref('drivers/' + driverId);
+                driverRef.set({
                     lat: currentPos[0],
                     lon: currentPos[1],
                     name: document.getElementById("dName").innerText,
@@ -842,6 +847,7 @@
                     is_online: true,
                     updated_at: Date.now()
                 });
+                driverRef.onDisconnect().remove();
             } else {
                 btn.classList.remove("online");
                 lbl.innerText = "Offline";
@@ -849,11 +855,19 @@
                 if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
                 
                 db.ref('drivers/' + driverId).remove();
-                dismissOrder();
+                dismissOrderUI();
             }
         }
 
         function dismissOrder() {
+            db.ref('orders/pass_signal').set({
+                rejected_by: driverId,
+                order_time: Date.now()
+            });
+            dismissOrderUI();
+        }
+
+        function dismissOrderUI() {
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
             currentOrderData = null;
@@ -1064,7 +1078,7 @@
                 timestamp: Date.now()
             });
 
-            db.ref('orders/current_status').remove();
+            db.ref('orders/current_status').set({ status: 'completed' });
             db.ref('orders/current_order').remove();
 
             if (multiRoute) {
