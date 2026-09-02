@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RideYellow - Driver Partner</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong&load=package.full" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -719,9 +719,9 @@
                     if (currentOrderData && (tripStep === 'to_client' || tripStep === 'in_trip')) {
                         let targetPoint = null;
                         if (tripStep === 'to_client' && currentOrderData.lat && currentOrderData.lon) {
-                            targetPoint = [parseFloat(currentOrderData.lat), parseFloat(currentOrderData.lon)];
+                            targetPoint = [Number(currentOrderData.lat), Number(currentOrderData.lon)];
                         } else if (tripStep === 'in_trip' && currentOrderData.dest_lat && currentOrderData.dest_lon) {
-                            targetPoint = [parseFloat(currentOrderData.dest_lat), parseFloat(currentOrderData.dest_lon)];
+                            targetPoint = [Number(currentOrderData.dest_lat), Number(currentOrderData.dest_lon)];
                         }
 
                         if (targetPoint && !isNaN(targetPoint[0]) && !isNaN(targetPoint[1])) {
@@ -900,12 +900,12 @@
         }
 
         function drawRoute(fromCoords, toCoords) {
-            if (!fromCoords || !toCoords || !map || typeof ymaps === 'undefined' || !ymaps.multiRouter) return;
+            if (!fromCoords || !toCoords || !map || typeof ymaps === 'undefined') return;
 
-            const startLat = parseFloat(fromCoords[0]);
-            const startLon = parseFloat(fromCoords[1]);
-            const endLat = parseFloat(toCoords[0]);
-            const endLon = parseFloat(toCoords[1]);
+            const startLat = Number(fromCoords[0]);
+            const startLon = Number(fromCoords[1]);
+            const endLat = Number(toCoords[0]);
+            const endLon = Number(toCoords[1]);
 
             if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) return;
 
@@ -914,54 +914,56 @@
                 multiRoute = null;
             }
 
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [
-                    [startLat, startLon],
-                    [endLat, endLon]
-                ],
-                params: { 
-                    routingMode: 'auto', 
-                    results: 1 
-                }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#007aff",
-                routeActiveStrokeWidth: 6,
-                routeActiveStrokeOpacity: 0.9,
-                routeStrokeColor: "#007aff",
-                pinVisible: true
-            });
-
-            multiRoute.model.events.add('requestsuccess', function() {
-                if (!multiRoute) return;
-                try {
-                    const activeRoute = multiRoute.getActiveRoute();
-                    if (activeRoute) {
-                        const durationText = activeRoute.properties.get("duration")?.text || "3 daq";
-                        const distanceText = activeRoute.properties.get("distance")?.text || "";
-
-                        if (tripStep === 'to_client') {
-                            document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
-                            db.ref('orders/current_status').update({
-                                eta: durationText
-                            });
-                        } else if (tripStep === 'in_trip') {
-                            document.getElementById("gpsStatus").innerHTML = `🚗 Manzilgacha: <b>${durationText}</b> (${distanceText})`;
-                        }
+            ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
+                multiRoute = new MultiRoute({
+                    referencePoints: [
+                        [startLat, startLon],
+                        [endLat, endLon]
+                    ],
+                    params: { 
+                        routingMode: 'auto', 
+                        results: 1 
                     }
-                } catch(err) {
-                    console.warn("ETA hisoblashda xatolik:", err);
-                }
-            });
-
-            map.geoObjects.add(multiRoute);
-
-            try {
-                map.setBounds([[startLat, startLon], [endLat, endLon]], {
-                    checkZoomRange: true,
-                    zoomMargin: 70
+                }, {
+                    boundsAutoApply: true,
+                    routeActiveStrokeColor: "#007aff",
+                    routeActiveStrokeWidth: 6,
+                    routeActiveStrokeOpacity: 0.9,
+                    routeStrokeColor: "#007aff",
+                    pinVisible: true
                 });
-            } catch (e) {}
+
+                multiRoute.model.events.add('requestsuccess', function() {
+                    if (!multiRoute) return;
+                    try {
+                        const activeRoute = multiRoute.getActiveRoute();
+                        if (activeRoute) {
+                            const durationText = activeRoute.properties.get("duration")?.text || "3 daq";
+                            const distanceText = activeRoute.properties.get("distance")?.text || "";
+
+                            if (tripStep === 'to_client') {
+                                document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
+                                db.ref('orders/current_status').update({ eta: durationText });
+                            } else if (tripStep === 'in_trip') {
+                                document.getElementById("gpsStatus").innerHTML = `🚗 Manzilgacha: <b>${durationText}</b> (${distanceText})`;
+                            }
+                        }
+                    } catch(err) {}
+                });
+
+                multiRoute.model.events.add('requestfail', function() {
+                    document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning";
+                });
+
+                map.geoObjects.add(multiRoute);
+
+                try {
+                    map.setBounds([[startLat, startLon], [endLat, endLon]], {
+                        checkZoomRange: true,
+                        zoomMargin: 80
+                    });
+                } catch (e) {}
+            });
         }
 
         function acceptDriverOrder() {
@@ -988,8 +990,8 @@
                 document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
             }
 
-            const clientLat = parseFloat(currentOrderData.lat);
-            const clientLon = parseFloat(currentOrderData.lon);
+            const clientLat = Number(currentOrderData.lat);
+            const clientLon = Number(currentOrderData.lon);
 
             document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${clientLat},${clientLon}&rtt=auto`;
 
@@ -1014,13 +1016,24 @@
 
             if (clientMarker) {
                 try { map.geoObjects.remove(clientMarker); } catch(e){}
+                clientMarker = null;
             }
+
             clientMarker = new ymaps.Placemark([clientLat, clientLon], {
+                balloonContent: `<b>Mijoz:</b> ${currentOrderData.client_name || 'Mijoz'}<br><b>Tel:</b> ${currentOrderData.client_phone || ''}`,
                 hintContent: `Mijoz #${orderIndex}: ${currentOrderData.client_name || 'Mijoz'}`
             }, {
-                preset: 'islands#redPersonIcon'
+                preset: 'islands#redPersonIcon',
+                zIndex: 100
             });
             map.geoObjects.add(clientMarker);
+
+            try {
+                map.setBounds([currentPos, [clientLat, clientLon]], {
+                    checkZoomRange: true,
+                    zoomMargin: 90
+                });
+            } catch(e) {}
 
             drawRoute(currentPos, [clientLat, clientLon]);
         }
@@ -1030,8 +1043,8 @@
             
             if (tripStep === 'to_client') {
                 if (currentOrderData && currentOrderData.lat && currentOrderData.lon) {
-                    const clientLat = parseFloat(currentOrderData.lat);
-                    const clientLon = parseFloat(currentOrderData.lon);
+                    const clientLat = Number(currentOrderData.lat);
+                    const clientLon = Number(currentOrderData.lon);
                     const distanceToClient = getDistanceMeters(currentPos[0], currentPos[1], clientLat, clientLon);
 
                     if (distanceToClient > 300) {
@@ -1056,18 +1069,20 @@
                 db.ref('orders/current_status').update({ step: 'in_trip' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                const destLat = parseFloat(currentOrderData.dest_lat);
-                const destLon = parseFloat(currentOrderData.dest_lon);
+                const destLat = Number(currentOrderData.dest_lat);
+                const destLon = Number(currentOrderData.dest_lon);
 
                 document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${destLat},${destLon}&rtt=auto`;
 
                 if (clientMarker) {
                     try { map.geoObjects.remove(clientMarker); } catch(e){}
+                    clientMarker = null;
                 }
                 clientMarker = new ymaps.Placemark([destLat, destLon], {
                     hintContent: `Manzil: ${currentOrderData.destination || 'Belgilangan joy'}`
                 }, {
-                    preset: 'islands#redDotIcon'
+                    preset: 'islands#redDotIcon',
+                    zIndex: 100
                 });
                 map.geoObjects.add(clientMarker);
 
@@ -1075,8 +1090,8 @@
 
             } else if (tripStep === 'in_trip') {
                 if (currentOrderData && currentOrderData.dest_lat && currentOrderData.dest_lon) {
-                    const destLat = parseFloat(currentOrderData.dest_lat);
-                    const destLon = parseFloat(currentOrderData.dest_lon);
+                    const destLat = Number(currentOrderData.dest_lat);
+                    const destLon = Number(currentOrderData.dest_lon);
                     const distanceToDest = getDistanceMeters(currentPos[0], currentPos[1], destLat, destLon);
 
                     if (distanceToDest > 300) {
