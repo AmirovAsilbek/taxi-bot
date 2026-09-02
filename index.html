@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -466,7 +466,14 @@
             font-size: 22px;
             color: #111;
         }
-        .d-name { font-size: 16px; font-weight: 800; color: #111; }
+        .d-name { font-size: 16px; font-weight: 800; color: #111; display: flex; align-items: center; gap: 6px; }
+        .acc-order-badge {
+            background: #111;
+            color: #ffcc00;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
         .d-car { font-size: 13px; color: #666; margin-top: 2px; }
         .d-rating { font-size: 12px; font-weight: 800; color: #ff9800; }
 
@@ -629,7 +636,9 @@
     <div class="search-status-sheet" id="searchStatusSheet">
         <div class="radar-spinner"></div>
         <div>
-            <div style="font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px;">Haydovchi qidirilmoqda...</div>
+            <div style="font-size: 18px; font-weight: 800; color: #111; margin-bottom: 4px;">
+                Haydovchi qidirilmoqda... <span id="searchingOrderIndex" style="background:#ffcc00; padding:2px 6px; border-radius:6px; font-size:13px;">#---</span>
+            </div>
             <div style="font-size: 13px; color: #666;">Eng yaqin faol haydovchilarga so'rov yuborildi</div>
         </div>
         <button class="btn-cancel-order" onclick="cancelTaxiOrder()">Buyurtmani bekor qilish</button>
@@ -644,7 +653,10 @@
             <div class="driver-main">
                 <div class="driver-photo-badge">Y</div>
                 <div>
-                    <div class="d-name" id="accDriverName">Haydovchi</div>
+                    <div class="d-name">
+                        <span id="accOrderBadge" class="acc-order-badge">#---</span>
+                        <span id="accDriverName">Haydovchi</span>
+                    </div>
                     <div class="d-car" id="accDriverCar">Oq Onix • 70 N 079 NN</div>
                     <div class="d-rating">★ 5.0 (A'lo darajada)</div>
                 </div>
@@ -698,6 +710,7 @@
         let targetDist = 1.0;
         let currentTariff = "Standart";
         let finalTripPrice = "0 UZS";
+        let currentOrderId = "";
         let searchTimer = null;
         let availableTariffs = new Set();
         let acceptedDriverData = null;
@@ -1038,6 +1051,10 @@
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
                     document.getElementById("locBtn").style.bottom = "38vh";
 
+                    const badgeVal = data.order_index || currentOrderId || "1";
+                    const badgeElem = document.getElementById("accOrderBadge");
+                    if (badgeElem) badgeElem.innerText = "#" + badgeVal;
+
                     document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
                     document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix • 70 N 079 NN";
                     document.getElementById("accTripPrice").innerText = data.price || finalTripPrice;
@@ -1073,7 +1090,7 @@
                             params: { routingMode: 'auto', results: 1 }
                         }, {
                             boundsAutoApply: true,
-                            routeActiveStrokeColor: "#ff4757",
+                            routeActiveStrokeColor: "#007aff",
                             routeActiveStrokeWidth: 6
                         });
                         map.geoObjects.add(multiRoute);
@@ -1089,14 +1106,16 @@
                             }
                             multiRoute = new ymaps.multiRouter.MultiRoute({
                                 referencePoints: [
-                                    [data.driver_lat, data.driver_lon],
+                                    [parseFloat(data.driver_lat), parseFloat(data.driver_lon)],
                                     startCoords
                                 ],
                                 params: { routingMode: 'auto', results: 1 }
                             }, {
                                 boundsAutoApply: true,
                                 routeActiveStrokeColor: "#007aff",
-                                routeActiveStrokeWidth: 6
+                                routeActiveStrokeWidth: 6,
+                                routeActiveStrokeOpacity: 0.9,
+                                routeStrokeColor: "#007aff"
                             });
                             map.geoObjects.add(multiRoute);
                         }
@@ -1158,6 +1177,10 @@
                 return;
             }
 
+            currentOrderId = Math.floor(1000 + Math.random() * 9000).toString();
+            const sIndexBadge = document.getElementById("searchingOrderIndex");
+            if (sIndexBadge) sIndexBadge.innerText = "#" + currentOrderId;
+
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
@@ -1196,7 +1219,6 @@
 
             const availableQueue = sortedDriversQueue.filter(id => !passedDrivers.includes(id));
 
-            // Agar barcha haydovchilar (yoki navbatdagilar) o'tkazib yuborgan bo'lsa -> Darhol "haydovchilar yo'q" deb to'xtatamiz
             if (availableQueue.length === 0) {
                 autoCancelOrderBySystem();
                 return;
@@ -1204,6 +1226,8 @@
 
             const basePayload = {
                 type: "client_order_searching",
+                order_id: currentOrderId,
+                index: currentOrderId,
                 client_id: currentUserId,
                 lat: startCoords[0],
                 lon: startCoords[1],
@@ -1219,7 +1243,6 @@
                 timestamp: Date.now()
             };
 
-            // 1-BOSQICH: Ro'yxatdagi 1-haydovchiga (15s)
             if (currentDriverQueueIndex === 0 && availableQueue.length > 0) {
                 basePayload.target_driver = availableQueue[0];
                 db.ref('orders/current_order').set(basePayload);
@@ -1229,7 +1252,6 @@
                     dispatchOrderToNextCandidate();
                 }, 15000);
             } 
-            // 2-BOSQICH: Ro'yxatdagi 2-haydovchiga (15s)
             else if (currentDriverQueueIndex === 1 && availableQueue.length > 1) {
                 basePayload.target_driver = availableQueue[1];
                 db.ref('orders/current_order').set(basePayload);
@@ -1239,7 +1261,6 @@
                     dispatchOrderToNextCandidate();
                 }, 15000);
             } 
-            // 3-BOSQICH: Qolgan barcha rad etmaganlarga baravar (ALL - 20s)
             else {
                 basePayload.target_driver = "ALL";
                 db.ref('orders/current_order').set(basePayload);
@@ -1255,6 +1276,7 @@
 
             const histId = "trip_" + Date.now();
             db.ref('order_history/' + histId).set({
+                order_id: currentOrderId,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText,
                 destination: targetName,
@@ -1283,6 +1305,7 @@
 
             const histId = "trip_" + Date.now();
             db.ref('order_history/' + histId).set({
+                order_id: currentOrderId,
                 client_name: document.getElementById("uName").innerText,
                 client_phone: document.getElementById("uPhone").innerText,
                 destination: targetName,
@@ -1306,6 +1329,7 @@
             if (confirm("Haqiqatan ham buyurtmani bekor qilmoqchimisiz?")) {
                 const histId = "trip_" + Date.now();
                 db.ref('order_history/' + histId).set({
+                    order_id: currentOrderId,
                     client_name: document.getElementById("uName").innerText,
                     client_phone: document.getElementById("uPhone").innerText,
                     driver_name: acceptedDriverData?.driver_name || "Noma'lum",
