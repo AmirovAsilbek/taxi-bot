@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong&load=package.full" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -967,6 +967,53 @@
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
         }
 
+        function drawOverviewRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
+                multiRoute = null;
+            }
+
+            ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
+                multiRoute = new MultiRoute({
+                    referencePoints: [fromCoords, toCoords],
+                    params: { routingMode: 'auto', results: 1 }
+                }, {
+                    boundsAutoApply: true,
+                    routeActiveStrokeColor: "#ff4757",
+                    routeActiveStrokeWidth: 6,
+                    pinVisible: true
+                });
+
+                multiRoute.model.events.add('requestsuccess', function() {
+                    if (!multiRoute) return;
+                    try {
+                        const routes = multiRoute.model.getRoutes();
+                        if (routes && routes.length > 0) {
+                            const distanceMeters = routes[0].properties.get("distance").value;
+                            const realKm = distanceMeters / 1000;
+                            calculatePrices(realKm);
+                        } else {
+                            const estimatedKm = targetDist * 1.8;
+                            calculatePrices(estimatedKm);
+                            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
+                            alert("⚠️ Diqqat: Ushbu manzilgacha xaritada aniq avtomobil yo'li topilmadi. Masofa va narx taxminiy aylanma yo'l orqali hisoblandi.");
+                        }
+                    } catch(err) {
+                        console.warn("Marshrut hisoblashda xatolik:", err);
+                    }
+                });
+
+                map.geoObjects.add(multiRoute);
+
+                try {
+                    map.setBounds([fromCoords, toCoords], {
+                        checkZoomRange: true,
+                        zoomMargin: 70
+                    });
+                } catch (e) {}
+            });
+        }
+
         function goToOverview() {
             document.getElementById("bottomSheet").style.display = "none";
             document.getElementById("overviewSheet").style.display = "flex";
@@ -980,10 +1027,6 @@
             calculatePrices(targetDist);
             syncTariffsAvailability();
 
-            if (multiRoute) {
-                try { map.geoObjects.remove(multiRoute); } catch(e){}
-                multiRoute = null;
-            }
             if (startPlacemark) {
                 try { map.geoObjects.remove(startPlacemark); } catch(e){}
                 startPlacemark = null;
@@ -993,10 +1036,10 @@
                 destPlacemark = null;
             }
 
-            const sLat = parseFloat(startCoords[0]);
-            const sLon = parseFloat(startCoords[1]);
-            const tLat = parseFloat(targetCoords[0]);
-            const tLon = parseFloat(targetCoords[1]);
+            const sLat = Number(startCoords[0]);
+            const sLon = Number(startCoords[1]);
+            const tLat = Number(targetCoords[0]);
+            const tLon = Number(targetCoords[1]);
 
             if (isNaN(sLat) || isNaN(sLon) || isNaN(tLat) || isNaN(tLon)) return;
 
@@ -1005,38 +1048,37 @@
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            multiRoute = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [
-                    [sLat, sLon],
-                    [tLat, tLon]
-                ],
-                params: { routingMode: 'auto', results: 1 }
-            }, {
-                boundsAutoApply: true,
-                routeActiveStrokeColor: "#ff4757",
-                routeActiveStrokeWidth: 6
-            });
+            drawOverviewRoute([sLat, sLon], [tLat, tLon]);
+        }
 
-            multiRoute.model.events.add('requestsuccess', function() {
-                if (!multiRoute) return;
+        function drawDriverTrackingRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
+                multiRoute = null;
+            }
+
+            ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
+                multiRoute = new MultiRoute({
+                    referencePoints: [fromCoords, toCoords],
+                    params: { routingMode: 'auto', results: 1 }
+                }, {
+                    boundsAutoApply: true,
+                    routeActiveStrokeColor: "#007aff",
+                    routeActiveStrokeWidth: 6,
+                    routeActiveStrokeOpacity: 0.9,
+                    routeStrokeColor: "#007aff",
+                    pinVisible: true
+                });
+
+                map.geoObjects.add(multiRoute);
+
                 try {
-                    const routes = multiRoute.model.getRoutes();
-                    if (routes && routes.length > 0) {
-                        const distanceMeters = routes[0].properties.get("distance").value;
-                        const realKm = distanceMeters / 1000;
-                        calculatePrices(realKm);
-                    } else {
-                        const estimatedKm = targetDist * 1.8;
-                        calculatePrices(estimatedKm);
-                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-                        alert("⚠️ Diqqat: Ushbu manzilgacha xaritada aniq avtomobil yo'li topilmadi. Masofa va narx taxminiy aylanma yo'l orqali hisoblandi.");
-                    }
-                } catch(err) {
-                    console.warn("Marshrut hisoblashda xatolik:", err);
-                }
+                    map.setBounds([fromCoords, toCoords], {
+                        checkZoomRange: true,
+                        zoomMargin: 80
+                    });
+                } catch (e) {}
             });
-
-            map.geoObjects.add(multiRoute);
         }
 
         function listenToOrderAcceptance() {
@@ -1081,43 +1123,18 @@
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
 
-                        if (multiRoute) {
-                            try { map.geoObjects.remove(multiRoute); } catch(e){}
-                            multiRoute = null;
-                        }
-                        multiRoute = new ymaps.multiRouter.MultiRoute({
-                            referencePoints: [startCoords, targetCoords],
-                            params: { routingMode: 'auto', results: 1 }
-                        }, {
-                            boundsAutoApply: true,
-                            routeActiveStrokeColor: "#007aff",
-                            routeActiveStrokeWidth: 6
-                        });
-                        map.geoObjects.add(multiRoute);
+                        drawDriverTrackingRoute(startCoords, targetCoords);
                     } else {
                         header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
 
                         if (data.driver_lat && data.driver_lon) {
-                            if (multiRoute) {
-                                try { map.geoObjects.remove(multiRoute); } catch(e){}
-                                multiRoute = null;
+                            const dLat = Number(data.driver_lat);
+                            const dLon = Number(data.driver_lon);
+                            if (!isNaN(dLat) && !isNaN(dLon)) {
+                                drawDriverTrackingRoute([dLat, dLon], startCoords);
                             }
-                            multiRoute = new ymaps.multiRouter.MultiRoute({
-                                referencePoints: [
-                                    [parseFloat(data.driver_lat), parseFloat(data.driver_lon)],
-                                    startCoords
-                                ],
-                                params: { routingMode: 'auto', results: 1 }
-                            }, {
-                                boundsAutoApply: true,
-                                routeActiveStrokeColor: "#007aff",
-                                routeActiveStrokeWidth: 6,
-                                routeActiveStrokeOpacity: 0.9,
-                                routeStrokeColor: "#007aff"
-                            });
-                            map.geoObjects.add(multiRoute);
                         }
                     }
                 } else if (data && data.status === 'completed') {
@@ -1194,7 +1211,7 @@
                 for (let id in drivers) {
                     const d = drivers[id];
                     if (d.is_online && d.lat && d.lon && normalizeTariff(d.tariff) === reqTariff) {
-                        const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
+                        const dist = getDistanceKm(startCoords[0], startCoords[1], Number(d.lat), Number(d.lon));
                         list.push({ id: id, distance: dist });
                     }
                 }
