@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RideYellow - Driver Partner</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -211,7 +211,15 @@
             padding: 10px 14px;
         }
         .client-meta { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-        .client-meta-name { font-weight: 800; font-size: 14px; color: #111; }
+        .client-meta-name { font-weight: 800; font-size: 14px; color: #111; display: flex; align-items: center; gap: 6px; }
+        .order-badge-inline {
+            background: #ffcc00;
+            color: #111;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 800;
+        }
         .client-meta-dest { font-size: 12px; color: #666; }
         
         .action-btns-row { display: flex; gap: 8px; }
@@ -431,7 +439,10 @@
         <div class="active-trip-panel" id="activeTripPanel">
             <div class="client-info-strip">
                 <div class="client-meta">
-                    <span class="client-meta-name" id="actClientName">Mijoz</span>
+                    <span class="client-meta-name">
+                        <span id="actOrderBadge" class="order-badge-inline">#---</span>
+                        <span id="actClientName">Mijoz</span>
+                    </span>
                     <span class="client-meta-dest" id="actClientDest">Manzil</span>
                 </div>
                 <div class="action-btns-row">
@@ -446,7 +457,9 @@
     <div class="order-sheet" id="orderSheet">
         <div class="order-top">
             <div>
-                <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase;">Yangi Buyurtma</div>
+                <div style="font-size: 11px; color: #888; font-weight: 800; text-transform: uppercase;">
+                    Yangi Buyurtma <span id="ordIndexBadge" style="background:#ffcc00; color:#111; padding:2px 6px; border-radius:4px; margin-left:4px;">#1</span>
+                </div>
                 <div class="price-tag" id="ordPrice">18 500 UZS</div>
             </div>
             <span class="badge-tariff" id="ordTariff">STANDART</span>
@@ -510,7 +523,7 @@
         let offerTimer = null;
         let currentOrderData = null;
         let tripStep = 'to_client';
-        let ignoredOrderTimestamp = 0; // Rad etilgan buyurtmani qayta ko'rsatmaslik uchun
+        let ignoredOrderTimestamp = 0;
         
         let completedRides = parseInt(localStorage.getItem('ry_driver_trips_' + driverId) || '0');
         let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings_' + driverId) || '0');
@@ -801,7 +814,11 @@
             const sheet = document.getElementById("orderSheet");
             sheet.style.display = "flex";
             
-            document.getElementById("ordPrice").innerText = order.price || "0 UZS";
+            const orderIndex = order.order_id || order.index || order.id || (order.timestamp ? String(order.timestamp).slice(-4) : "1");
+            const indexElem = document.getElementById("ordIndexBadge");
+            if (indexElem) indexElem.innerText = "#" + orderIndex;
+
+            document.getElementById("ordPrice").innerText = order.price || "18 500 UZS";
             document.getElementById("ordTariff").innerText = (order.tariff || "STANDART").toUpperCase();
             document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name || 'Mijoz'} (${order.distance || ''})`;
             document.getElementById("ordDest").innerText = `Manzil: ${order.destination || "Belgilangan nuqta"}`;
@@ -883,7 +900,7 @@
         }
 
         function drawRoute(fromCoords, toCoords) {
-            if (!fromCoords || !toCoords || !map) return;
+            if (!fromCoords || !toCoords || !map || typeof ymaps === 'undefined' || !ymaps.multiRouter) return;
 
             const startLat = parseFloat(fromCoords[0]);
             const startLon = parseFloat(fromCoords[1]);
@@ -910,6 +927,8 @@
                 boundsAutoApply: true,
                 routeActiveStrokeColor: "#007aff",
                 routeActiveStrokeWidth: 6,
+                routeActiveStrokeOpacity: 0.9,
+                routeStrokeColor: "#007aff",
                 pinVisible: true
             });
 
@@ -918,8 +937,8 @@
                 try {
                     const activeRoute = multiRoute.getActiveRoute();
                     if (activeRoute) {
-                        const durationText = activeRoute.properties.get("duration").text;
-                        const distanceText = activeRoute.properties.get("distance").text;
+                        const durationText = activeRoute.properties.get("duration")?.text || "3 daq";
+                        const distanceText = activeRoute.properties.get("distance")?.text || "";
 
                         if (tripStep === 'to_client') {
                             document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
@@ -946,6 +965,8 @@
         }
 
         function acceptDriverOrder() {
+            if (!currentOrderData) return;
+
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
             document.getElementById("activeTripPanel").style.display = "flex";
@@ -955,6 +976,10 @@
             const btn = document.getElementById("stepActionBtn");
             btn.className = "btn-step-action";
             btn.innerText = "📍 YETIB KELDIM";
+
+            const orderIndex = currentOrderData.order_id || currentOrderData.index || currentOrderData.id || (currentOrderData.timestamp ? String(currentOrderData.timestamp).slice(-4) : "1");
+            const actBadge = document.getElementById("actOrderBadge");
+            if (actBadge) actBadge.innerText = "#" + orderIndex;
 
             document.getElementById("actClientName").innerText = currentOrderData.client_name || "Mijoz";
             document.getElementById("actClientDest").innerText = currentOrderData.destination || "Manzil";
@@ -975,6 +1000,7 @@
             db.ref('orders/current_status').set({
                 status: 'accepted',
                 step: 'to_client',
+                order_index: orderIndex,
                 driver_name: document.getElementById("dName").innerText,
                 driver_car: document.getElementById("dCar").innerText,
                 driver_phone: driverPhone,
@@ -984,13 +1010,13 @@
                 driver_lon: currentPos[1]
             });
 
-            db.ref('orders/current_order').update({ status: 'accepted' });
+            db.ref('orders/current_order').update({ status: 'accepted', order_index: orderIndex });
 
             if (clientMarker) {
                 try { map.geoObjects.remove(clientMarker); } catch(e){}
             }
             clientMarker = new ymaps.Placemark([clientLat, clientLon], {
-                hintContent: `Mijoz: ${currentOrderData.client_name || 'Mijoz'}`
+                hintContent: `Mijoz #${orderIndex}: ${currentOrderData.client_name || 'Mijoz'}`
             }, {
                 preset: 'islands#redPersonIcon'
             });
