@@ -216,7 +216,7 @@
         let driverId = paramUserId ? "driver_" + paramUserId : (tg?.initDataUnsafe?.user?.id ? "driver_" + tg.initDataUnsafe.user.id : "driver_" + (localStorage.getItem("ry_uid") || Date.now()));
         localStorage.setItem("ry_uid", driverId);
 
-        let map, multiRoute, driverPlacemark = null;
+        let map, multiRoute, driverPlacemark = null, clientMarker = null;
         let isOnline = false, isApproved = false;
         let currentPos = [39.0560, 66.8300];
         let lastSyncedPos = null;
@@ -468,16 +468,35 @@
         }
 
         function drawRoute(fromCoords, toCoords) {
-            if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
+            if (!fromCoords || !toCoords || !map || typeof ymaps === 'undefined') return;
+
+            const startLat = Number(fromCoords[0]);
+            const startLon = Number(fromCoords[1]);
+            const endLat = Number(toCoords[0]);
+            const endLon = Number(toCoords[1]);
+
+            if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) return;
+
+            if (multiRoute) {
+                try { map.geoObjects.remove(multiRoute); } catch(e){}
+                multiRoute = null;
+            }
 
             ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
                 multiRoute = new MultiRoute({
-                    referencePoints: [fromCoords, toCoords],
-                    params: { routingMode: 'auto', results: 1 }
+                    referencePoints: [
+                        [startLat, startLon],
+                        [endLat, endLon]
+                    ],
+                    params: { 
+                        routingMode: 'auto', 
+                        results: 1 
+                    }
                 }, {
                     boundsAutoApply: true,
                     routeActiveStrokeColor: "#007aff",
                     routeActiveStrokeWidth: 6,
+                    routeActiveStrokeOpacity: 0.9,
                     pinVisible: true
                 });
 
@@ -486,12 +505,27 @@
                         const activeRoute = multiRoute.getActiveRoute();
                         if (activeRoute && currentOrderData) {
                             const durationText = activeRoute.properties.get("duration")?.text || "3 daq";
+                            const distanceText = activeRoute.properties.get("distance")?.text || "";
+
+                            if (tripStep === 'to_client') {
+                                document.getElementById("gpsStatus").innerHTML = `🚖 Mijoz tomon: <b>${durationText}</b> (${distanceText})`;
+                            } else if (tripStep === 'in_trip') {
+                                document.getElementById("gpsStatus").innerHTML = `🚗 Manzil tomon: <b>${durationText}</b> (${distanceText})`;
+                            }
+
                             db.ref('orders/active/' + currentOrderData.order_id).update({ eta: durationText });
                         }
                     } catch(e){}
                 });
 
                 map.geoObjects.add(multiRoute);
+
+                try {
+                    map.setBounds([[startLat, startLon], [endLat, endLon]], {
+                        checkZoomRange: true,
+                        zoomMargin: 80
+                    });
+                } catch (e) {}
             });
         }
 
@@ -502,41 +536,63 @@
             const oId = currentOrderData.order_id;
             const orderRef = db.ref('orders/active/' + oId);
 
-            orderRef.transaction(current => {
-                if (current && current.status === 'searching') {
-                    current.status = 'accepted';
-                    current.step = 'to_client';
-                    current.driver_id = driverId;
-                    current.driver_name = document.getElementById("dName").innerText;
-                    current.driver_car = document.getElementById("dCar").innerText;
-                    current.driver_phone = localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379";
-                    current.driver_lat = Number(currentPos[0]);
-                    current.driver_lon = Number(currentPos[1]);
-                    current.eta = "3 daq";
-                    return current;
+            const clientLat = Number(currentOrderData.lat);
+            const clientLon = Number(currentOrderData.lon);
+
+            const updatePayload = {
+                status: 'accepted',
+                step: 'to_client',
+                driver_id: driverId,
+                driver_name: document.getElementById("dName").innerText || "Haydovchi",
+                driver_car: document.getElementById("dCar").innerText || "Mashina",
+                driver_phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379",
+                driver_lat: Number(currentPos[0]),
+                driver_lon: Number(currentPos[1]),
+                eta: "3 daq"
+            };
+
+            orderRef.update(updatePayload).then(() => {
+                document.getElementById("orderSheet").style.display = "none";
+                document.getElementById("activeTripPanel").style.display = "flex";
+                document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon yo'l chizilmoqda...";
+                tripStep = 'to_client';
+
+                const btn = document.getElementById("stepActionBtn");
+                btn.className = "btn-step-action";
+                btn.innerText = "📍 YETIB KELDIM";
+
+                document.getElementById("actOrderBadge").innerText = "#" + oId;
+                document.getElementById("actClientName").innerText = currentOrderData.client_name || "Mijoz";
+                document.getElementById("actClientDest").innerText = currentOrderData.destination || "Manzil";
+                
+                if (currentOrderData.client_phone) {
+                    document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
                 }
-                return;
-            }, (error, committed, snapshot) => {
-                if (committed) {
-                    document.getElementById("orderSheet").style.display = "none";
-                    document.getElementById("activeTripPanel").style.display = "flex";
-                    tripStep = 'to_client';
 
-                    document.getElementById("actOrderBadge").innerText = "#" + oId;
-                    document.getElementById("actClientName").innerText = currentOrderData.client_name;
-                    document.getElementById("actClientDest").innerText = currentOrderData.destination;
-                    document.getElementById("actCallBtn").href = "tel:" + (currentOrderData.client_phone || "");
-
-                    const clientLat = Number(currentOrderData.lat);
-                    const clientLon = Number(currentOrderData.lon);
+                if (!isNaN(clientLat) && !isNaN(clientLon)) {
                     document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${clientLat},${clientLon}&rtt=auto`;
 
+                    if (clientMarker) {
+                        try { map.geoObjects.remove(clientMarker); } catch(e){}
+                        clientMarker = null;
+                    }
+
+                    clientMarker = new ymaps.Placemark([clientLat, clientLon], {
+                        balloonContent: `<b>Mijoz:</b> ${currentOrderData.client_name || 'Mijoz'}<br><b>Tel:</b> ${currentOrderData.client_phone || ''}`,
+                        hintContent: `Mijoz: ${currentOrderData.client_name || 'Mijoz'}`
+                    }, {
+                        preset: 'islands#redPersonIcon',
+                        zIndex: 200
+                    });
+                    map.geoObjects.add(clientMarker);
+
                     drawRoute(currentPos, [clientLat, clientLon]);
-                    listenOrderState(oId);
-                } else {
-                    alert("⚠️ Buyurtmani boshqa haydovchi qabul qildi.");
-                    dismissOrderUI();
                 }
+
+                listenOrderState(oId);
+            }).catch(err => {
+                alert("Xatolik: " + err.message);
+                dismissOrderUI();
             });
         }
 
@@ -570,6 +626,19 @@
                 const destLat = Number(currentOrderData.dest_lat);
                 const destLon = Number(currentOrderData.dest_lon);
                 document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${destLat},${destLon}&rtt=auto`;
+                
+                if (clientMarker) {
+                    try { map.geoObjects.remove(clientMarker); } catch(e){}
+                    clientMarker = null;
+                }
+                clientMarker = new ymaps.Placemark([destLat, destLon], {
+                    hintContent: `Manzil: ${currentOrderData.destination || 'Belgilangan joy'}`
+                }, {
+                    preset: 'islands#redDotIcon',
+                    zIndex: 200
+                });
+                map.geoObjects.add(clientMarker);
+
                 drawRoute(currentPos, [destLat, destLon]);
             } else if (tripStep === 'in_trip') {
                 completeCurrentTrip();
@@ -609,6 +678,7 @@
             document.getElementById("activeTripPanel").style.display = "none";
             document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda...";
             if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
+            if (clientMarker) try { map.geoObjects.remove(clientMarker); } catch(e){}
         }
 
         function centerDriverLocation() {
