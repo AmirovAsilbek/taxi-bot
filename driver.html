@@ -216,7 +216,7 @@
         let driverId = paramUserId ? "driver_" + paramUserId : (tg?.initDataUnsafe?.user?.id ? "driver_" + tg.initDataUnsafe.user.id : "driver_" + (localStorage.getItem("ry_uid") || Date.now()));
         localStorage.setItem("ry_uid", driverId);
 
-        let map, multiRoute, driverPlacemark = null, clientMarker = null;
+        let map, multiRoute, driverPlacemark = null;
         let isOnline = false, isApproved = false;
         let currentPos = [39.0560, 66.8300];
         let lastSyncedPos = null;
@@ -342,14 +342,14 @@
                     const now = Date.now();
                     const movedDist = lastSyncedPos ? getDistanceMeters(lastSyncedPos[0], lastSyncedPos[1], lat, lon) : 999;
 
-                    if (isOnline && isApproved && (movedDist >= 15 || (now - lastSyncTime) >= 7000)) {
+                    if (isOnline && isApproved && (movedDist >= 10 || (now - lastSyncTime) >= 5000)) {
                         lastSyncedPos = currentPos;
                         lastSyncTime = now;
                         const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
                         const driverRef = db.ref('drivers/' + driverId);
                         driverRef.set({
-                            lat: currentPos[0],
-                            lon: currentPos[1],
+                            lat: Number(currentPos[0]),
+                            lon: Number(currentPos[1]),
                             name: document.getElementById("dName").innerText,
                             car: document.getElementById("dCar").innerText,
                             phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
@@ -361,8 +361,8 @@
 
                         if (currentOrderData && tripStep !== 'completed') {
                             db.ref('orders/active/' + currentOrderData.order_id).update({
-                                driver_lat: currentPos[0],
-                                driver_lon: currentPos[1]
+                                driver_lat: Number(currentPos[0]),
+                                driver_lon: Number(currentPos[1])
                             });
                         }
                     }
@@ -427,6 +427,24 @@
                 lbl.innerText = "Online";
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda...";
                 lastSyncTime = 0;
+
+                db.ref('registered_drivers/' + driverId).once('value', snap => {
+                    const regData = snap.val() || {};
+                    const dTariff = normalizeTariff(regData.tariff || localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
+
+                    const driverRef = db.ref('drivers/' + driverId);
+                    driverRef.set({
+                        lat: Number(currentPos[0]),
+                        lon: Number(currentPos[1]),
+                        name: document.getElementById("dName").innerText || "Haydovchi",
+                        car: document.getElementById("dCar").innerText || "Mashina",
+                        phone: regData.phone || localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
+                        tariff: dTariff,
+                        is_online: true,
+                        updated_at: Date.now()
+                    });
+                    driverRef.onDisconnect().remove();
+                });
             } else {
                 btn.classList.remove("online");
                 lbl.innerText = "Offline";
@@ -492,8 +510,8 @@
                     current.driver_name = document.getElementById("dName").innerText;
                     current.driver_car = document.getElementById("dCar").innerText;
                     current.driver_phone = localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379";
-                    current.driver_lat = currentPos[0];
-                    current.driver_lon = currentPos[1];
+                    current.driver_lat = Number(currentPos[0]);
+                    current.driver_lon = Number(currentPos[1]);
                     current.eta = "3 daq";
                     return current;
                 }
@@ -516,7 +534,7 @@
                     drawRoute(currentPos, [clientLat, clientLon]);
                     listenOrderState(oId);
                 } else {
-                    alert("⚠️ Buyurtmani boshqa haydovchi qabul qilib bo'ldi.");
+                    alert("⚠️ Buyurtmani boshqa haydovchi qabul qildi.");
                     dismissOrderUI();
                 }
             });
@@ -589,7 +607,7 @@
             currentOrderData = null;
             tripStep = 'to_client';
             document.getElementById("activeTripPanel").style.display = "none";
-            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Yangi buyurtmalar qidirilmoqda...";
+            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda...";
             if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
         }
 
