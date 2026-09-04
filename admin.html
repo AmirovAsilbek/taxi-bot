@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RideYellow - Admin Dispatcher</title>
+    <title>Express Taxi - Admin Dispetcher</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -13,329 +13,62 @@
         body, html { width: 100%; height: 100%; background: #0f1117; color: #f1f2f6; overflow-x: hidden; }
 
         .admin-header {
-            background: #181b24;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #282c38;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            background: #181b24; padding: 14px 18px; display: flex;
+            align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #282c38; position: sticky; top: 0; z-index: 100;
         }
         .header-brand { display: flex; align-items: center; gap: 10px; }
         .admin-badge {
-            width: 38px;
-            height: 38px;
-            background: #ffcc00;
-            color: #111;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 20px;
+            width: 38px; height: 38px; background: #ffcc00; color: #111;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 20px;
         }
         .header-title { font-size: 16px; font-weight: 800; color: #fff; }
         .header-sub { font-size: 11px; color: #8a8f9d; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            padding: 14px 16px;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 14px 16px; }
         .stat-card {
-            background: #181b24;
-            border: 1px solid #282c38;
-            border-radius: 16px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            background: #181b24; border: 1px solid #282c38; border-radius: 16px;
+            padding: 14px; display: flex; flex-direction: column; gap: 4px;
         }
         .stat-num { font-size: 20px; font-weight: 900; color: #ffcc00; }
         .stat-title { font-size: 11px; font-weight: 700; color: #8a8f9d; text-transform: uppercase; }
 
         .tab-bar {
-            display: flex;
-            background: #181b24;
-            margin: 0 16px 14px 16px;
-            border-radius: 14px;
-            padding: 4px;
-            border: 1px solid #282c38;
-            gap: 4px;
-            overflow-x: auto;
+            display: flex; background: #181b24; margin: 0 16px 14px 16px;
+            border-radius: 14px; padding: 4px; border: 1px solid #282c38; gap: 4px; overflow-x: auto;
         }
         .tab-btn {
-            flex: 1;
-            min-width: 75px;
-            padding: 10px 4px;
-            border: none;
-            background: transparent;
-            color: #8a8f9d;
-            font-size: 11.5px;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            white-space: nowrap;
+            flex: 1; min-width: 75px; padding: 10px 4px; border: none;
+            background: transparent; color: #8a8f9d; font-size: 11.5px;
+            font-weight: 700; border-radius: 10px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;
         }
-        .tab-btn.active {
-            background: #ffcc00;
-            color: #111;
-        }
+        .tab-btn.active { background: #ffcc00; color: #111; }
 
         .tab-view { display: none; padding: 0 16px 30px 16px; }
         .tab-view.active { display: block; }
 
-        #adminMap {
-            width: 100%;
-            height: 360px;
-            border-radius: 20px;
-            border: 1px solid #282c38;
-            overflow: hidden;
-            margin-bottom: 14px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
+        #adminMap { width: 100%; height: 360px; border-radius: 20px; border: 1px solid #282c38; overflow: hidden; margin-bottom: 14px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .section-title { font-size: 15px; font-weight: 800; color: #fff; }
-        .btn-add-driver {
-            background: #ffcc00;
-            color: #111;
-            border: none;
-            padding: 7px 14px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 800;
-            cursor: pointer;
-        }
 
-        .driver-card {
-            background: #181b24;
-            border: 1px solid #282c38;
-            border-radius: 18px;
-            padding: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .driver-card, .order-card {
+            background: #181b24; border: 1px solid #282c38; border-radius: 18px;
+            padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;
         }
-        .driver-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .driver-info-main { display: flex; align-items: center; gap: 10px; }
-        .driver-avatar {
-            width: 40px;
-            height: 40px;
-            background: #282c38;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            color: #ffcc00;
-            font-size: 16px;
-        }
-        .driver-name { font-weight: 800; font-size: 14px; color: #fff; }
-        .driver-phone { font-size: 12px; color: #8a8f9d; }
-        .status-badge {
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
+        .driver-top, .order-head { display: flex; align-items: center; justify-content: space-between; }
+        .status-badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; }
         .status-badge.online { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
         .status-badge.offline { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
         .status-badge.pending { background: rgba(255, 165, 2, 0.15); color: #ffa502; }
 
-        .driver-meta-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            background: #13151c;
-            padding: 8px 12px;
-            border-radius: 10px;
-            color: #ccc;
-        }
-
-        .driver-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-action-call {
-            flex: 1;
-            background: #282c38;
-            color: #2ed573;
-            text-align: center;
-            text-decoration: none;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .btn-action-delete {
-            flex: 1;
-            background: rgba(255, 71, 87, 0.15);
-            color: #ff4757;
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .btn-action-approve {
-            flex: 1;
-            background: #2ed573;
-            color: #fff;
-            border: none;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-        .btn-action-reject {
-            flex: 1;
-            background: #ff4757;
-            color: #fff;
-            border: none;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .order-card {
-            background: #181b24;
-            border: 1px solid #282c38;
-            border-radius: 18px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .order-head { display: flex; justify-content: space-between; align-items: center; }
         .order-price { font-size: 18px; font-weight: 900; color: #ffcc00; }
-        .order-badge {
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 8px;
-        }
-        .order-badge.completed { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
-        .order-badge.cancelled { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
+        .order-badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; }
         .order-badge.active { background: rgba(255, 204, 0, 0.15); color: #ffcc00; }
 
-        .order-details {
-            background: #13151c;
-            padding: 12px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            font-size: 13px;
-        }
-        .btn-cancel-adm {
-            background: #ff4757;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .history-filters {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
-        .filter-btn {
-            background: #181b24;
-            color: #8a8f9d;
-            border: 1px solid #282c38;
-            padding: 7px 12px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .filter-btn.active {
-            background: #ffcc00;
-            color: #111;
-            border-color: #ffcc00;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.85);
-            z-index: 200;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal-box {
-            background: #181b24;
-            border: 1px solid #282c38;
-            border-radius: 20px;
-            padding: 22px;
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .modal-title { font-size: 17px; font-weight: 800; color: #fff; }
-        .adm-input, .adm-select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #282c38;
-            background: #13151c;
-            color: #fff;
-            outline: none;
-            font-size: 14px;
-        }
-        .adm-input:focus { border-color: #ffcc00; }
-        .btn-save-adm {
-            background: #ffcc00;
-            color: #111;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 15px;
-            cursor: pointer;
-        }
-        .btn-close-adm {
-            background: transparent;
-            color: #8a8f9d;
-            border: none;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-        }
+        .order-details { background: #13151c; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+        .btn-cancel-adm { background: #ff4757; color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -344,11 +77,10 @@
         <div class="header-brand">
             <div class="admin-badge">Y</div>
             <div>
-                <div class="header-title">RideYellow Admin</div>
+                <div class="header-title">Express Taxi Admin</div>
                 <div class="header-sub">Dispetcherlik va Boshqaruv</div>
             </div>
         </div>
-        <button class="btn-add-driver" onclick="openAddModal()">+ Haydovchi</button>
     </div>
 
     <div class="stats-grid">
@@ -357,117 +89,68 @@
             <div class="stat-title">Online Haydovchilar</div>
         </div>
         <div class="stat-card">
-            <div class="stat-num" id="statTotalDrivers">0</div>
-            <div class="stat-title">Jami Haydovchilar</div>
+            <div class="stat-num" id="statActiveOrders">0</div>
+            <div class="stat-title">Faol Buyurtmalar</div>
         </div>
         <div class="stat-card">
             <div class="stat-num" id="statCompletedCount" style="color: #2ed573;">0</div>
-            <div class="stat-title">Yetkazilgan Safarlar</div>
+            <div class="stat-title">Tugallangan Safarlar</div>
         </div>
         <div class="stat-card">
-            <div class="stat-num" id="statCancelledCount" style="color: #ff4757;">0</div>
-            <div class="stat-title">Bekor qilinganlar</div>
+            <div class="stat-num" id="statTotalDrivers">0</div>
+            <div class="stat-title">Tasdiqlangan Haydovchilar</div>
         </div>
     </div>
 
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
+        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Faol Buyurtmalar</button>
         <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
-        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Faol</button>
-        <button class="tab-btn" onclick="switchTab('historyTab', this)">📊 Tarix</button>
         <button class="tab-btn" onclick="switchTab('applicationsTab', this)">
             📑 Arizalar <span id="pendingBadge" style="background:#ff4757; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; display:none;">0</span>
         </button>
     </div>
 
-    <!-- 1. XARITA SAHIFASI -->
+    <!-- 1. XARITA -->
     <div class="tab-view active" id="mapTab">
         <div id="adminMap"></div>
-        <div class="section-title" style="margin-bottom: 8px;">🟢 Xaritada ko'rinayotgan faol mashinalar</div>
+        <div class="section-title" style="margin-bottom: 8px;">🟢 Faol haydovchilar</div>
         <div id="mapDriversSummary" style="font-size: 13px; color: #8a8f9d;">Yuklanmoqda...</div>
     </div>
 
-    <!-- 2. TASDIQLANGAN HAYDOVCHILAR -->
-    <div class="tab-view" id="driversTab">
-        <div class="section-header">
-            <div class="section-title">Ro'yxatdan o'tgan haydovchilar</div>
-        </div>
-        <div id="driversListContainer">
-            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Yuklanmoqda...</div>
-        </div>
-    </div>
-
-    <!-- 3. FAOL BUYURTMA -->
+    <!-- 2. BARCHA FAOL BUYURTMALAR -->
     <div class="tab-view" id="ordersTab">
-        <div class="section-header">
-            <div class="section-title">Jonli va Faol Buyurtma</div>
-        </div>
+        <div class="section-header"><div class="section-title">Hozirgi barcha faol buyurtmalar</div></div>
         <div id="ordersListContainer">
             <div style="text-align: center; color: #8a8f9d; padding: 20px;">Hozircha faol buyurtmalar yo'q</div>
         </div>
     </div>
 
-    <!-- 4. BUYURTMALAR TARIXI -->
-    <div class="tab-view" id="historyTab">
-        <div class="section-header">
-            <div class="section-title">Safarlar va Buyurtmalar Tarixi</div>
-        </div>
-        <div class="history-filters">
-            <button class="filter-btn active" onclick="filterHistory('all', this)">Barchasi</button>
-            <button class="filter-btn" onclick="filterHistory('completed', this)">✅ Yetkazilgan</button>
-            <button class="filter-btn" onclick="filterHistory('cancelled', this)">❌ Bekor qilingan</button>
-        </div>
-        <div id="historyListContainer">
-            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Tarix yuklanmoqda...</div>
-        </div>
+    <!-- 3. HAYDOVCHILAR -->
+    <div class="tab-view" id="driversTab">
+        <div class="section-header"><div class="section-title">Ro'yxatdan o'tgan haydovchilar</div></div>
+        <div id="driversListContainer"></div>
     </div>
 
-    <!-- 5. ARIZALAR SAHIFASI -->
+    <!-- 4. ARIZALAR -->
     <div class="tab-view" id="applicationsTab">
-        <div class="section-header">
-            <div class="section-title">Kelib tushgan arizalar (<span id="applicationsCount">0</span>)</div>
-        </div>
-        <div id="applicationsListContainer">
-            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Hozircha yangi arizalar yo'q</div>
-        </div>
-    </div>
-
-    <!-- Yangi haydovchi qo'shish modali -->
-    <div class="modal-overlay" id="addDriverModal">
-        <div class="modal-box">
-            <div class="modal-title">Yangi Haydovchi Qo'shish</div>
-            <input type="text" id="newDName" class="adm-input" placeholder="Ism va Familiya">
-            <input type="tel" id="newDPhone" class="adm-input" placeholder="+998 90 123 45 67">
-            <input type="text" id="newDCar" class="adm-input" placeholder="Mashina rusumi va rangi">
-            <input type="text" id="newDPlate" class="adm-input" placeholder="Davlat raqami (70 A 777 AA)">
-            <select id="newDTariff" class="adm-select">
-                <option value="standart">Standart</option>
-                <option value="komfort">Komfort</option>
-                <option value="komfort_plus">Komfort+</option>
-            </select>
-            <button class="btn-save-adm" onclick="saveNewDriver()">Bazaga saqlash</button>
-            <button class="btn-close-adm" onclick="closeAddModal()">Bekor qilish</button>
-        </div>
+        <div class="section-header"><div class="section-title">Yangi kelib tushgan arizalar</div></div>
+        <div id="applicationsListContainer"></div>
     </div>
 
     <script>
         const tg = window.Telegram?.WebApp;
-        if (tg) { tg.expand(); }
+        if (tg) tg.expand();
 
-        const firebaseConfig = {
-            databaseURL: "https://express-taxi-83af2-default-rtdb.firebaseio.com"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        const firebaseConfig = { databaseURL: "https://express-taxi-83af2-default-rtdb.firebaseio.com" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         let adminMap;
         let driverMarkers = {};
         let registeredDriversData = {};
         let onlineDriversData = {};
-        let orderHistoryData = {};
-        let currentFilter = 'all';
+        let activeOrdersData = {};
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -477,18 +160,12 @@
                 <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
                 <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
                 <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.8"/>
-                <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.8"/>
                 <rect x="18" y="27" width="28" height="18" rx="4" fill="#111"/>
             </svg>
         `);
 
         ymaps.ready(() => {
-            adminMap = new ymaps.Map("adminMap", {
-                center: [39.0560, 66.8300],
-                zoom: 14,
-                type: 'yandex#map',
-                controls: ['zoomControl']
-            });
+            adminMap = new ymaps.Map("adminMap", { center: [39.0560, 66.8300], zoom: 14, type: 'yandex#map', controls: ['zoomControl'] });
             initAdminSync();
         });
 
@@ -497,9 +174,7 @@
             document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
             document.getElementById(tabId).classList.add("active");
             btn.classList.add("active");
-            if (tabId === 'mapTab' && adminMap) {
-                adminMap.container.fitToViewport();
-            }
+            if (tabId === 'mapTab' && adminMap) adminMap.container.fitToViewport();
         }
 
         function initAdminSync() {
@@ -517,15 +192,16 @@
                 updateStats();
             });
 
-            db.ref('orders').on('value', snap => {
-                const orders = snap.val() || {};
-                renderOrdersList(orders);
+            db.ref('orders/active').on('value', snap => {
+                activeOrdersData = snap.val() || {};
+                renderActiveOrders();
+                updateStats();
             });
 
             db.ref('order_history').on('value', snap => {
-                orderHistoryData = snap.val() || {};
-                renderHistoryList();
-                updateStats();
+                const history = snap.val() || {};
+                const count = Object.values(history).filter(h => h.status === 'completed').length;
+                document.getElementById("statCompletedCount").innerText = count;
             });
         }
 
@@ -537,15 +213,13 @@
                 }
             }
 
-            let summaryText = [];
+            let summary = [];
             for (let id in drivers) {
                 const d = drivers[id];
                 if (d.is_online && d.lat && d.lon) {
-                    summaryText.push(`🚖 ${d.name} (${d.car})`);
+                    summary.push(`🚖 ${d.name} (${d.car})`);
                     if (!driverMarkers[id]) {
-                        const marker = new ymaps.Placemark([d.lat, d.lon], {
-                            hintContent: `${d.name} • ${d.car}`
-                        }, {
+                        const marker = new ymaps.Placemark([d.lat, d.lon], { hintContent: `${d.name} • ${d.car}` }, {
                             iconLayout: 'default#image',
                             iconImageHref: topViewCarSvg,
                             iconImageSize: [36, 36],
@@ -558,60 +232,78 @@
                     }
                 }
             }
-
-            document.getElementById("mapDriversSummary").innerHTML = summaryText.length > 0 
-                ? summaryText.join("<br>") 
-                : "Ayni damda online haydovchilar yo'q";
+            document.getElementById("mapDriversSummary").innerHTML = summary.length ? summary.join("<br>") : "Online haydovchilar yo'q";
         }
 
-        function renderDriversList() {
-            const container = document.getElementById("driversListContainer");
-            const allIds = Array.from(new Set([...Object.keys(registeredDriversData), ...Object.keys(onlineDriversData)]));
+        function renderActiveOrders() {
+            const container = document.getElementById("ordersListContainer");
+            const keys = Object.keys(activeOrdersData);
 
-            const approvedIds = allIds.filter(id => {
-                const reg = registeredDriversData[id];
-                return reg && reg.status !== 'pending' && reg.status !== 'rejected';
-            });
-
-            if (approvedIds.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha tasdiqlangan haydovchilar yo'q</div>`;
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha faol buyurtmalar yo'q</div>`;
                 return;
             }
 
             container.innerHTML = "";
-            approvedIds.forEach(id => {
-                const reg = registeredDriversData[id] || {};
-                const onl = onlineDriversData[id] || {};
-                const isOnline = onl.is_online ? true : false;
-                const name = reg.name || onl.name || "Haydovchi";
-                const phone = reg.phone || onl.phone || "+998900000000";
-                const car = reg.car || onl.car || "Chevrolet";
-                const plate = reg.plate || "70 N 079 NN";
-                const tariff = reg.tariff || onl.tariff || "standart";
+            keys.forEach(k => {
+                const o = activeOrdersData[k];
+                const card = document.createElement("div");
+                card.className = "order-card";
+                card.innerHTML = `
+                    <div class="order-head">
+                        <div>
+                            <span style="font-size:12px; color:#ffcc00; font-weight:800;">#${o.order_id}</span>
+                            <div class="order-price">${o.price || '0 UZS'}</div>
+                        </div>
+                        <span class="order-badge active">${(o.status || 'KUTILMOQDA').toUpperCase()}</span>
+                    </div>
+                    <div class="order-details">
+                        <div>👤 <b>Mijoz:</b> ${o.client_name || 'Noma\'lum'} (${o.client_phone || ''})</div>
+                        <div>📍 <b>Borish joyi:</b> ${o.destination || 'Belgilanmagan'}</div>
+                        <div>🚗 <b>Haydovchi:</b> ${o.driver_name ? `${o.driver_name} (${o.driver_car})` : 'Qidirilmoqda...'}</div>
+                    </div>
+                    <button class="btn-cancel-adm" onclick="cancelOrderByAdmin('${k}')">❌ Bekor qilish</button>
+                `;
+                container.appendChild(card);
+            });
+        }
 
+        function cancelOrderByAdmin(orderId) {
+            if (confirm("Buyurtmani bekor qilmoqchimisiz?")) {
+                db.ref('orders/active/' + orderId).update({
+                    status: 'cancelled_by_admin',
+                    cancel_reason: "Admin tomonidan bekor qilindi"
+                });
+                setTimeout(() => {
+                    db.ref('orders/active/' + orderId).remove();
+                }, 1000);
+            }
+        }
+
+        function renderDriversList() {
+            const container = document.getElementById("driversListContainer");
+            const approved = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status === 'approved');
+
+            if (approved.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Tasdiqlangan haydovchilar yo'q</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            approved.forEach(id => {
+                const reg = registeredDriversData[id];
+                const isOnline = onlineDriversData[id]?.is_online;
                 const card = document.createElement("div");
                 card.className = "driver-card";
                 card.innerHTML = `
                     <div class="driver-top">
-                        <div class="driver-info-main">
-                            <div class="driver-avatar">${name.charAt(0).toUpperCase()}</div>
-                            <div>
-                                <div class="driver-name">${name}</div>
-                                <div class="driver-phone">${phone}</div>
-                            </div>
+                        <div>
+                            <div style="font-weight:800; color:#fff;">${reg.name}</div>
+                            <div style="font-size:12px; color:#8a8f9d;">${reg.phone}</div>
                         </div>
-                        <span class="status-badge ${isOnline ? 'online' : 'offline'}">
-                            ${isOnline ? '● Online' : '○ Offline'}
-                        </span>
+                        <span class="status-badge ${isOnline ? 'online' : 'offline'}">${isOnline ? '● Online' : '○ Offline'}</span>
                     </div>
-                    <div class="driver-meta-row">
-                        <span>🚗 ${car} (${plate})</span>
-                        <span style="color:#ffcc00; font-weight:700;">${tariff.toUpperCase()}</span>
-                    </div>
-                    <div class="driver-actions">
-                        <a href="tel:${phone}" class="btn-action-call">📞 Qo'ng'iroq</a>
-                        <button class="btn-action-delete" onclick="deleteDriverFromDatabase('${id}', '${name}')">🗑️ Bazadan o'chirish</button>
-                    </div>
+                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate}) • <b>${reg.tariff.toUpperCase()}</b></div>
                 `;
                 container.appendChild(card);
             });
@@ -619,233 +311,52 @@
 
         function renderApplicationsList() {
             const container = document.getElementById("applicationsListContainer");
+            const pending = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status === 'pending');
             const badge = document.getElementById("pendingBadge");
-            const countLabel = document.getElementById("applicationsCount");
-            
-            const pendingIds = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status === 'pending');
 
-            countLabel.innerText = pendingIds.length;
-            if (pendingIds.length > 0) {
-                badge.innerText = pendingIds.length;
+            if (pending.length > 0) {
+                badge.innerText = pending.length;
                 badge.style.display = "inline-block";
             } else {
                 badge.style.display = "none";
             }
 
-            if (pendingIds.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha yangi arizalar yo'q</div>`;
+            if (pending.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Yangi arizalar yo'q</div>`;
                 return;
             }
 
             container.innerHTML = "";
-            pendingIds.forEach(id => {
+            pending.forEach(id => {
                 const reg = registeredDriversData[id];
-                const name = reg.name || "Nomzod";
-                const phone = reg.phone || "+998900000000";
-                const car = reg.car || "Mashina";
-                const plate = reg.plate || "Raqamsiz";
-                const tariff = reg.tariff || "standart";
-
                 const card = document.createElement("div");
                 card.className = "driver-card";
                 card.innerHTML = `
                     <div class="driver-top">
-                        <div class="driver-info-main">
-                            <div class="driver-avatar" style="background: rgba(255, 165, 2, 0.15); color: #ffa502;">⏳</div>
-                            <div>
-                                <div class="driver-name">${name}</div>
-                                <div class="driver-phone">${phone}</div>
-                            </div>
+                        <div>
+                            <div style="font-weight:800; color:#fff;">${reg.name}</div>
+                            <div style="font-size:12px; color:#8a8f9d;">${reg.phone}</div>
                         </div>
                         <span class="status-badge pending">Kutilmoqda</span>
                     </div>
-                    <div class="driver-meta-row">
-                        <span>🚗 ${car} (${plate})</span>
-                        <span style="color:#ffcc00; font-weight:700;">${tariff.toUpperCase()}</span>
-                    </div>
-                    <div class="driver-actions">
-                        <button class="btn-action-approve" onclick="approveDriverApplication('${id}', '${name}')">✅ Tasdiqlash</button>
-                        <button class="btn-action-reject" onclick="rejectDriverApplication('${id}', '${name}')">❌ Rad etish</button>
+                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate})</div>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <button style="flex:1; background:#2ed573; border:none; padding:8px; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;" onclick="setDriverStatus('${id}', 'approved')">✅ Tasdiqlash</button>
+                        <button style="flex:1; background:#ff4757; border:none; padding:8px; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;" onclick="setDriverStatus('${id}', 'rejected')">❌ Rad etish</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function approveDriverApplication(id, name) {
-            db.ref('registered_drivers/' + id).update({
-                status: 'approved',
-                approved_at: Date.now()
-            }).then(() => {
-                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                alert(`✅ ${name} tasdiqlandi!`);
-            });
-        }
-
-        function rejectDriverApplication(id, name) {
-            if (confirm(`Haqiqatan ham ${name} arizasini rad etmoqchimisiz?`)) {
-                db.ref('registered_drivers/' + id).update({
-                    status: 'rejected',
-                    rejected_at: Date.now()
-                }).then(() => {
-                    if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-                    alert(`❌ ${name} arizasi rad etildi.`);
-                });
-            }
-        }
-
-        function renderOrdersList(orders) {
-            const container = document.getElementById("ordersListContainer");
-            const currentOrder = orders.current_order;
-            if (!currentOrder) {
-                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Hozircha faol buyurtmalar yo'q</div>`;
-                return;
-            }
-            container.innerHTML = "";
-            const card = document.createElement("div");
-            card.className = "order-card";
-            card.innerHTML = `
-                <div class="order-head">
-                    <div class="order-price">${currentOrder.price || '0 UZS'}</div>
-                    <span class="order-badge active">${(currentOrder.status || 'Kutilmoqda').toUpperCase()}</span>
-                </div>
-                <div class="order-details">
-                    <div>👤 <b>Mijoz:</b> ${currentOrder.client_name || 'Noma\'lum'} (${currentOrder.client_phone || ''})</div>
-                    <div>📍 <b>Borish manzili:</b> ${currentOrder.destination || 'Belgilanmagan'}</div>
-                    <div>📏 <b>Masofa:</b> ${currentOrder.distance || '0 km'} • <b>Tarif:</b> ${currentOrder.tariff || 'Standart'}</div>
-                </div>
-                <button class="btn-cancel-adm" onclick="forceCancelOrder()">❌ Buyurtmani bekor qilish</button>
-            `;
-            container.appendChild(card);
-        }
-
-        function renderHistoryList() {
-            const container = document.getElementById("historyListContainer");
-            const historyKeys = Object.keys(orderHistoryData).reverse();
-
-            let filteredKeys = historyKeys.filter(k => {
-                const item = orderHistoryData[k];
-                if (currentFilter === 'completed') return item.status === 'completed';
-                if (currentFilter === 'cancelled') return item.status === 'cancelled' || item.status === 'cancelled_by_client' || item.status === 'cancelled_by_admin';
-                return true;
-            });
-
-            if (filteredKeys.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Bu toifada buyurtmalar mavjud emas</div>`;
-                return;
-            }
-
-            container.innerHTML = "";
-            filteredKeys.forEach(key => {
-                const item = orderHistoryData[key];
-                const dateObj = new Date(item.timestamp || Date.now());
-                const dateStr = dateObj.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const timeStr = dateObj.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
-
-                const isDone = item.status === 'completed';
-                const statusLabel = isDone ? '✅ YETKAZILDI' : '❌ BEKOR QILINDI';
-                const badgeClass = isDone ? 'completed' : 'cancelled';
-
-                const card = document.createElement("div");
-                card.className = "order-card";
-                card.innerHTML = `
-                    <div class="order-head">
-                        <div>
-                            <div class="order-price">${item.price || '0 UZS'}</div>
-                            <div style="font-size: 11px; color: #8a8f9d; margin-top: 2px;">📅 ${dateStr} • ⏰ ${timeStr}</div>
-                        </div>
-                        <span class="order-badge ${badgeClass}">${statusLabel}</span>
-                    </div>
-                    <div class="order-details">
-                        <div>👤 <b>Mijoz:</b> ${item.client_name || 'Noma\'lum'} (<a href="tel:${item.client_phone || ''}" style="color:#ffcc00; text-decoration:none;">${item.client_phone || '-'}</a>)</div>
-                        <div>🚖 <b>Haydovchi:</b> ${item.driver_name || 'Topilmadi'} ${item.driver_car ? `(${item.driver_car})` : ''}</div>
-                        <div>📍 <b>Manzil:</b> ${item.destination || 'Belgilanmagan'}</div>
-                        <div>📏 <b>Masofa:</b> ${item.distance || '-'} • <b>Tarif:</b> ${item.tariff || 'Standart'}</div>
-                        ${item.cancel_reason ? `<div style="color:#ff4757; font-size:12px;">⚠️ Sabab: ${item.cancel_reason}</div>` : ''}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function filterHistory(type, btn) {
-            currentFilter = type;
-            document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            renderHistoryList();
+        function setDriverStatus(id, status) {
+            db.ref('registered_drivers/' + id).update({ status, reviewed_at: Date.now() });
         }
 
         function updateStats() {
-            const onlineCount = Object.keys(onlineDriversData).filter(id => onlineDriversData[id].is_online).length;
-            const approvedDriversCount = Object.keys(registeredDriversData).filter(id => registeredDriversData[id].status !== 'pending' && registeredDriversData[id].status !== 'rejected').length;
-            
-            const historyList = Object.values(orderHistoryData);
-            const completedCount = historyList.filter(o => o.status === 'completed').length;
-            const cancelledCount = historyList.filter(o => o.status === 'cancelled' || o.status === 'cancelled_by_client' || o.status === 'cancelled_by_admin').length;
-
-            document.getElementById("statOnlineCount").innerText = onlineCount;
-            document.getElementById("statTotalDrivers").innerText = approvedDriversCount;
-            document.getElementById("statCompletedCount").innerText = completedCount;
-            document.getElementById("statCancelledCount").innerText = cancelledCount;
-        }
-
-        function deleteDriverFromDatabase(id, name) {
-            if (confirm(`Haqiqatan ham ${name} haydovchisini bazadan butunlay o'chirib tashlamoqchimisiz?`)) {
-                db.ref('registered_drivers/' + id).remove();
-                db.ref('drivers/' + id).remove();
-                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                alert(`✅ ${name} bazadan o'chirildi!`);
-            }
-        }
-
-        function forceCancelOrder() {
-            if (confirm("Ushbu faol buyurtmani majburiy bekor qilib, tarixga yozmoqchimisiz?")) {
-                db.ref('orders/current_order').once('value', snap => {
-                    const currentOrder = snap.val() || {};
-                    const histId = "ord_" + Date.now();
-                    
-                    db.ref('order_history/' + histId).set({
-                        ...currentOrder,
-                        status: 'cancelled_by_admin',
-                        cancel_reason: "Admin tomonidan bekor qilindi",
-                        timestamp: Date.now()
-                    });
-
-                    db.ref('orders/current_status').remove();
-                    db.ref('orders/current_order').remove();
-                    alert("✅ Buyurtma bekor qilindi va tarixga saqlandi!");
-                });
-            }
-        }
-
-        function openAddModal() { document.getElementById("addDriverModal").style.display = "flex"; }
-        function closeAddModal() { document.getElementById("addDriverModal").style.display = "none"; }
-
-        function saveNewDriver() {
-            const name = document.getElementById("newDName").value.trim();
-            const phone = document.getElementById("newDPhone").value.trim();
-            const car = document.getElementById("newDCar").value.trim();
-            const plate = document.getElementById("newDPlate").value.trim();
-            const tariff = document.getElementById("newDTariff").value;
-
-            if (!name || !phone || !car || !plate) {
-                alert("Iltimos, barcha maydonlarni to'ldiring!");
-                return;
-            }
-
-            const driverId = "driver_manual_" + Date.now();
-            db.ref('registered_drivers/' + driverId).set({
-                name: name,
-                phone: phone,
-                car: car,
-                plate: plate,
-                tariff: tariff,
-                status: 'approved',
-                registered_at: Date.now()
-            });
-
-            closeAddModal();
-            alert("✅ Yangi haydovchi bazaga qo'shildi!");
+            document.getElementById("statOnlineCount").innerText = Object.values(onlineDriversData).filter(d => d.is_online).length;
+            document.getElementById("statActiveOrders").innerText = Object.keys(activeOrdersData).length;
+            document.getElementById("statTotalDrivers").innerText = Object.values(registeredDriversData).filter(d => d.status === 'approved').length;
         }
     </script>
 </body>
