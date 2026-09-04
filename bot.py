@@ -7,8 +7,9 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart, Command
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 
-BOT_TOKEN = "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I"
-ADMIN_ID = [8726943857, 2020402]
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8643693514:AAFvSzfPBXjoAmvt4ltAtlBD_zwLp63e93I")
+ADMIN_IDS = [8726943857, 2020402]
+
 WEBAPP_CLIENT_URL = "https://amirovasilbek.github.io/taxi-bot/index.html"
 WEBAPP_DRIVER_URL = "https://amirovasilbek.github.io/taxi-bot/driver.html"
 WEBAPP_ADMIN_URL = "https://amirovasilbek.github.io/taxi-bot/admin.html"
@@ -31,7 +32,6 @@ def init_db():
     conn.close()
 
 def get_main_keyboard(user_id: int):
-    # Har bir foydalanuvchi uchun individual parametr uzatiladi
     client_url = f"{WEBAPP_CLIENT_URL}?user_id={user_id}"
     driver_url = f"{WEBAPP_DRIVER_URL}?user_id={user_id}"
     admin_url = f"{WEBAPP_ADMIN_URL}?user_id={user_id}"
@@ -40,7 +40,7 @@ def get_main_keyboard(user_id: int):
         [KeyboardButton(text="🚖 Taksi chaqirish", web_app=WebAppInfo(url=client_url))],
         [KeyboardButton(text="🚗 Haydovchi kabineti", web_app=WebAppInfo(url=driver_url))]
     ]
-    if user_id in ADMIN_ID:
+    if user_id in ADMIN_IDS:
         buttons.append([KeyboardButton(text="⚙️ Admin Dispetcher", web_app=WebAppInfo(url=admin_url))])
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
@@ -53,22 +53,21 @@ async def start_handler(message: types.Message):
     conn.commit()
     conn.close()
 
-    text = f"Assalomu alaykum, <b>{user.first_name}</b>! Express Taxi tizimiga xush kelibsiz."
-    if user.id in ADMIN_ID:
+    text = f"Assalomu alaykum, <b>{user.first_name}</b>! Express Taxi xizmatiga xush kelibsiz."
+    if user.id in ADMIN_IDS:
         text += "\n\n👑 <i>Siz tizim administratori sifatida tanildingiz.</i>"
 
     await message.answer(text, parse_mode="HTML", reply_markup=get_main_keyboard(user.id))
 
 @dp.message(Command("admin"))
 async def admin_handler(message: types.Message):
-    if message.from_user.id not in ADMIN_ID:
-        await message.answer("❌ Bu bo'lim faqat admin uchun.")
+    if message.from_user.id not in ADMIN_IDS:
+        await message.answer("❌ Bu bo'lim faqat adminlar uchun.")
         return
-    await message.answer("Dispetcherlik panelini pastki menyudagi tugma orqali ochishingiz mumkin.")
+    await message.answer("Dispetcherlik panelini pastki tugma orqali ochishingiz mumkin.")
 
-# --- RENDER PORT TALABINI QANOATLANTIRISH UCHUN ---
 async def handle(request):
-    return web.Response(text="Bot is running!")
+    return web.Response(text="Express Taxi Bot is running!")
 
 async def web_server():
     app = web.Application()
@@ -82,8 +81,6 @@ async def web_server():
 async def main():
     init_db()
     await bot.delete_webhook(drop_pending_updates=True)
-    
-    # Veb-server va Telegram botni bir vaqtda ishga tushiramiz
     await asyncio.gather(
         web_server(),
         dp.start_polling(bot)
