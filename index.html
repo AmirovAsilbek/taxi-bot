@@ -31,10 +31,7 @@
             background: #ffffff; border-radius: 50%;
             transform: rotate(45deg);
         }
-        .pin-shadow {
-            width: 14px; height: 6px; background: rgba(0,0,0,0.3);
-            border-radius: 50%; margin-top: 2px;
-        }
+        .pin-shadow { width: 14px; height: 6px; background: rgba(0,0,0,0.3); border-radius: 50%; margin-top: 2px; }
 
         .map-btn {
             position: absolute; z-index: 20; background: #ffffff;
@@ -79,22 +76,12 @@
             flex-direction: column; padding: 24px 0 16px 0; overflow-y: auto;
         }
         .side-menu.open { left: 0; }
-        .user-profile {
-            padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0;
-            display: flex; align-items: center; gap: 12px;
-        }
-        .user-avatar {
-            width: 44px; height: 44px; border-radius: 50%; background: #ffcc00;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 18px; color: #000;
-        }
+        .user-profile { padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 44px; height: 44px; border-radius: 50%; background: #ffcc00; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; color: #000; }
         .user-name { font-weight: 700; font-size: 16px; color: #111; }
         .user-phone { font-size: 12px; color: #888; }
         .menu-list { list-style: none; padding: 10px 0; }
-        .menu-item {
-            padding: 13px 20px; display: flex; align-items: center;
-            justify-content: space-between; font-size: 15px; color: #222; cursor: pointer;
-        }
+        .menu-item { padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 15px; color: #222; cursor: pointer; }
 
         .bottom-sheet {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 220px;
@@ -188,7 +175,7 @@
             <div class="auth-desc">Taksidan foydalanish uchun ma'lumotlaringizni kiriting:</div>
             <input type="text" id="regName" class="auth-input" placeholder="Ismingiz">
             <input type="tel" id="regPhone" class="auth-input" placeholder="+998 90 123 45 67">
-            <button class="btn-auth-submit" onclick="saveUserRegistration()">Ro'yxatdan o'tish va Kirish</button>
+            <button class="btn-auth-submit" onclick="saveUserRegistration()">Kirish va Boshlash</button>
         </div>
     </div>
 
@@ -213,19 +200,13 @@
             </div>
         </div>
         <ul class="menu-list">
-            <li class="menu-item" onclick="alert('Xizmat faol')">
-                <span>💼 Biznes-hisob</span><span>›</span>
-            </li>
-            <li class="menu-item" onclick="alert('Xavfsizlik yoqilgan')">
-                <span>🛡️ Xavfsizlik</span><span>›</span>
-            </li>
+            <li class="menu-item" onclick="alert('Express Taxi xizmati faol')"><span>💼 Biznes-hisob</span><span>›</span></li>
+            <li class="menu-item" onclick="alert('Xavfsizlik tizimi yoqilgan')"><span>🛡️ Xavfsizlik</span><span>›</span></li>
         </ul>
     </div>
 
     <div class="bottom-sheet" id="bottomSheet">
-        <div class="handle-area" onclick="collapseSheet()" id="handleArea">
-            <div class="sheet-handle-bar"></div>
-        </div>
+        <div class="handle-area" onclick="collapseSheet()" id="handleArea"><div class="sheet-handle-bar"></div></div>
         <div class="title-text" id="sheetTitle">📍 Shahrisabz Tumani</div>
         <div class="search-box">
             <span>🔍</span>
@@ -239,17 +220,11 @@
         <div style="font-size: 18px; font-weight: 700; color: #111;">Safaringiz ma'lumotlari</div>
         <div class="route-points">
             <div class="point-item">
-                <div class="point-left">
-                    <div class="dot dot-start"></div>
-                    <span class="point-name" id="overviewStart">Mening joylashuvim</span>
-                </div>
+                <div class="point-left"><div class="dot dot-start"></div><span class="point-name" id="overviewStart">Mening joylashuvim</span></div>
                 <button class="btn-note" onclick="addNote()">📝 Izoh</button>
             </div>
             <div class="point-item">
-                <div class="point-left">
-                    <div class="dot dot-end"></div>
-                    <span class="point-name" id="overviewDest">Xaritadagi manzil</span>
-                </div>
+                <div class="point-left"><div class="dot dot-end"></div><span class="point-name" id="overviewDest">Xaritadagi manzil</span></div>
             </div>
         </div>
 
@@ -321,7 +296,7 @@
                     <div class="d-rating">★ 5.0 (A'lo darajada)</div>
                 </div>
             </div>
-            <a href="tel:+998883893379" class="btn-call-driver" id="callDriverBtn">📞</a>
+            <a href="tel:+998900000000" class="btn-call-driver" id="callDriverBtn">📞</a>
         </div>
         <div class="trip-price-row">
             <span style="color: #666;">Safar narxi:</span>
@@ -353,11 +328,14 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         let paramUserId = urlParams.get('user_id');
-        let currentUserId = paramUserId || tg?.initDataUnsafe?.user?.id || "guest_" + Date.now();
+        let localGuest = localStorage.getItem("guest_id") || ("guest_" + Date.now());
+        localStorage.setItem("guest_id", localGuest);
+        let currentUserId = paramUserId || tg?.initDataUnsafe?.user?.id || localGuest;
 
         let map, multiRoute;
         let startPlacemark = null;
         let destPlacemark = null;
+        let driverLiveMarker = null;
         let driverMarkers = {};
 
         let startCoords = [39.0560, 66.8300];
@@ -392,13 +370,7 @@
         `);
 
         ymaps.ready(() => {
-            map = new ymaps.Map("map", {
-                center: startCoords,
-                zoom: 15,
-                type: 'yandex#map',
-                controls: []
-            });
-
+            map = new ymaps.Map("map", { center: startCoords, zoom: 15, type: 'yandex#map', controls: [] });
             locateMe();
             checkUserAuth();
             listenToLiveDrivers();
@@ -410,21 +382,18 @@
                 if (targetDist < 0.2) targetDist = 0.5;
 
                 const revUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${targetCoords[0]}&lon=${targetCoords[1]}&accept-language=uz`;
-                fetch(revUrl)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data && data.address) {
-                            const a = data.address;
-                            targetName = a.road || a.suburb || a.village || a.town || a.city || "Shahrisabz";
-                        } else {
-                            targetName = "Xaritadagi belgilangan nuqta";
-                        }
-                        document.getElementById("sheetTitle").innerText = "📍 " + targetName;
-                    })
-                    .catch(() => {
-                        targetName = "Xaritadagi joylashuv";
-                        document.getElementById("sheetTitle").innerText = "📍 " + targetName;
-                    });
+                fetch(revUrl).then(res => res.json()).then(data => {
+                    if (data && data.address) {
+                        const a = data.address;
+                        targetName = a.road || a.suburb || a.village || a.town || a.city || "Shahrisabz";
+                    } else {
+                        targetName = "Xaritadagi belgilangan nuqta";
+                    }
+                    document.getElementById("sheetTitle").innerText = "📍 " + targetName;
+                }).catch(() => {
+                    targetName = "Xaritadagi joylashuv";
+                    document.getElementById("sheetTitle").innerText = "📍 " + targetName;
+                });
             });
 
             map.events.add('click', (e) => {
@@ -433,22 +402,6 @@
                 map.setCenter(clickPos, map.getZoom(), { duration: 250 });
             });
         });
-
-        function playSoundChime() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.4);
-            } catch (e) {}
-        }
 
         function normalizeTariff(tariffStr) {
             if (!tariffStr) return 'standart';
@@ -477,18 +430,13 @@
                         const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
                         if (dist <= MAX_NEARBY_RADIUS_KM) {
                             driverList.push({ id: id, ...d, distance: dist });
-                        } else if (driverMarkers[id]) {
-                            try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
-                            delete driverMarkers[id];
                         }
                     }
                 }
 
-                driverList.sort((a, b) => a.distance - b.distance);
-
                 driverList.forEach(d => {
                     activeSet.add(normalizeTariff(d.tariff));
-                    const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'} (${d.distance.toFixed(1)} km)`;
+                    const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'}`;
 
                     if (!driverMarkers[d.id]) {
                         const marker = new ymaps.Placemark([d.lat, d.lon], { hintContent: hint }, {
@@ -501,7 +449,6 @@
                         map.geoObjects.add(marker);
                     } else {
                         driverMarkers[d.id].geometry.setCoordinates([d.lat, d.lon]);
-                        driverMarkers[d.id].properties.set('hintContent', hint);
                     }
                 });
 
@@ -535,13 +482,11 @@
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.style.opacity = "0.5";
-                    submitBtn.style.cursor = "not-allowed";
                     submitBtn.innerText = "❌ Hozirda taksilar yo'q";
                 }
             } else if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = "1";
-                submitBtn.style.cursor = "pointer";
                 submitBtn.innerText = "🚖 Taksi chaqirish";
             }
         }
@@ -594,10 +539,7 @@
         }
 
         function drawOverviewRoute(fromCoords, toCoords) {
-            if (multiRoute) {
-                try { map.geoObjects.remove(multiRoute); } catch(e){}
-                multiRoute = null;
-            }
+            if (multiRoute) { try { map.geoObjects.remove(multiRoute); } catch(e){} multiRoute = null; }
 
             ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
                 multiRoute = new MultiRoute({
@@ -611,14 +553,10 @@
                 });
 
                 multiRoute.model.events.add('requestsuccess', function() {
-                    if (!multiRoute) return;
                     try {
                         const routes = multiRoute.model.getRoutes();
                         if (routes && routes.length > 0) {
-                            const distanceMeters = routes[0].properties.get("distance").value;
-                            calculatePrices(distanceMeters / 1000);
-                        } else {
-                            calculatePrices(targetDist * 1.5);
+                            calculatePrices(routes[0].properties.get("distance").value / 1000);
                         }
                     } catch(err) {}
                 });
@@ -651,25 +589,38 @@
             drawOverviewRoute(startCoords, targetCoords);
         }
 
-        function drawDriverTrackingRoute(fromCoords, toCoords) {
-            if (multiRoute) {
-                try { map.geoObjects.remove(multiRoute); } catch(e){}
-                multiRoute = null;
-            }
-
-            ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
-                multiRoute = new MultiRoute({
-                    referencePoints: [fromCoords, toCoords],
-                    params: { routingMode: 'auto', results: 1 }
-                }, {
-                    boundsAutoApply: true,
-                    routeActiveStrokeColor: "#007aff",
-                    routeActiveStrokeWidth: 6,
-                    routeActiveStrokeOpacity: 0.9,
-                    pinVisible: true
+        function updateDriverLivePosition(dLat, dLon) {
+            if (!driverLiveMarker) {
+                driverLiveMarker = new ymaps.Placemark([dLat, dLon], {}, {
+                    iconLayout: 'default#image',
+                    iconImageHref: topViewBlueCarSvg,
+                    iconImageSize: [42, 42],
+                    iconImageOffset: [-21, -21],
+                    zIndex: 200
                 });
-                map.geoObjects.add(multiRoute);
-            });
+                map.geoObjects.add(driverLiveMarker);
+            } else {
+                driverLiveMarker.geometry.setCoordinates([dLat, dLon]);
+            }
+        }
+
+        function drawLiveTrackingRoute(fromCoords, toCoords) {
+            if (multiRoute) {
+                multiRoute.model.setReferencePoints([fromCoords, toCoords]);
+            } else {
+                ymaps.modules.require(['multiRouter.MultiRoute'], function (MultiRoute) {
+                    multiRoute = new MultiRoute({
+                        referencePoints: [fromCoords, toCoords],
+                        params: { routingMode: 'auto', results: 1 }
+                    }, {
+                        boundsAutoApply: true,
+                        routeActiveStrokeColor: "#007aff",
+                        routeActiveStrokeWidth: 6,
+                        pinVisible: true
+                    });
+                    map.geoObjects.add(multiRoute);
+                });
+            }
         }
 
         function listenToMyOrder(orderId) {
@@ -700,25 +651,30 @@
                         document.getElementById("callDriverBtn").href = "tel:" + data.driver_phone;
                     }
 
+                    if (data.driver_lat && data.driver_lon) {
+                        updateDriverLivePosition(data.driver_lat, data.driver_lon);
+                    }
+
                     const header = document.getElementById("tripStatusHeader");
                     if (data.step === 'arrived') {
                         header.innerText = "📍 HAYDOVCHI YETIB KELDI!";
                         timerPill.innerText = "Chiqing";
                         timerPill.style.background = "#2ed573";
                         timerPill.style.color = "#fff";
-                        playSoundChime();
                     } else if (data.step === 'in_trip') {
                         header.innerText = "🚀 SAFAR BOSHLANDI";
                         timerPill.innerText = "Ketmoqda";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
-                        drawDriverTrackingRoute(startCoords, targetCoords);
+                        if (data.driver_lat && data.driver_lon) {
+                            drawLiveTrackingRoute([data.driver_lat, data.driver_lon], targetCoords);
+                        }
                     } else {
                         header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
                         if (data.driver_lat && data.driver_lon) {
-                            drawDriverTrackingRoute([data.driver_lat, data.driver_lon], startCoords);
+                            drawLiveTrackingRoute([data.driver_lat, data.driver_lon], startCoords);
                         }
                     }
                 } else if (data.status === 'completed') {
@@ -726,9 +682,9 @@
                     document.getElementById("ratingSheet").style.display = "flex";
                     document.getElementById("locBtn").style.bottom = "32vh";
                     if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
-                    playSoundChime();
+                    if (driverLiveMarker) try { map.geoObjects.remove(driverLiveMarker); } catch(e){}
                 } else if (data.status === 'cancelled_by_driver' || data.status === 'cancelled_by_admin') {
-                    alert("⚠️ Buyurtma bekor qilindi!");
+                    alert("⚠️ Buyurtma haydovchi yoki admin tomonidan bekor qilindi!");
                     resetToOverview();
                 } else if (data.status === 'searching' && data.rejected_drivers) {
                     dispatchOrderToNextCandidate(data);
@@ -772,7 +728,6 @@
                 }
 
                 const initialOrder = {
-                    type: "client_order_searching",
                     order_id: currentOrderId,
                     client_id: currentUserId,
                     lat: startCoords[0],
@@ -835,18 +790,14 @@
 
         function autoCancelOrderBySystem() {
             clearTimeout(queueTimer);
-            if (currentOrderId) {
-                db.ref('orders/active/' + currentOrderId).remove();
-            }
+            if (currentOrderId) db.ref('orders/active/' + currentOrderId).remove();
             resetToOverview();
             alert("😔 Kechirasiz, barcha haydovchilar band yoki buyurtma qabul qilinmadi.");
         }
 
         function cancelTaxiOrder() {
             clearTimeout(queueTimer);
-            if (currentOrderId) {
-                db.ref('orders/active/' + currentOrderId).remove();
-            }
+            if (currentOrderId) db.ref('orders/active/' + currentOrderId).remove();
             resetToOverview();
         }
 
@@ -857,9 +808,7 @@
                         status: 'cancelled_by_client',
                         cancel_reason: "Mijoz tomonidan bekor qilindi"
                     });
-                    setTimeout(() => {
-                        db.ref('orders/active/' + currentOrderId).remove();
-                    }, 1500);
+                    setTimeout(() => { db.ref('orders/active/' + currentOrderId).remove(); }, 1500);
                 }
                 resetToOverview();
             }
@@ -872,6 +821,7 @@
             document.getElementById("overviewSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "64vh";
             if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
+            if (driverLiveMarker) try { map.geoObjects.remove(driverLiveMarker); } catch(e){}
         }
 
         function handleTopBtnClick() {
@@ -984,42 +934,39 @@
                 const container = document.getElementById("searchResults");
                 container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim() + ' Shahrisabz')}&countrycodes=uz&limit=6&accept-language=uz`;
-                fetch(url)
-                    .then(res => res.json())
-                    .then(data => {
-                        container.innerHTML = "";
-                        if (!data || data.length === 0) {
-                            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
-                            return;
-                        }
-                        data.forEach(item => {
-                            const lat = parseFloat(item.lat);
-                            const lon = parseFloat(item.lon);
-                            const dist = getDistanceKm(startCoords[0], startCoords[1], lat, lon);
-                            const title = item.display_name.split(',')[0];
+                fetch(url).then(res => res.json()).then(data => {
+                    container.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                        return;
+                    }
+                    data.forEach(item => {
+                        const lat = parseFloat(item.lat);
+                        const lon = parseFloat(item.lon);
+                        const dist = getDistanceKm(startCoords[0], startCoords[1], lat, lon);
+                        const title = item.display_name.split(',')[0];
 
-                            const div = document.createElement("div");
-                            div.className = "result-item";
-                            div.innerHTML = `
-                                <div>
-                                    <div class="result-title">${title}</div>
-                                    <div class="result-sub">${item.display_name}</div>
-                                </div>
-                                <div class="result-dist">${dist.toFixed(1)} km</div>
-                            `;
-                            div.onclick = () => {
-                                targetCoords = [lat, lon];
-                                targetName = title;
-                                map.setCenter(targetCoords, 16, { duration: 300 });
-                                document.getElementById("sheetTitle").innerText = "📍 " + title;
-                                collapseSheet();
-                            };
-                            container.appendChild(div);
-                        });
-                    })
-                    .catch(() => {
-                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidiruvda xatolik</div>";
+                        const div = document.createElement("div");
+                        div.className = "result-item";
+                        div.innerHTML = `
+                            <div>
+                                <div class="result-title">${title}</div>
+                                <div class="result-sub">${item.display_name}</div>
+                            </div>
+                            <div class="result-dist">${dist.toFixed(1)} km</div>
+                        `;
+                        div.onclick = () => {
+                            targetCoords = [lat, lon];
+                            targetName = title;
+                            map.setCenter(targetCoords, 16, { duration: 300 });
+                            document.getElementById("sheetTitle").innerText = "📍 " + title;
+                            collapseSheet();
+                        };
+                        container.appendChild(div);
                     });
+                }).catch(() => {
+                    container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidiruvda xatolik</div>";
+                });
             }, 350);
         }
 
