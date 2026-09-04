@@ -250,11 +250,13 @@
             listenForIncomingOrders();
         });
 
+        // Masofani metrlarda aniq hisoblash (Geodezik Haversine formulasi)
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
-            const phi1 = lat1 * Math.PI / 180, phi2 = lat2 * Math.PI / 180;
-            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+            const phi1 = Number(lat1) * Math.PI / 180;
+            const phi2 = Number(lat2) * Math.PI / 180;
+            const deltaPhi = (Number(lat2) - Number(lat1)) * Math.PI / 180;
+            const deltaLambda = (Number(lon2) - Number(lon1)) * Math.PI / 180;
             const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
             return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
         }
@@ -606,16 +608,35 @@
             });
         }
 
+        // --- 50 METRLI MASOFA CHEKLOVI BILAN BOSHQARUV ---
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
             const oId = currentOrderData.order_id;
 
+            // 1-BOSQICH: MIJOZ TOMON HARAKATLANISH ("YETIB KELDIM")
             if (tripStep === 'to_client') {
+                const clientLat = Number(currentOrderData.lat);
+                const clientLon = Number(currentOrderData.lon);
+
+                if (!isNaN(clientLat) && !isNaN(clientLon)) {
+                    const distToClient = getDistanceMeters(currentPos[0], currentPos[1], clientLat, clientLon);
+
+                    // 50 metrdan uzoq bo'lsa ruxsat berilmaydi
+                    if (distToClient > 50) {
+                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                        alert(`⚠️ Siz mijozdan hali uzoqdasiz!\n\nMijozgacha masofa: ${distToClient} metr.\n"Yetib keldim" tugmasini bosish uchun 50 metrdan yaqinroq keling.`);
+                        return;
+                    }
+                }
+
                 tripStep = 'waiting';
                 btn.className = "btn-step-action";
                 btn.innerText = "🚀 SAFARNI BOSHLASH";
                 document.getElementById("gpsStatus").innerHTML = "⏳ Mijoz kutilmoqda...";
                 db.ref('orders/active/' + oId).update({ step: 'arrived' });
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            // 2-BOSQICH: MIJOZNI KUTISH ("SAFARNI BOSHLASH")
             } else if (tripStep === 'waiting') {
                 tripStep = 'in_trip';
                 btn.className = "btn-finish-trip";
@@ -640,7 +661,24 @@
                 map.geoObjects.add(clientMarker);
 
                 drawRoute(currentPos, [destLat, destLon]);
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            // 3-BOSQICH: SAFARDA HARAKATLANISH ("SAFARNI YAKUNLASH")
             } else if (tripStep === 'in_trip') {
+                const destLat = Number(currentOrderData.dest_lat);
+                const destLon = Number(currentOrderData.dest_lon);
+
+                if (!isNaN(destLat) && !isNaN(destLon)) {
+                    const distToDest = getDistanceMeters(currentPos[0], currentPos[1], destLat, destLon);
+
+                    // 50 metrdan uzoq bo'lsa ruxsat berilmaydi
+                    if (distToDest > 50) {
+                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+                        alert(`⚠️ Siz manzilga hali yetib bormadingiz!\n\nManzilgacha qolgan masofa: ${distToDest} metr.\nSafarni yakunlash uchun manzilga 50 metrgacha yetib boring.`);
+                        return;
+                    }
+                }
+
                 completeCurrentTrip();
             }
         }
@@ -667,7 +705,8 @@
             db.ref('orders/active/' + oId).update({ status: 'completed' });
             setTimeout(() => { db.ref('orders/active/' + oId).remove(); }, 2000);
 
-            alert("✅ Safar yakunlandi!");
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            alert("✅ Safar muvaffaqiyatli yakunlandi!");
             resetDriverState();
         }
 
