@@ -354,8 +354,6 @@
         let queueTimer = null;
         let orderRef = null;
 
-        const MAX_NEARBY_RADIUS_KM = 35;
-
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
                 <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
@@ -426,31 +424,32 @@
 
                 for (let id in drivers) {
                     const d = drivers[id];
-                    if (d.is_online && d.lat && d.lon) {
-                        const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
-                        if (dist <= MAX_NEARBY_RADIUS_KM) {
-                            driverList.push({ id: id, ...d, distance: dist });
+                    const dLat = parseFloat(d.lat);
+                    const dLon = parseFloat(d.lon);
+
+                    if (d.is_online && !isNaN(dLat) && !isNaN(dLon)) {
+                        const normTariff = normalizeTariff(d.tariff || 'standart');
+                        activeSet.add(normTariff);
+
+                        driverList.push({ id: id, ...d, lat: dLat, lon: dLon, tariff: normTariff });
+                        const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${normTariff.toUpperCase()}`;
+
+                        if (!driverMarkers[id]) {
+                            const marker = new ymaps.Placemark([dLat, dLon], { hintContent: hint }, {
+                                iconLayout: 'default#image',
+                                iconImageHref: topViewBlueCarSvg,
+                                iconImageSize: [38, 38],
+                                iconImageOffset: [-19, -19],
+                                zIndex: 150
+                            });
+                            driverMarkers[id] = marker;
+                            map.geoObjects.add(marker);
+                        } else {
+                            driverMarkers[id].geometry.setCoordinates([dLat, dLon]);
+                            driverMarkers[id].properties.set('hintContent', hint);
                         }
                     }
                 }
-
-                driverList.forEach(d => {
-                    activeSet.add(normalizeTariff(d.tariff));
-                    const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'}`;
-
-                    if (!driverMarkers[d.id]) {
-                        const marker = new ymaps.Placemark([d.lat, d.lon], { hintContent: hint }, {
-                            iconLayout: 'default#image',
-                            iconImageHref: topViewBlueCarSvg,
-                            iconImageSize: [38, 38],
-                            iconImageOffset: [-19, -19]
-                        });
-                        driverMarkers[d.id] = marker;
-                        map.geoObjects.add(marker);
-                    } else {
-                        driverMarkers[d.id].geometry.setCoordinates([d.lat, d.lon]);
-                    }
-                });
 
                 availableTariffs = activeSet;
                 syncTariffsAvailability();
@@ -482,11 +481,13 @@
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.style.opacity = "0.5";
+                    submitBtn.style.cursor = "not-allowed";
                     submitBtn.innerText = "❌ Hozirda taksilar yo'q";
                 }
             } else if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = "1";
+                submitBtn.style.cursor = "pointer";
                 submitBtn.innerText = "🚖 Taksi chaqirish";
             }
         }
@@ -684,7 +685,7 @@
                     if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
                     if (driverLiveMarker) try { map.geoObjects.remove(driverLiveMarker); } catch(e){}
                 } else if (data.status === 'cancelled_by_driver' || data.status === 'cancelled_by_admin') {
-                    alert("⚠️ Buyurtma haydovchi yoki admin tomonidan bekor qilindi!");
+                    alert("⚠️ Buyurtma bekor qilindi!");
                     resetToOverview();
                 } else if (data.status === 'searching' && data.rejected_drivers) {
                     dispatchOrderToNextCandidate(data);
