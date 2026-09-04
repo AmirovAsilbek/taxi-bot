@@ -372,6 +372,7 @@
             locateMe();
             checkUserAuth();
             listenToLiveDrivers();
+            restoreClientOrder();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
             map.events.add('actionend', () => {
@@ -413,7 +414,6 @@
             db.ref('drivers').on('value', snapshot => {
                 const drivers = snapshot.val() || {};
                 const activeSet = new Set();
-                let driverList = [];
 
                 for (let id in driverMarkers) {
                     if (!drivers[id] || !drivers[id].is_online) {
@@ -431,7 +431,6 @@
                         const normTariff = normalizeTariff(d.tariff || 'standart');
                         activeSet.add(normTariff);
 
-                        driverList.push({ id: id, ...d, lat: dLat, lon: dLon, tariff: normTariff });
                         const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${normTariff.toUpperCase()}`;
 
                         if (!driverMarkers[id]) {
@@ -591,13 +590,18 @@
         }
 
         function updateDriverLivePosition(dLat, dLon) {
+            for (let id in driverMarkers) {
+                try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
+            }
+            driverMarkers = {};
+
             if (!driverLiveMarker) {
-                driverLiveMarker = new ymaps.Placemark([dLat, dLon], {}, {
+                driverLiveMarker = new ymaps.Placemark([dLat, dLon], { hintContent: "Haydovchi" }, {
                     iconLayout: 'default#image',
                     iconImageHref: topViewBlueCarSvg,
                     iconImageSize: [42, 42],
                     iconImageOffset: [-21, -21],
-                    zIndex: 200
+                    zIndex: 300
                 });
                 map.geoObjects.add(driverLiveMarker);
             } else {
@@ -685,10 +689,39 @@
                     if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
                     if (driverLiveMarker) try { map.geoObjects.remove(driverLiveMarker); } catch(e){}
                 } else if (data.status === 'cancelled_by_driver' || data.status === 'cancelled_by_admin') {
-                    alert("⚠️ Buyurtma bekor qilindi!");
+                    alert("⚠️ Buyurtma haydovchi yoki admin tomonidan bekor qilindi!");
                     resetToOverview();
                 } else if (data.status === 'searching' && data.rejected_drivers) {
                     dispatchOrderToNextCandidate(data);
+                }
+            });
+        }
+
+        function restoreClientOrder() {
+            const savedOrderId = localStorage.getItem("taxi_active_order_id");
+            if (!savedOrderId) return;
+
+            db.ref('orders/active/' + savedOrderId).once('value', snapshot => {
+                const order = snapshot.val();
+                if (order && order.client_id === currentUserId) {
+                    currentOrderId = savedOrderId;
+                    targetName = order.destination || "Belgilangan joy";
+                    finalTripPrice = order.price || "0 UZS";
+                    startCoords = [Number(order.lat), Number(order.lon)];
+                    targetCoords = [Number(order.dest_lat), Number(order.dest_lon)];
+
+                    document.getElementById("bottomSheet").style.display = "none";
+                    document.getElementById("centerPin").style.display = "none";
+                    document.getElementById("topBtn").innerText = "←";
+
+                    if (order.status === 'searching') {
+                        document.getElementById("searchingOrderIndex").innerText = "#" + currentOrderId;
+                        document.getElementById("searchStatusSheet").style.display = "flex";
+                        document.getElementById("locBtn").style.bottom = "40vh";
+                    }
+                    listenToMyOrder(currentOrderId);
+                } else {
+                    localStorage.removeItem("taxi_active_order_id");
                 }
             });
         }
@@ -700,8 +733,9 @@
             }
 
             currentOrderId = String(Date.now()).slice(-6);
-            document.getElementById("searchingOrderIndex").innerText = "#" + currentOrderId;
+            localStorage.setItem("taxi_active_order_id", currentOrderId);
 
+            document.getElementById("searchingOrderIndex").innerText = "#" + currentOrderId;
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
@@ -816,6 +850,7 @@
         }
 
         function resetToOverview() {
+            localStorage.removeItem("taxi_active_order_id");
             if (orderRef) orderRef.off();
             document.getElementById("searchStatusSheet").style.display = "none";
             document.getElementById("driverAcceptedSheet").style.display = "none";
@@ -883,6 +918,7 @@
         }
 
         function closeRatingSheet() {
+            localStorage.removeItem("taxi_active_order_id");
             document.getElementById("ratingSheet").style.display = "none";
             document.getElementById("bottomSheet").style.display = "flex";
             document.getElementById("centerPin").style.display = "flex";
