@@ -250,7 +250,6 @@
             listenForIncomingOrders();
         });
 
-        // Masofani metrlarda aniq hisoblash (Geodezik Haversine formulasi)
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
             const phi1 = Number(lat1) * Math.PI / 180;
@@ -572,7 +571,8 @@
                 }
 
                 if (!isNaN(clientLat) && !isNaN(clientLon)) {
-                    document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${clientLat},${clientLon}&rtt=auto`;
+                    // Google Maps Navigator havolasi
+                    document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${clientLat},${clientLon}&travelmode=driving`;
 
                     if (clientMarker) {
                         try { map.geoObjects.remove(clientMarker); } catch(e){}
@@ -608,12 +608,10 @@
             });
         }
 
-        // --- 50 METRLI MASOFA CHEKLOVI BILAN BOSHQARUV ---
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
             const oId = currentOrderData.order_id;
 
-            // 1-BOSQICH: MIJOZ TOMON HARAKATLANISH ("YETIB KELDIM")
             if (tripStep === 'to_client') {
                 const clientLat = Number(currentOrderData.lat);
                 const clientLon = Number(currentOrderData.lon);
@@ -621,7 +619,6 @@
                 if (!isNaN(clientLat) && !isNaN(clientLon)) {
                     const distToClient = getDistanceMeters(currentPos[0], currentPos[1], clientLat, clientLon);
 
-                    // 50 metrdan uzoq bo'lsa ruxsat berilmaydi
                     if (distToClient > 50) {
                         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                         alert(`⚠️ Siz mijozdan hali uzoqdasiz!\n\nMijozgacha masofa: ${distToClient} metr.\n"Yetib keldim" tugmasini bosish uchun 50 metrdan yaqinroq keling.`);
@@ -636,7 +633,6 @@
                 db.ref('orders/active/' + oId).update({ step: 'arrived' });
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            // 2-BOSQICH: MIJOZNI KUTISH ("SAFARNI BOSHLASH")
             } else if (tripStep === 'waiting') {
                 tripStep = 'in_trip';
                 btn.className = "btn-finish-trip";
@@ -646,7 +642,9 @@
 
                 const destLat = Number(currentOrderData.dest_lat);
                 const destLon = Number(currentOrderData.dest_lon);
-                document.getElementById("actNaviBtn").href = `https://yandex.uz/maps/?rtext=${currentPos[0]},${currentPos[1]}~${destLat},${destLon}&rtt=auto`;
+                
+                // Google Maps Navigator havolasi
+                document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${destLat},${destLon}&travelmode=driving`;
                 
                 if (clientMarker) {
                     try { map.geoObjects.remove(clientMarker); } catch(e){}
@@ -663,7 +661,6 @@
                 drawRoute(currentPos, [destLat, destLon]);
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-            // 3-BOSQICH: SAFARDA HARAKATLANISH ("SAFARNI YAKUNLASH")
             } else if (tripStep === 'in_trip') {
                 const destLat = Number(currentOrderData.dest_lat);
                 const destLon = Number(currentOrderData.dest_lon);
@@ -671,7 +668,6 @@
                 if (!isNaN(destLat) && !isNaN(destLon)) {
                     const distToDest = getDistanceMeters(currentPos[0], currentPos[1], destLat, destLon);
 
-                    // 50 metrdan uzoq bo'lsa ruxsat berilmaydi
                     if (distToDest > 50) {
                         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                         alert(`⚠️ Siz manzilga hali yetib bormadingiz!\n\nManzilgacha qolgan masofa: ${distToDest} metr.\nSafarni yakunlash uchun manzilga 50 metrgacha yetib boring.`);
