@@ -14,286 +14,114 @@
         #map { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
         .center-pin-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -100%);
-            z-index: 15;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            z-index: 15; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center;
         }
         .center-pin {
-            width: 40px;
-            height: 40px;
-            background: #ff3333;
-            border: 3px solid #111;
-            border-radius: 50% 50% 50% 0;
+            width: 40px; height: 40px; background: #ff3333;
+            border: 3px solid #111; border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
             box-shadow: 0 4px 14px rgba(255, 51, 51, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
         .center-pin::after {
-            content: '';
-            width: 12px;
-            height: 12px;
-            background: #ffffff;
-            border-radius: 50%;
+            content: ''; width: 12px; height: 12px;
+            background: #ffffff; border-radius: 50%;
             transform: rotate(45deg);
         }
         .pin-shadow {
-            width: 14px;
-            height: 6px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 50%;
-            margin-top: 2px;
+            width: 14px; height: 6px; background: rgba(0,0,0,0.3);
+            border-radius: 50%; margin-top: 2px;
         }
 
         .map-btn {
-            position: absolute;
-            z-index: 20;
-            background: #ffffff;
-            border: none;
-            border-radius: 50%;
-            width: 46px;
-            height: 46px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-            cursor: pointer;
-            font-size: 20px;
+            position: absolute; z-index: 20; background: #ffffff;
+            border: none; border-radius: 50%; width: 46px; height: 46px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15); cursor: pointer; font-size: 20px;
         }
         .btn-menu { top: 18px; left: 18px; }
         .btn-layers { top: 18px; right: 18px; font-size: 18px; }
         .btn-locate { bottom: 230px; right: 18px; font-size: 22px; transition: bottom 0.3s ease; }
 
         .auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 500;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); z-index: 500; display: none;
+            align-items: center; justify-content: center; padding: 20px;
         }
         .auth-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 24px 20px;
-            width: 100%;
-            max-width: 360px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #ffffff; border-radius: 20px; padding: 24px 20px;
+            width: 100%; max-width: 360px; display: flex; flex-direction: column;
+            gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         .auth-title { font-size: 20px; font-weight: 800; color: #111; text-align: center; }
         .auth-desc { font-size: 13px; color: #666; text-align: center; margin-bottom: 5px; }
         .auth-input {
-            width: 100%;
-            padding: 14px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
-            outline: none;
-            background: #f8f9fa;
+            width: 100%; padding: 14px; border: 1.5px solid #e0e0e0;
+            border-radius: 12px; font-size: 15px; outline: none; background: #f8f9fa;
         }
         .auth-input:focus { border-color: #ffcc00; background: #fff; }
         .btn-auth-submit {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
+            background: #ffcc00; color: #000; border: none; padding: 14px;
+            border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer;
         }
 
         .side-menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.4);
-            z-index: 99;
-            display: none;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4); z-index: 99; display: none;
         }
         .side-menu {
-            position: fixed;
-            top: 0;
-            left: -80%;
-            width: 75%;
-            height: 100%;
-            background: #ffffff;
-            z-index: 100;
-            transition: left 0.3s ease;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 0 16px 0;
-            overflow-y: auto;
+            position: fixed; top: 0; left: -80%; width: 75%; height: 100%;
+            background: #ffffff; z-index: 100; transition: left 0.3s ease;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.2); display: flex;
+            flex-direction: column; padding: 24px 0 16px 0; overflow-y: auto;
         }
         .side-menu.open { left: 0; }
-
         .user-profile {
-            padding: 0 20px 16px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            padding: 0 20px 16px 20px; border-bottom: 1px solid #f0f0f0;
+            display: flex; align-items: center; gap: 12px;
         }
         .user-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #ffcc00;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            color: #000;
+            width: 44px; height: 44px; border-radius: 50%; background: #ffcc00;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px; color: #000;
         }
         .user-name { font-weight: 700; font-size: 16px; color: #111; }
         .user-phone { font-size: 12px; color: #888; }
-
         .menu-list { list-style: none; padding: 10px 0; }
         .menu-item {
-            padding: 13px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 15px;
-            color: #222;
-            cursor: pointer;
+            padding: 13px 20px; display: flex; align-items: center;
+            justify-content: space-between; font-size: 15px; color: #222; cursor: pointer;
         }
-        .menu-item:active { background: #f5f5f5; }
-        .menu-left { display: flex; align-items: center; gap: 14px; }
-        .menu-icon { font-size: 18px; }
 
         .bottom-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 220px;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 30;
-            box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 10px 20px 20px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 220px;
+            background: #ffffff; border-radius: 28px 28px 0 0; z-index: 30;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.15); padding: 10px 20px 20px 20px;
+            display: flex; flex-direction: column; gap: 10px;
             transition: height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .bottom-sheet.expanded { height: 85vh; }
-
-        .handle-area {
-            width: 100%;
-            padding: 6px 0 10px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        .sheet-handle-bar {
-            width: 52px;
-            height: 6px;
-            background: #dcdde1;
-            border-radius: 6px;
-        }
-
-        .title-text {
-            font-size: 19px;
-            font-weight: 800;
-            color: #111;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: #f1f2f6;
-            border-radius: 16px;
-            padding: 14px 16px;
-            gap: 12px;
-        }
-        .search-input {
-            border: none;
-            background: transparent;
-            font-size: 15px;
-            color: #111;
-            width: 100%;
-            outline: none;
-        }
-
-        .search-results {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            overflow-y: auto;
-            flex: 1;
-            padding: 6px 0;
-        }
-        .result-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 14px;
-            background: #f8f9fa;
-            border: 1.5px solid transparent;
-            border-radius: 14px;
-            cursor: pointer;
-        }
+        .handle-area { width: 100%; padding: 6px 0 10px 0; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .sheet-handle-bar { width: 52px; height: 6px; background: #dcdde1; border-radius: 6px; }
+        .title-text { font-size: 19px; font-weight: 800; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .search-box { display: flex; align-items: center; background: #f1f2f6; border-radius: 16px; padding: 14px 16px; gap: 12px; }
+        .search-input { border: none; background: transparent; font-size: 15px; color: #111; width: 100%; outline: none; }
+        .search-results { display: none; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding: 6px 0; }
+        .result-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8f9fa; border-radius: 14px; cursor: pointer; }
         .result-title { font-weight: 700; font-size: 14px; color: #222; }
         .result-sub { font-size: 12px; color: #777; }
-        .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; white-space: nowrap; margin-left: 8px; }
-
-        .btn-go-action {
-            display: block;
-            width: 100%;
-            background: #ff3333;
-            color: #ffffff;
-            border: none;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 800;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35);
-            margin-top: 4px;
-        }
+        .result-dist { font-size: 12px; font-weight: 800; color: #ff3333; margin-left: 8px; }
+        .btn-go-action { display: block; width: 100%; background: #ff3333; color: #ffffff; border: none; padding: 15px; border-radius: 16px; font-size: 16px; font-weight: 800; text-align: center; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 51, 51, 0.35); }
 
         .overview-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 64vh;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 30;
-            box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 18px 20px 20px 20px;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 64vh;
+            background: #ffffff; border-radius: 28px 28px 0 0; z-index: 30;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.15); padding: 18px 20px 20px 20px;
+            display: none; flex-direction: column; justify-content: space-between;
         }
-
         .route-points { display: flex; flex-direction: column; gap: 8px; }
         .point-item { display: flex; align-items: center; justify-content: space-between; }
         .point-left { display: flex; align-items: center; gap: 10px; }
@@ -301,49 +129,12 @@
         .dot-start { background: #ffcc00; }
         .dot-end { background: #ff3333; }
         .point-name { font-size: 14px; font-weight: 600; color: #222; }
+        .btn-note { background: #f4f4f6; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #666; cursor: pointer; }
 
-        .btn-note {
-            background: #f4f4f6;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .tariff-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        .tariff-card {
-            background: #ffffff;
-            border: 2px solid #ececec;
-            border-radius: 16px;
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            transition: 0.25s all ease;
-        }
-        .tariff-card.active {
-            border-color: #ffcc00;
-            background: #fffdf0;
-        }
-        .tariff-card.disabled {
-            opacity: 0.35;
-            filter: grayscale(1);
-            background: #f1f2f6;
-            border-color: #e4e7eb;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
+        .tariff-list { display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; }
+        .tariff-card { background: #ffffff; border: 2px solid #ececec; border-radius: 16px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.25s all ease; }
+        .tariff-card.active { border-color: #ffcc00; background: #fffdf0; }
+        .tariff-card.disabled { opacity: 0.35; filter: grayscale(1); background: #f1f2f6; border-color: #e4e7eb; cursor: not-allowed; pointer-events: none; }
         .tariff-left { display: flex; align-items: center; gap: 12px; }
         .car-img { width: 44px; height: auto; }
         .tariff-name { font-size: 15px; font-weight: 700; color: #111; }
@@ -352,169 +143,40 @@
 
         .pricing-row { display: flex; align-items: center; justify-content: space-between; }
         .tip-selector { font-size: 13px; color: #444; font-weight: 600; }
-        .total-badge {
-            border: 1.5px solid #ffcc00;
-            padding: 5px 12px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 800;
-            color: #111;
-        }
-
-        .btn-request {
-            width: 100%;
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
-            transition: 0.2s all ease;
-        }
+        .total-badge { border: 1.5px solid #ffcc00; padding: 5px 12px; border-radius: 12px; font-size: 15px; font-weight: 800; color: #111; }
+        .btn-request { width: 100%; background: #ffcc00; color: #000; border: none; padding: 15px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4); }
 
         .search-status-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 38vh;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 30;
-            box-shadow: 0 -6px 30px rgba(0,0,0,0.15);
-            padding: 24px 20px 20px 20px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            text-align: center;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 38vh;
+            background: #ffffff; border-radius: 28px 28px 0 0; z-index: 30;
+            box-shadow: 0 -6px 30px rgba(0,0,0,0.15); padding: 24px 20px 20px 20px;
+            display: none; flex-direction: column; align-items: center; justify-content: space-between; text-align: center;
         }
-
-        .radar-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ffcc00;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 10px;
-        }
+        .radar-spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #ffcc00; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .btn-cancel-order {
-            width: 100%;
-            background: #f1f2f6;
-            color: #ff3333;
-            border: none;
-            padding: 14px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-        }
+        .btn-cancel-order { width: 100%; background: #f1f2f6; color: #ff3333; border: none; padding: 14px; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; }
 
         .driver-accepted-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 35;
-            box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
-            padding: 20px 20px 24px 20px;
-            display: none;
-            flex-direction: column;
-            gap: 14px;
-            border-top: 4px solid #ffcc00;
+            position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff;
+            border-radius: 28px 28px 0 0; z-index: 35; box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
+            padding: 20px 20px 24px 20px; display: none; flex-direction: column; gap: 14px; border-top: 4px solid #ffcc00;
         }
-
-        .accepted-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #f0f0f0;
-            padding-bottom: 12px;
-        }
-        .arrival-pill {
-            background: #111;
-            color: #ffcc00;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 800;
-        }
-
-        .driver-card-info {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        .accepted-top { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; padding-bottom: 12px; }
+        .arrival-pill { background: #111; color: #ffcc00; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 800; }
+        .driver-card-info { display: flex; align-items: center; justify-content: space-between; }
         .driver-main { display: flex; align-items: center; gap: 12px; }
-        .driver-photo-badge {
-            width: 48px;
-            height: 48px;
-            background: #ffcc00;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 22px;
-            color: #111;
-        }
+        .driver-photo-badge { width: 48px; height: 48px; background: #ffcc00; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; color: #111; }
         .d-name { font-size: 16px; font-weight: 800; color: #111; display: flex; align-items: center; gap: 6px; }
-        .acc-order-badge {
-            background: #111;
-            color: #ffcc00;
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 6px;
-        }
+        .acc-order-badge { background: #111; color: #ffcc00; font-size: 11px; padding: 2px 6px; border-radius: 6px; }
         .d-car { font-size: 13px; color: #666; margin-top: 2px; }
         .d-rating { font-size: 12px; font-weight: 800; color: #ff9800; }
-
-        .btn-call-driver {
-            background: #2ed573;
-            color: #fff;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(46, 213, 115, 0.35);
-        }
-
-        .trip-price-row {
-            display: flex;
-            justify-content: space-between;
-            background: #f8f9fb;
-            padding: 12px 16px;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 14px;
-        }
+        .btn-call-driver { background: #2ed573; color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; font-size: 20px; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.35); }
+        .trip-price-row { display: flex; justify-content: space-between; background: #f8f9fb; padding: 12px 16px; border-radius: 14px; font-weight: 700; font-size: 14px; }
 
         .rating-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 28px 28px 0 0;
-            z-index: 40;
-            box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
-            padding: 24px 20px;
-            display: none;
-            flex-direction: column;
-            gap: 16px;
-            text-align: center;
+            position: absolute; bottom: 0; left: 0; width: 100%; background: #ffffff;
+            border-radius: 28px 28px 0 0; z-index: 40; box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
+            padding: 24px 20px; display: none; flex-direction: column; gap: 16px; text-align: center;
         }
     </style>
 </head>
@@ -552,12 +214,10 @@
         </div>
         <ul class="menu-list">
             <li class="menu-item" onclick="alert('Xizmat faol')">
-                <div class="menu-left"><span class="menu-icon">💼</span><span>Biznes-hisob</span></div>
-                <span>›</span>
+                <span>💼 Biznes-hisob</span><span>›</span>
             </li>
             <li class="menu-item" onclick="alert('Xavfsizlik yoqilgan')">
-                <div class="menu-left"><span class="menu-icon">🛡️</span><span>Xavfsizlik</span></div>
-                <span>›</span>
+                <span>🛡️ Xavfsizlik</span><span>›</span>
             </li>
         </ul>
     </div>
@@ -609,7 +269,7 @@
                     <img src="https://cdn-icons-png.flaticon.com/512/3202/3202926.png" class="car-img" alt="Komfort">
                     <div>
                         <div class="tariff-name">Komfort</div>
-                        <div class="tariff-seats" id="seats_komfort">4 kishilik • Keng saloni</div>
+                        <div class="tariff-seats" id="seats_komfort">4 kishilik • Qulay</div>
                     </div>
                 </div>
                 <div class="price-val" id="price_komfort">9 000 UZS</div>
@@ -627,7 +287,7 @@
         </div>
 
         <div class="pricing-row">
-            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%) ⌵</div>
+            <div class="tip-selector">🔗 Choypuli: 2 000 UZS (5%)</div>
             <div class="total-badge" id="totalPrice">Jami: 7 500 UZS</div>
         </div>
         <button class="btn-request" id="submitOrderBtn" onclick="sendTaxiOrder()">🚖 Taksi chaqirish</button>
@@ -672,7 +332,7 @@
 
     <div class="rating-sheet" id="ratingSheet">
         <div style="font-size: 20px; font-weight: 800; color: #111;">Safar yakunlandi! 🎉</div>
-        <div style="font-size: 14px; color: #666;">Haydovchining ishini baholang:</div>
+        <div style="font-size: 14px; color: #666;">Haydovchining xizmatini baholang:</div>
         <div style="font-size: 32px; display: flex; justify-content: center; gap: 10px; cursor: pointer; color: #ffcc00;">
             <span onclick="rateDriver(1)">★</span>
             <span onclick="rateDriver(2)">★</span>
@@ -687,12 +347,8 @@
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.expand(); tg.enableClosingConfirmation(); }
 
-        const firebaseConfig = {
-            databaseURL: "https://express-taxi-83af2-default-rtdb.firebaseio.com"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        const firebaseConfig = { databaseURL: "https://express-taxi-83af2-default-rtdb.firebaseio.com" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -714,26 +370,26 @@
         let searchTimer = null;
         let availableTariffs = new Set();
         let acceptedDriverData = null;
-        
+
         let sortedDriversQueue = [];
         let currentDriverQueueIndex = 0;
         let queueTimer = null;
-        let passedDrivers = [];
+        let orderRef = null;
 
         const MAX_NEARBY_RADIUS_KM = 35;
 
         const topViewBlueCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
-        <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
-        <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
-        <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
-        <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
-        <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
-        <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.85"/>
-        <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.85"/>
-        <rect x="18" y="27" width="28" height="18" rx="4" fill="#e6b800"/>
-    </svg>
-`);
+            <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 64 64">
+                <rect x="8" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="10" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="8" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="50" y="42" width="6" height="12" rx="3" fill="#111"/>
+                <rect x="12" y="6" width="40" height="52" rx="14" fill="#ffcc00"/>
+                <path d="M16 20 Q32 16 48 20 L45 28 Q32 26 19 28 Z" fill="#222" opacity="0.85"/>
+                <path d="M19 44 Q32 46 45 44 L47 50 Q32 52 17 50 Z" fill="#222" opacity="0.85"/>
+                <rect x="18" y="27" width="28" height="18" rx="4" fill="#e6b800"/>
+            </svg>
+        `);
 
         ymaps.ready(() => {
             map = new ymaps.Map("map", {
@@ -746,9 +402,6 @@
             locateMe();
             checkUserAuth();
             listenToLiveDrivers();
-            listenToOrderAcceptance();
-            listenForDriverRejections();
-            listenForOrderClearing();
 
             map.events.add('actionbegin', () => { collapseSheet(); });
             map.events.add('actionend', () => {
@@ -823,16 +476,10 @@
                     if (d.is_online && d.lat && d.lon) {
                         const dist = getDistanceKm(startCoords[0], startCoords[1], d.lat, d.lon);
                         if (dist <= MAX_NEARBY_RADIUS_KM) {
-                            driverList.push({
-                                id: id,
-                                ...d,
-                                distance: dist
-                            });
-                        } else {
-                            if (driverMarkers[id]) {
-                                try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
-                                delete driverMarkers[id];
-                            }
+                            driverList.push({ id: id, ...d, distance: dist });
+                        } else if (driverMarkers[id]) {
+                            try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
+                            delete driverMarkers[id];
                         }
                     }
                 }
@@ -840,15 +487,11 @@
                 driverList.sort((a, b) => a.distance - b.distance);
 
                 driverList.forEach(d => {
-                    const normTariff = normalizeTariff(d.tariff);
-                    activeSet.add(normTariff);
-
+                    activeSet.add(normalizeTariff(d.tariff));
                     const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${d.tariff || 'Standart'} (${d.distance.toFixed(1)} km)`;
-                    
+
                     if (!driverMarkers[d.id]) {
-                        const marker = new ymaps.Placemark([d.lat, d.lon], {
-                            hintContent: hint
-                        }, {
+                        const marker = new ymaps.Placemark([d.lat, d.lon], { hintContent: hint }, {
                             iconLayout: 'default#image',
                             iconImageHref: topViewBlueCarSvg,
                             iconImageSize: [38, 38],
@@ -874,7 +517,6 @@
             tariffsList.forEach(type => {
                 const card = document.getElementById("tariff_" + type);
                 if (!card) return;
-
                 if (availableTariffs.has(type)) {
                     card.classList.remove("disabled");
                 } else {
@@ -886,9 +528,7 @@
             const activeCard = document.querySelector(".tariff-card.active:not(.disabled)");
             if (!activeCard) {
                 const firstAvailable = tariffsList.find(t => availableTariffs.has(t));
-                if (firstAvailable) {
-                    selectTariff(firstAvailable);
-                }
+                if (firstAvailable) selectTariff(firstAvailable);
             }
 
             if (availableTariffs.size === 0) {
@@ -898,13 +538,11 @@
                     submitBtn.style.cursor = "not-allowed";
                     submitBtn.innerText = "❌ Hozirda taksilar yo'q";
                 }
-            } else {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.style.opacity = "1";
-                    submitBtn.style.cursor = "pointer";
-                    submitBtn.innerText = "🚖 Taksi chaqirish";
-                }
+            } else if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+                submitBtn.style.cursor = "pointer";
+                submitBtn.innerText = "🚖 Taksi chaqirish";
             }
         }
 
@@ -920,44 +558,32 @@
             document.getElementById("price_standart").innerText = prices.standart.toLocaleString() + " UZS";
             document.getElementById("price_komfort").innerText = prices.komfort.toLocaleString() + " UZS";
             document.getElementById("price_komfort_plus").innerText = prices.komfort_plus.toLocaleString() + " UZS";
-            
             document.getElementById("seats_standart").innerText = `4 kishilik • ${targetDist.toFixed(1)} km`;
 
             let fallbackPrice = prices.standart;
             if (currentTariff === "Komfort") fallbackPrice = prices.komfort;
             if (currentTariff === "Komfort+") fallbackPrice = prices.komfort_plus;
             const totalCalc = fallbackPrice + 2000;
-            
+
             document.getElementById("totalPrice").innerText = "Jami: " + totalCalc.toLocaleString() + " UZS";
             finalTripPrice = totalCalc.toLocaleString() + " UZS";
-
-            const currentType = currentTariff === "Komfort+" ? "komfort_plus" : (currentTariff === "Komfort" ? "komfort" : "standart");
-            if (availableTariffs.has(currentType)) {
-                selectTariff(currentType);
-            } else {
-                syncTariffsAvailability();
-            }
         }
 
         function selectTariff(type) {
             if (!availableTariffs.has(type)) return;
-
             document.querySelectorAll(".tariff-card").forEach(el => el.classList.remove("active"));
             let selectedPrice = prices.standart;
 
             if (type === 'standart') {
-                const el = document.getElementById("tariff_standart");
-                if (el) el.classList.add("active");
+                document.getElementById("tariff_standart")?.classList.add("active");
                 currentTariff = "Standart";
                 selectedPrice = prices.standart;
             } else if (type === 'komfort') {
-                const el = document.getElementById("tariff_komfort");
-                if (el) el.classList.add("active");
+                document.getElementById("tariff_komfort")?.classList.add("active");
                 currentTariff = "Komfort";
                 selectedPrice = prices.komfort;
             } else if (type === 'komfort_plus') {
-                const el = document.getElementById("tariff_komfort_plus");
-                if (el) el.classList.add("active");
+                document.getElementById("tariff_komfort_plus")?.classList.add("active");
                 currentTariff = "Komfort+";
                 selectedPrice = prices.komfort_plus;
             }
@@ -990,27 +616,14 @@
                         const routes = multiRoute.model.getRoutes();
                         if (routes && routes.length > 0) {
                             const distanceMeters = routes[0].properties.get("distance").value;
-                            const realKm = distanceMeters / 1000;
-                            calculatePrices(realKm);
+                            calculatePrices(distanceMeters / 1000);
                         } else {
-                            const estimatedKm = targetDist * 1.8;
-                            calculatePrices(estimatedKm);
-                            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-                            alert("⚠️ Diqqat: Ushbu manzilgacha xaritada aniq avtomobil yo'li topilmadi. Masofa va narx taxminiy aylanma yo'l orqali hisoblandi.");
+                            calculatePrices(targetDist * 1.5);
                         }
-                    } catch(err) {
-                        console.warn("Marshrut hisoblashda xatolik:", err);
-                    }
+                    } catch(err) {}
                 });
 
                 map.geoObjects.add(multiRoute);
-
-                try {
-                    map.setBounds([fromCoords, toCoords], {
-                        checkZoomRange: true,
-                        zoomMargin: 70
-                    });
-                } catch (e) {}
             });
         }
 
@@ -1027,28 +640,15 @@
             calculatePrices(targetDist);
             syncTariffsAvailability();
 
-            if (startPlacemark) {
-                try { map.geoObjects.remove(startPlacemark); } catch(e){}
-                startPlacemark = null;
-            }
-            if (destPlacemark) {
-                try { map.geoObjects.remove(destPlacemark); } catch(e){}
-                destPlacemark = null;
-            }
+            if (startPlacemark) try { map.geoObjects.remove(startPlacemark); } catch(e){}
+            if (destPlacemark) try { map.geoObjects.remove(destPlacemark); } catch(e){}
 
-            const sLat = Number(startCoords[0]);
-            const sLon = Number(startCoords[1]);
-            const tLat = Number(targetCoords[0]);
-            const tLon = Number(targetCoords[1]);
-
-            if (isNaN(sLat) || isNaN(sLon) || isNaN(tLat) || isNaN(tLon)) return;
-
-            startPlacemark = new ymaps.Placemark([sLat, sLon], {}, { preset: 'islands#yellowPersonIcon' });
-            destPlacemark = new ymaps.Placemark([tLat, tLon], { hintContent: targetName }, { preset: 'islands#redDotIcon' });
+            startPlacemark = new ymaps.Placemark(startCoords, {}, { preset: 'islands#yellowPersonIcon' });
+            destPlacemark = new ymaps.Placemark(targetCoords, { hintContent: targetName }, { preset: 'islands#redDotIcon' });
             map.geoObjects.add(startPlacemark);
             map.geoObjects.add(destPlacemark);
 
-            drawOverviewRoute([sLat, sLon], [tLat, tLon]);
+            drawOverviewRoute(startCoords, targetCoords);
         }
 
         function drawDriverTrackingRoute(fromCoords, toCoords) {
@@ -1066,41 +666,33 @@
                     routeActiveStrokeColor: "#007aff",
                     routeActiveStrokeWidth: 6,
                     routeActiveStrokeOpacity: 0.9,
-                    routeStrokeColor: "#007aff",
                     pinVisible: true
                 });
-
                 map.geoObjects.add(multiRoute);
-
-                try {
-                    map.setBounds([fromCoords, toCoords], {
-                        checkZoomRange: true,
-                        zoomMargin: 80
-                    });
-                } catch (e) {}
             });
         }
 
-        function listenToOrderAcceptance() {
-            db.ref('orders/current_status').on('value', snapshot => {
-                const data = snapshot.val();
-                acceptedDriverData = data;
+        function listenToMyOrder(orderId) {
+            if (orderRef) orderRef.off();
+            orderRef = db.ref('orders/active/' + orderId);
 
-                if (data && data.status === 'accepted') {
+            orderRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                if (data.status === 'accepted') {
                     clearTimeout(queueTimer);
+                    acceptedDriverData = data;
 
                     document.getElementById("searchStatusSheet").style.display = "none";
                     document.getElementById("driverAcceptedSheet").style.display = "flex";
                     document.getElementById("locBtn").style.bottom = "38vh";
 
-                    const badgeVal = data.order_index || currentOrderId || "1";
-                    const badgeElem = document.getElementById("accOrderBadge");
-                    if (badgeElem) badgeElem.innerText = "#" + badgeVal;
-
+                    document.getElementById("accOrderBadge").innerText = "#" + data.order_id;
                     document.getElementById("accDriverName").innerText = data.driver_name || "Haydovchi";
-                    document.getElementById("accDriverCar").innerText = data.driver_car || "Oq Onix • 70 N 079 NN";
+                    document.getElementById("accDriverCar").innerText = data.driver_car || "Mashina";
                     document.getElementById("accTripPrice").innerText = data.price || finalTripPrice;
-                    
+
                     const timerPill = document.getElementById("driverArrivalTimer");
                     timerPill.innerText = data.eta || "3 daq";
 
@@ -1109,99 +701,53 @@
                     }
 
                     const header = document.getElementById("tripStatusHeader");
-
                     if (data.step === 'arrived') {
                         header.innerText = "📍 HAYDOVCHI YETIB KELDI!";
                         timerPill.innerText = "Chiqing";
                         timerPill.style.background = "#2ed573";
                         timerPill.style.color = "#fff";
                         playSoundChime();
-                        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
                     } else if (data.step === 'in_trip') {
                         header.innerText = "🚀 SAFAR BOSHLANDI";
                         timerPill.innerText = "Ketmoqda";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
-
                         drawDriverTrackingRoute(startCoords, targetCoords);
                     } else {
                         header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
-
                         if (data.driver_lat && data.driver_lon) {
-                            const dLat = Number(data.driver_lat);
-                            const dLon = Number(data.driver_lon);
-                            if (!isNaN(dLat) && !isNaN(dLon)) {
-                                drawDriverTrackingRoute([dLat, dLon], startCoords);
-                            }
+                            drawDriverTrackingRoute([data.driver_lat, data.driver_lon], startCoords);
                         }
                     }
-                } else if (data && data.status === 'completed') {
+                } else if (data.status === 'completed') {
                     document.getElementById("driverAcceptedSheet").style.display = "none";
                     document.getElementById("ratingSheet").style.display = "flex";
                     document.getElementById("locBtn").style.bottom = "32vh";
-                    if (multiRoute) {
-                        try { map.geoObjects.remove(multiRoute); } catch(e){}
-                        multiRoute = null;
-                    }
+                    if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
                     playSoundChime();
-                } else if (data && (data.status === 'cancelled_by_admin' || data.status === 'cancelled_by_driver')) {
+                } else if (data.status === 'cancelled_by_driver' || data.status === 'cancelled_by_admin') {
                     alert("⚠️ Buyurtma bekor qilindi!");
-                    document.getElementById("searchStatusSheet").style.display = "none";
-                    document.getElementById("driverAcceptedSheet").style.display = "none";
-                    document.getElementById("overviewSheet").style.display = "flex";
-                    document.getElementById("locBtn").style.bottom = "64vh";
-                    if (multiRoute) {
-                        try { map.geoObjects.remove(multiRoute); } catch(e){}
-                        multiRoute = null;
-                    }
-                }
-            });
-        }
-
-        function listenForDriverRejections() {
-            db.ref('orders/pass_signal').on('value', snap => {
-                const data = snap.val();
-                if (data && data.order_time) {
-                    if (data.rejected_by && !passedDrivers.includes(data.rejected_by)) {
-                        passedDrivers.push(data.rejected_by);
-                    }
-                    dispatchOrderToNextCandidate();
-                    db.ref('orders/pass_signal').remove();
-                }
-            });
-        }
-
-        function listenForOrderClearing() {
-            db.ref('orders/current_order').on('value', snapshot => {
-                const order = snapshot.val();
-                const searchSheet = document.getElementById("searchStatusSheet");
-                
-                if (!order && searchSheet && searchSheet.style.display === "flex") {
-                    clearTimeout(queueTimer);
-                    searchSheet.style.display = "none";
-                    document.getElementById("driverAcceptedSheet").style.display = "none";
-                    document.getElementById("overviewSheet").style.display = "flex";
-                    document.getElementById("locBtn").style.bottom = "64vh";
+                    resetToOverview();
+                } else if (data.status === 'searching' && data.rejected_drivers) {
+                    dispatchOrderToNextCandidate(data);
                 }
             });
         }
 
         function sendTaxiOrder() {
             if (availableTariffs.size === 0) {
-                alert("Hozirda bu hududda faol taksilar mavjud emas!");
+                alert("Hozirda faol taksilar mavjud emas!");
                 return;
             }
 
-            currentOrderId = Math.floor(1000 + Math.random() * 9000).toString();
-            const sIndexBadge = document.getElementById("searchingOrderIndex");
-            if (sIndexBadge) sIndexBadge.innerText = "#" + currentOrderId;
+            currentOrderId = String(Date.now()).slice(-6);
+            document.getElementById("searchingOrderIndex").innerText = "#" + currentOrderId;
 
             document.getElementById("overviewSheet").style.display = "none";
             document.getElementById("searchStatusSheet").style.display = "flex";
             document.getElementById("locBtn").style.bottom = "40vh";
-            passedDrivers = [];
 
             db.ref('drivers').once('value', snapshot => {
                 const drivers = snapshot.val() || {};
@@ -1225,156 +771,107 @@
                     return;
                 }
 
-                dispatchOrderToNextCandidate();
-            });
+                const initialOrder = {
+                    type: "client_order_searching",
+                    order_id: currentOrderId,
+                    client_id: currentUserId,
+                    lat: startCoords[0],
+                    lon: startCoords[1],
+                    dest_lat: targetCoords[0],
+                    dest_lon: targetCoords[1],
+                    destination: targetName,
+                    distance: targetDist.toFixed(1) + " km",
+                    tariff: currentTariff,
+                    price: finalTripPrice,
+                    client_name: document.getElementById("uName").innerText,
+                    client_phone: document.getElementById("uPhone").innerText,
+                    status: "searching",
+                    target_driver: sortedDriversQueue[0] || "ALL",
+                    rejected_drivers: {},
+                    timestamp: Date.now()
+                };
 
-            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                db.ref('orders/active/' + currentOrderId).set(initialOrder);
+                listenToMyOrder(currentOrderId);
+
+                queueTimer = setTimeout(() => {
+                    handleQueueStep();
+                }, 15000);
+            });
         }
 
-        function dispatchOrderToNextCandidate() {
+        function handleQueueStep() {
             clearTimeout(queueTimer);
+            currentDriverQueueIndex++;
+            db.ref('orders/active/' + currentOrderId).once('value', snap => {
+                const order = snap.val();
+                if (order && order.status === 'searching') {
+                    dispatchOrderToNextCandidate(order);
+                }
+            });
+        }
 
-            const availableQueue = sortedDriversQueue.filter(id => !passedDrivers.includes(id));
+        function dispatchOrderToNextCandidate(orderData) {
+            clearTimeout(queueTimer);
+            const rejected = orderData.rejected_drivers || {};
+            const availableQueue = sortedDriversQueue.filter(id => !rejected[id]);
 
             if (availableQueue.length === 0) {
                 autoCancelOrderBySystem();
                 return;
             }
 
-            const basePayload = {
-                type: "client_order_searching",
-                order_id: currentOrderId,
-                index: currentOrderId,
-                client_id: currentUserId,
-                lat: startCoords[0],
-                lon: startCoords[1],
-                dest_lat: targetCoords[0],
-                dest_lon: targetCoords[1],
-                destination: targetName,
-                distance: targetDist.toFixed(1) + " km",
-                tariff: currentTariff,
-                price: finalTripPrice,
-                client_name: document.getElementById("uName").innerText,
-                client_phone: document.getElementById("uPhone").innerText,
-                status: "searching",
-                timestamp: Date.now()
-            };
-
-            if (currentDriverQueueIndex === 0 && availableQueue.length > 0) {
-                basePayload.target_driver = availableQueue[0];
-                db.ref('orders/current_order').set(basePayload);
-
-                queueTimer = setTimeout(() => {
-                    currentDriverQueueIndex = 1;
-                    dispatchOrderToNextCandidate();
-                }, 15000);
-            } 
-            else if (currentDriverQueueIndex === 1 && availableQueue.length > 1) {
-                basePayload.target_driver = availableQueue[1];
-                db.ref('orders/current_order').set(basePayload);
-
-                queueTimer = setTimeout(() => {
-                    currentDriverQueueIndex = 2;
-                    dispatchOrderToNextCandidate();
-                }, 15000);
-            } 
-            else {
-                basePayload.target_driver = "ALL";
-                db.ref('orders/current_order').set(basePayload);
-
-                queueTimer = setTimeout(() => {
-                    autoCancelOrderBySystem();
-                }, 20000);
+            let nextTarget = "ALL";
+            if (currentDriverQueueIndex < availableQueue.length) {
+                nextTarget = availableQueue[currentDriverQueueIndex];
             }
+
+            db.ref('orders/active/' + currentOrderId).update({ target_driver: nextTarget });
+
+            queueTimer = setTimeout(() => {
+                handleQueueStep();
+            }, nextTarget === "ALL" ? 20000 : 15000);
         }
 
         function autoCancelOrderBySystem() {
             clearTimeout(queueTimer);
-
-            const histId = "trip_" + Date.now();
-            db.ref('order_history/' + histId).set({
-                order_id: currentOrderId,
-                client_name: document.getElementById("uName").innerText,
-                client_phone: document.getElementById("uPhone").innerText,
-                destination: targetName,
-                price: finalTripPrice,
-                tariff: currentTariff,
-                distance: targetDist.toFixed(1) + " km",
-                status: 'cancelled',
-                cancel_reason: "Haydovchilar qabul qilmadi (Tizim bekor qildi)",
-                timestamp: Date.now()
-            });
-
-            db.ref('orders/current_status').remove();
-            db.ref('orders/current_order').remove();
-            
-            document.getElementById("searchStatusSheet").style.display = "none";
-            document.getElementById("driverAcceptedSheet").style.display = "none";
-            document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "64vh";
-
-            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-            alert("😔 Kechirasiz, barcha haydovchilar band yoki buyurtma qabul qilinmadi.\nIltimos, birozdan so'ng qayta urinib ko'ring.");
+            if (currentOrderId) {
+                db.ref('orders/active/' + currentOrderId).remove();
+            }
+            resetToOverview();
+            alert("😔 Kechirasiz, barcha haydovchilar band yoki buyurtma qabul qilinmadi.");
         }
 
         function cancelTaxiOrder() {
             clearTimeout(queueTimer);
-
-            const histId = "trip_" + Date.now();
-            db.ref('order_history/' + histId).set({
-                order_id: currentOrderId,
-                client_name: document.getElementById("uName").innerText,
-                client_phone: document.getElementById("uPhone").innerText,
-                destination: targetName,
-                price: finalTripPrice,
-                tariff: currentTariff,
-                distance: targetDist.toFixed(1) + " km",
-                status: 'cancelled_by_client',
-                cancel_reason: "Qidiruv paytida mijoz bekor qildi",
-                timestamp: Date.now()
-            });
-
-            db.ref('orders/current_status').remove();
-            db.ref('orders/current_order').remove();
-            document.getElementById("searchStatusSheet").style.display = "none";
-            document.getElementById("driverAcceptedSheet").style.display = "none";
-            document.getElementById("overviewSheet").style.display = "flex";
-            document.getElementById("locBtn").style.bottom = "64vh";
+            if (currentOrderId) {
+                db.ref('orders/active/' + currentOrderId).remove();
+            }
+            resetToOverview();
         }
 
         function cancelAcceptedOrder() {
             if (confirm("Haqiqatan ham buyurtmani bekor qilmoqchimisiz?")) {
-                const histId = "trip_" + Date.now();
-                db.ref('order_history/' + histId).set({
-                    order_id: currentOrderId,
-                    client_name: document.getElementById("uName").innerText,
-                    client_phone: document.getElementById("uPhone").innerText,
-                    driver_name: acceptedDriverData?.driver_name || "Noma'lum",
-                    driver_car: acceptedDriverData?.driver_car || "-",
-                    destination: targetName,
-                    price: finalTripPrice,
-                    tariff: currentTariff,
-                    distance: targetDist.toFixed(1) + " km",
-                    status: 'cancelled_by_client',
-                    cancel_reason: "Haydovchi qabul qilgach mijoz bekor qildi",
-                    timestamp: Date.now()
-                });
-
-                db.ref('orders/current_status').set({ status: 'cancelled_by_client' });
-                db.ref('orders/current_order').remove();
-
-                document.getElementById("driverAcceptedSheet").style.display = "none";
-                document.getElementById("overviewSheet").style.display = "flex";
-                document.getElementById("locBtn").style.bottom = "64vh";
-                if (multiRoute) {
-                    try { map.geoObjects.remove(multiRoute); } catch(e){}
-                    multiRoute = null;
+                if (currentOrderId) {
+                    db.ref('orders/active/' + currentOrderId).update({
+                        status: 'cancelled_by_client',
+                        cancel_reason: "Mijoz tomonidan bekor qilindi"
+                    });
+                    setTimeout(() => {
+                        db.ref('orders/active/' + currentOrderId).remove();
+                    }, 1500);
                 }
-
-                setTimeout(() => {
-                    db.ref('orders/current_status').remove();
-                }, 1500);
+                resetToOverview();
             }
+        }
+
+        function resetToOverview() {
+            if (orderRef) orderRef.off();
+            document.getElementById("searchStatusSheet").style.display = "none";
+            document.getElementById("driverAcceptedSheet").style.display = "none";
+            document.getElementById("overviewSheet").style.display = "flex";
+            document.getElementById("locBtn").style.bottom = "64vh";
+            if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
         }
 
         function handleTopBtnClick() {
@@ -1388,10 +885,7 @@
                 document.getElementById("centerPin").style.display = "flex";
                 document.getElementById("topBtn").innerText = "☰";
                 document.getElementById("locBtn").style.bottom = "230px";
-                if (multiRoute) {
-                    try { map.geoObjects.remove(multiRoute); } catch(e){}
-                    multiRoute = null;
-                }
+                if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
             } else {
                 toggleSideMenu();
             }
@@ -1400,13 +894,8 @@
         function toggleSideMenu() {
             const menu = document.getElementById("sideMenu");
             const overlay = document.getElementById("menuOverlay");
-            if (menu.classList.contains("open")) {
-                menu.classList.remove("open");
-                overlay.style.display = "none";
-            } else {
-                menu.classList.add("open");
-                overlay.style.display = "block";
-            }
+            menu.classList.toggle("open");
+            overlay.style.display = menu.classList.contains("open") ? "block" : "none";
         }
 
         function checkUserAuth() {
@@ -1438,7 +927,6 @@
         }
 
         function rateDriver(stars) {
-            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             alert(`Rahmat! Haydovchiga ${stars} yulduz berildi ⭐`);
             closeRatingSheet();
         }
@@ -1449,7 +937,7 @@
             document.getElementById("centerPin").style.display = "flex";
             document.getElementById("topBtn").innerText = "☰";
             document.getElementById("locBtn").style.bottom = "230px";
-            db.ref('orders/current_status').remove();
+            if (currentOrderId) db.ref('orders/active/' + currentOrderId).remove();
         }
 
         function getDistanceKm(lat1, lon1, lat2, lon2) {
@@ -1459,8 +947,7 @@
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                       Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
         function locateMe() {
@@ -1496,58 +983,44 @@
             searchTimer = setTimeout(() => {
                 const container = document.getElementById("searchResults");
                 container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidirilmoqda...</div>";
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim() + ' Shahrisabz Uzbekistan')}&countrycodes=uz&limit=8&accept-language=uz`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim() + ' Shahrisabz')}&countrycodes=uz&limit=6&accept-language=uz`;
                 fetch(url)
                     .then(res => res.json())
                     .then(data => {
                         container.innerHTML = "";
                         if (!data || data.length === 0) {
-                            return fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query.trim())}&countrycodes=uz&limit=8&accept-language=uz`)
-                                .then(r => r.json())
-                                .then(altData => renderResults(altData, container));
+                            container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                            return;
                         }
-                        renderResults(data, container);
+                        data.forEach(item => {
+                            const lat = parseFloat(item.lat);
+                            const lon = parseFloat(item.lon);
+                            const dist = getDistanceKm(startCoords[0], startCoords[1], lat, lon);
+                            const title = item.display_name.split(',')[0];
+
+                            const div = document.createElement("div");
+                            div.className = "result-item";
+                            div.innerHTML = `
+                                <div>
+                                    <div class="result-title">${title}</div>
+                                    <div class="result-sub">${item.display_name}</div>
+                                </div>
+                                <div class="result-dist">${dist.toFixed(1)} km</div>
+                            `;
+                            div.onclick = () => {
+                                targetCoords = [lat, lon];
+                                targetName = title;
+                                map.setCenter(targetCoords, 16, { duration: 300 });
+                                document.getElementById("sheetTitle").innerText = "📍 " + title;
+                                collapseSheet();
+                            };
+                            container.appendChild(div);
+                        });
                     })
                     .catch(() => {
-                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
+                        container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Qidiruvda xatolik</div>";
                     });
-            }, 300);
-        }
-
-        function renderResults(items, container) {
-            if (!items || items.length === 0) {
-                container.innerHTML = "<div style='color:#888; padding:10px; text-align:center;'>Manzil topilmadi</div>";
-                return;
-            }
-            container.innerHTML = "";
-            items.forEach(item => {
-                const lat = parseFloat(item.lat);
-                const lon = parseFloat(item.lon);
-                const coords = [lat, lon];
-                const dist = getDistanceKm(startCoords[0], startCoords[1], lat, lon);
-                const nameParts = item.display_name.split(',');
-                const title = nameParts[0];
-                const sub = nameParts.slice(1, 3).join(',');
-
-                const div = document.createElement("div");
-                div.className = "result-item";
-                div.innerHTML = `
-                    <div>
-                        <div class="result-title">${title}</div>
-                        <div class="result-sub">${sub}</div>
-                    </div>
-                    <div class="result-dist">${dist.toFixed(1)} km</div>
-                `;
-                div.onclick = () => {
-                    targetCoords = coords;
-                    targetName = title;
-                    targetDist = dist > 0.2 ? dist : 0.5;
-                    map.setCenter(coords, 16, { duration: 300 });
-                    document.getElementById("sheetTitle").innerText = "📍 " + title;
-                    collapseSheet();
-                };
-                container.appendChild(div);
-            });
+            }, 350);
         }
 
         function changeMapType() {
