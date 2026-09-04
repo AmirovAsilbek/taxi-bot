@@ -248,6 +248,7 @@
             listenForDriverAccount();
             initLocationTracker();
             listenForIncomingOrders();
+            checkActiveTripOnStart();
         });
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -386,6 +387,66 @@
                         if (order.target_driver !== driverId && order.target_driver !== 'ALL') continue;
 
                         showOrderPopup(order);
+                        break;
+                    }
+                }
+            });
+        }
+
+        function checkActiveTripOnStart() {
+            db.ref('orders/active').once('value', snapshot => {
+                const orders = snapshot.val() || {};
+                for (let oId in orders) {
+                    const order = orders[oId];
+                    if (order.driver_id === driverId && order.status === 'accepted') {
+                        currentOrderData = order;
+                        tripStep = order.step || 'to_client';
+
+                        document.getElementById("orderSheet").style.display = "none";
+                        document.getElementById("activeTripPanel").style.display = "flex";
+                        document.getElementById("actOrderBadge").innerText = "#" + oId;
+                        document.getElementById("actClientName").innerText = order.client_name || "Mijoz";
+                        document.getElementById("actClientDest").innerText = order.destination || "Manzil";
+
+                        if (order.client_phone) {
+                            document.getElementById("actCallBtn").href = "tel:" + order.client_phone;
+                        }
+
+                        const btn = document.getElementById("stepActionBtn");
+                        const clientLat = Number(order.lat);
+                        const clientLon = Number(order.lon);
+                        const destLat = Number(order.dest_lat);
+                        const destLon = Number(order.dest_lon);
+
+                        if (tripStep === 'to_client') {
+                            btn.className = "btn-step-action";
+                            btn.innerText = "📍 YETIB KELDIM";
+                            document.getElementById("gpsStatus").innerHTML = "🚖 Mijoz tomon harakatlaning...";
+                            document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${clientLat},${clientLon}&travelmode=driving`;
+                            
+                            if (clientMarker) try { map.geoObjects.remove(clientMarker); } catch(e){}
+                            clientMarker = new ymaps.Placemark([clientLat, clientLon], { hintContent: "Mijoz" }, { preset: 'islands#redPersonIcon', zIndex: 200 });
+                            map.geoObjects.add(clientMarker);
+
+                            drawRoute(currentPos, [clientLat, clientLon]);
+                        } else if (tripStep === 'waiting') {
+                            btn.className = "btn-step-action";
+                            btn.innerText = "🚀 SAFARNI BOSHLASH";
+                            document.getElementById("gpsStatus").innerHTML = "⏳ Mijoz kutilmoqda...";
+                        } else if (tripStep === 'in_trip') {
+                            btn.className = "btn-finish-trip";
+                            btn.innerText = "🏁 SAFARNI YAKUNLASH";
+                            document.getElementById("gpsStatus").innerHTML = "🚗 Manzil tomon ketmoqdasiz...";
+                            document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${destLat},${destLon}&travelmode=driving`;
+                            
+                            if (clientMarker) try { map.geoObjects.remove(clientMarker); } catch(e){}
+                            clientMarker = new ymaps.Placemark([destLat, destLon], { hintContent: "Manzil" }, { preset: 'islands#redDotIcon', zIndex: 200 });
+                            map.geoObjects.add(clientMarker);
+
+                            drawRoute(currentPos, [destLat, destLon]);
+                        }
+
+                        listenOrderState(oId);
                         break;
                     }
                 }
@@ -571,7 +632,6 @@
                 }
 
                 if (!isNaN(clientLat) && !isNaN(clientLon)) {
-                    // Google Maps Navigator havolasi
                     document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${clientLat},${clientLon}&travelmode=driving`;
 
                     if (clientMarker) {
@@ -643,7 +703,6 @@
                 const destLat = Number(currentOrderData.dest_lat);
                 const destLon = Number(currentOrderData.dest_lon);
                 
-                // Google Maps Navigator havolasi
                 document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${destLat},${destLon}&travelmode=driving`;
                 
                 if (clientMarker) {
