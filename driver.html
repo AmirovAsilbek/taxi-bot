@@ -219,6 +219,7 @@
         let map, multiRoute, driverPlacemark = null, clientMarker = null;
         let isOnline = false, isApproved = false;
         let currentPos = [39.0560, 66.8300];
+        let currentHeading = 0;
         let lastSyncedPos = null;
         let lastSyncTime = 0;
         let offerTimer = null;
@@ -245,15 +246,34 @@
             </svg>
         `);
 
+        function getBearing(lat1, lon1, lat2, lon2) {
+            const φ1 = Number(lat1) * Math.PI / 180;
+            const φ2 = Number(lat2) * Math.PI / 180;
+            const Δλ = (Number(lon2) - Number(lon1)) * Math.PI / 180;
+
+            const y = Math.sin(Δλ) * Math.cos(φ2);
+            const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+            const θ = Math.atan2(y, x);
+            return (θ * 180 / Math.PI + 360) % 360;
+        }
+
+        let rotatingCarLayout;
+
         ymaps.ready(() => {
             map = new ymaps.Map("map", { center: currentPos, zoom: 16, type: 'yandex#map', controls: [] });
+
+            rotatingCarLayout = ymaps.templateLayoutFactory.createClass(
+                '<div style="transform: rotate({{ properties.heading|default:0 }}deg); transform-origin: 20px 20px; transition: transform 0.35s ease; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">' +
+                    '<img src="' + topViewCarSvg + '" style="width: 40px; height: 40px; display: block;" />' +
+                '</div>'
+            );
+
             listenForDriverAccount();
             initLocationTracker();
             listenForIncomingOrders();
             checkActiveTripOnStart();
         });
 
-        // EKRAN O'CHMASLIGI UCHUN WAKE LOCK
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) {
@@ -268,7 +288,6 @@
             }
         }
 
-        // BUYURTMA KELGANDA OVOZ CHIQARISH
         function playOrderBeep() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -374,25 +393,37 @@
                 navigator.geolocation.watchPosition(pos => {
                     const lat = pos.coords.latitude;
                     const lon = pos.coords.longitude;
+                    const prevPos = currentPos;
                     currentPos = [lat, lon];
 
+                    if (pos.coords.heading !== null && !isNaN(pos.coords.heading) && pos.coords.heading !== 0) {
+                        currentHeading = Math.round(pos.coords.heading);
+                    } else if (prevPos && (prevPos[0] !== lat || prevPos[1] !== lon)) {
+                        const dist = getDistanceMeters(prevPos[0], prevPos[1], lat, lon);
+                        if (dist >= 3) {
+                            currentHeading = Math.round(getBearing(prevPos[0], prevPos[1], lat, lon));
+                        }
+                    }
+
                     if (!driverPlacemark) {
-                        driverPlacemark = new ymaps.Placemark(currentPos, {}, {
-                            iconLayout: 'default#image',
-                            iconImageHref: topViewCarSvg,
-                            iconImageSize: [40, 40],
-                            iconImageOffset: [-20, -20]
+                        driverPlacemark = new ymaps.Placemark(currentPos, {
+                            heading: currentHeading
+                        }, {
+                            iconLayout: rotatingCarLayout,
+                            iconOffset: [-20, -20],
+                            zIndex: 300
                         });
                         map.geoObjects.add(driverPlacemark);
                         map.setCenter(currentPos, 16);
                     } else {
                         driverPlacemark.geometry.setCoordinates(currentPos);
+                        driverPlacemark.properties.set('heading', currentHeading);
                     }
 
                     const now = Date.now();
                     const movedDist = lastSyncedPos ? getDistanceMeters(lastSyncedPos[0], lastSyncedPos[1], lat, lon) : 999;
 
-                    if (isOnline && isApproved && (movedDist >= 10 || (now - lastSyncTime) >= 5000)) {
+                    if (isOnline && isApproved && (movedDist >= 8 || (now - lastSyncTime) >= 5000)) {
                         lastSyncedPos = currentPos;
                         lastSyncTime = now;
                         const dTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
@@ -400,6 +431,7 @@
                         driverRef.set({
                             lat: Number(currentPos[0]),
                             lon: Number(currentPos[1]),
+                            heading: currentHeading,
                             name: document.getElementById("dName").innerText,
                             car: document.getElementById("dCar").innerText,
                             phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
@@ -412,7 +444,8 @@
                         if (currentOrderData && tripStep !== 'completed') {
                             db.ref('orders/active/' + currentOrderData.order_id).update({
                                 driver_lat: Number(currentPos[0]),
-                                driver_lon: Number(currentPos[1])
+                                driver_lon: Number(currentPos[1]),
+                                driver_heading: currentHeading
                             });
                         }
                     }
@@ -420,12 +453,10 @@
             }
         }
 
-        // MIJOZ BEKOR QILGANDA OYNANI AVTOMATIK YOQOTISH VA YANGI BUYURTMANI TIKLASH
         function listenForIncomingOrders() {
             db.ref('orders/active').on('value', snapshot => {
                 const orders = snapshot.val() || {};
 
-                // Agar hozir taklif oynasi ochiq tursa, lekin mijoz bekor qilib yuborgan bo'lsa
                 if (currentOrderData && !currentOrderData.driver_id) {
                     const activeOrderStillExists = orders[currentOrderData.order_id];
                     if (!activeOrderStillExists || activeOrderStillExists.status !== 'searching') {
@@ -560,6 +591,7 @@
                     driverRef.set({
                         lat: Number(currentPos[0]),
                         lon: Number(currentPos[1]),
+                        heading: currentHeading,
                         name: document.getElementById("dName").innerText || "Haydovchi",
                         car: document.getElementById("dCar").innerText || "Mashina",
                         phone: regData.phone || localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
@@ -675,6 +707,7 @@
                 driver_phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379",
                 driver_lat: Number(currentPos[0]),
                 driver_lon: Number(currentPos[1]),
+                driver_heading: currentHeading,
                 eta: "3 daq"
             };
 
