@@ -63,6 +63,44 @@
         .status-badge.offline { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
         .status-badge.pending { background: rgba(255, 165, 2, 0.15); color: #ffa502; }
 
+        .driver-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .btn-action-call {
+            flex: 1;
+            background: #282c38;
+            color: #2ed573;
+            text-align: center;
+            text-decoration: none;
+            padding: 9px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-action-delete {
+            flex: 1;
+            background: rgba(255, 71, 87, 0.15);
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            padding: 9px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+        .btn-action-delete:active { background: rgba(255, 71, 87, 0.3); }
+
         .order-price { font-size: 18px; font-weight: 900; color: #ffcc00; }
         .order-badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; }
         .order-badge.active { background: rgba(255, 204, 0, 0.15); color: #ffcc00; }
@@ -303,7 +341,11 @@
                         </div>
                         <span class="status-badge ${isOnline ? 'online' : 'offline'}">${isOnline ? '● Online' : '○ Offline'}</span>
                     </div>
-                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate}) • <b>${reg.tariff.toUpperCase()}</b></div>
+                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate}) • <b>${(reg.tariff || 'standart').toUpperCase()}</b></div>
+                    <div class="driver-actions">
+                        <a href="tel:${reg.phone}" class="btn-action-call">📞 Qo'ng'iroq</a>
+                        <button class="btn-action-delete" onclick="deleteDriver('${id}', '${reg.name}')">🗑️ O'chirish</button>
+                    </div>
                 `;
                 container.appendChild(card);
             });
@@ -339,10 +381,10 @@
                         </div>
                         <span class="status-badge pending">Kutilmoqda</span>
                     </div>
-                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate})</div>
+                    <div style="font-size:12px; color:#ccc;">🚗 ${reg.car} (${reg.plate}) • <b>${(reg.tariff || 'standart').toUpperCase()}</b></div>
                     <div style="display:flex; gap:8px; margin-top:6px;">
                         <button style="flex:1; background:#2ed573; border:none; padding:8px; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;" onclick="setDriverStatus('${id}', 'approved')">✅ Tasdiqlash</button>
-                        <button style="flex:1; background:#ff4757; border:none; padding:8px; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;" onclick="setDriverStatus('${id}', 'rejected')">❌ Rad etish</button>
+                        <button style="flex:1; background:#ff4757; border:none; padding:8px; border-radius:8px; color:#fff; font-weight:800; cursor:pointer;" onclick="deleteDriver('${id}', '${reg.name}')">🗑️ O'chirish</button>
                     </div>
                 `;
                 container.appendChild(card);
@@ -351,6 +393,26 @@
 
         function setDriverStatus(id, status) {
             db.ref('registered_drivers/' + id).update({ status, reviewed_at: Date.now() });
+        }
+
+        // HAYDOVCHINI TIZIMDAN BUTUNLAY O'CHIRISH
+        function deleteDriver(id, name) {
+            if (confirm(`Haqiqatan ham "${name}" haydovchisini bazadan butunlay o'chirmoqchimisiz?`)) {
+                // 1. Ro'yxatdan o'tganlar bazasidan o'chirish
+                db.ref('registered_drivers/' + id).remove();
+
+                // 2. Faol (online) haydovchilar xaritasidan o'chirish
+                db.ref('drivers/' + id).remove();
+
+                // 3. Agar xaritada markeri bo'lsa darhol olib tashlash
+                if (driverMarkers[id]) {
+                    try { adminMap.geoObjects.remove(driverMarkers[id]); } catch(e){}
+                    delete driverMarkers[id];
+                }
+
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                alert(`✅ "${name}" bazadan butunlay o'chirildi!`);
+            }
         }
 
         function updateStats() {
