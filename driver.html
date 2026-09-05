@@ -224,6 +224,8 @@
         let offerTimer = null;
         let currentOrderData = null;
         let tripStep = 'to_client';
+        let wakeLock = null;
+        let alertSoundInterval = null;
 
         let completedRides = parseInt(localStorage.getItem('ry_driver_trips_' + driverId) || '0');
         let totalIncome = parseInt(localStorage.getItem('ry_driver_earnings_' + driverId) || '0');
@@ -250,6 +252,51 @@
             listenForIncomingOrders();
             checkActiveTripOnStart();
         });
+
+        // EKRAN O'CHMASLIGI UCHUN WAKE LOCK
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {}
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => { wakeLock = null; });
+            }
+        }
+
+        // BUYURTMA KELGANDA OVOZ CHIQARISH
+        function playOrderBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "square";
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch(e){}
+        }
+
+        function startOrderAlertSound() {
+            stopOrderAlertSound();
+            playOrderBeep();
+            alertSoundInterval = setInterval(playOrderBeep, 800);
+        }
+
+        function stopOrderAlertSound() {
+            if (alertSoundInterval) {
+                clearInterval(alertSoundInterval);
+                alertSoundInterval = null;
+            }
+        }
 
         function getDistanceMeters(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
@@ -314,6 +361,7 @@
         function forceOffline() {
             if (isOnline) {
                 isOnline = false;
+                releaseWakeLock();
                 document.getElementById("toggleBtn").classList.remove("online");
                 document.getElementById("statusLabel").innerText = "Offline";
                 document.getElementById("gpsStatus").innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
@@ -372,9 +420,20 @@
             }
         }
 
+        // MIJOZ BEKOR QILGANDA OYNANI AVTOMATIK YOQOTISH VA YANGI BUYURTMANI TIKLASH
         function listenForIncomingOrders() {
             db.ref('orders/active').on('value', snapshot => {
                 const orders = snapshot.val() || {};
+
+                // Agar hozir taklif oynasi ochiq tursa, lekin mijoz bekor qilib yuborgan bo'lsa
+                if (currentOrderData && !currentOrderData.driver_id) {
+                    const activeOrderStillExists = orders[currentOrderData.order_id];
+                    if (!activeOrderStillExists || activeOrderStillExists.status !== 'searching') {
+                        dismissOrderUI();
+                        return;
+                    }
+                }
+
                 if (!isOnline || !isApproved || currentOrderData) return;
 
                 const myTariff = normalizeTariff(localStorage.getItem("ry_driver_tariff_" + driverId) || "standart");
@@ -464,6 +523,8 @@
             document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name} (${order.distance})`;
             document.getElementById("ordDest").innerText = `Manzil: ${order.destination}`;
 
+            startOrderAlertSound();
+
             let timeLeft = 15;
             document.getElementById("timerBar").style.width = "100%";
             clearInterval(offerTimer);
@@ -489,6 +550,7 @@
                 lbl.innerText = "Online";
                 banner.innerHTML = "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda...";
                 lastSyncTime = 0;
+                requestWakeLock();
 
                 db.ref('registered_drivers/' + driverId).once('value', snap => {
                     const regData = snap.val() || {};
@@ -511,6 +573,7 @@
                 btn.classList.remove("online");
                 lbl.innerText = "Offline";
                 banner.innerHTML = "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
+                releaseWakeLock();
                 db.ref('drivers/' + driverId).remove();
                 dismissOrderUI();
             }
@@ -524,6 +587,7 @@
         }
 
         function dismissOrderUI() {
+            stopOrderAlertSound();
             clearInterval(offerTimer);
             document.getElementById("orderSheet").style.display = "none";
             currentOrderData = null;
@@ -593,6 +657,7 @@
 
         function acceptDriverOrder() {
             if (!currentOrderData) return;
+            stopOrderAlertSound();
             clearInterval(offerTimer);
 
             const oId = currentOrderData.order_id;
@@ -766,6 +831,7 @@
         }
 
         function resetDriverState() {
+            stopOrderAlertSound();
             if (currentOrderData) db.ref('orders/active/' + currentOrderData.order_id).off();
             currentOrderData = null;
             tripStep = 'to_client';
