@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi - Admin Dispetcher</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong&load=package.full" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -39,8 +39,8 @@
             border-radius: 14px; padding: 4px; border: 1px solid #282c38; gap: 4px; overflow-x: auto;
         }
         .tab-btn {
-            flex: 1; min-width: 75px; padding: 10px 4px; border: none;
-            background: transparent; color: #8a8f9d; font-size: 11.5px;
+            flex: 1; min-width: 65px; padding: 10px 2px; border: none;
+            background: transparent; color: #8a8f9d; font-size: 11px;
             font-weight: 700; border-radius: 10px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;
         }
@@ -53,7 +53,7 @@
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .section-title { font-size: 15px; font-weight: 800; color: #fff; }
 
-        .driver-card, .order-card {
+        .driver-card, .order-card, .archive-card {
             background: #181b24; border: 1px solid #282c38; border-radius: 18px;
             padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;
         }
@@ -62,44 +62,21 @@
         .status-badge.online { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
         .status-badge.offline { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
         .status-badge.pending { background: rgba(255, 165, 2, 0.15); color: #ffa502; }
+        .status-badge.completed { background: rgba(46, 213, 115, 0.15); color: #2ed573; }
+        .status-badge.cancelled { background: rgba(255, 71, 87, 0.15); color: #ff4757; }
 
-        .driver-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 4px;
-        }
+        .driver-actions { display: flex; gap: 8px; margin-top: 4px; }
         .btn-action-call {
-            flex: 1;
-            background: #282c38;
-            color: #2ed573;
-            text-align: center;
-            text-decoration: none;
-            padding: 9px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
+            flex: 1; background: #282c38; color: #2ed573; text-align: center;
+            text-decoration: none; padding: 9px; border-radius: 10px; font-size: 12px;
+            font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;
         }
         .btn-action-delete {
-            flex: 1;
-            background: rgba(255, 71, 87, 0.15);
-            color: #ff4757;
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            padding: 9px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: 0.2s;
+            flex: 1; background: rgba(255, 71, 87, 0.15); color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3); padding: 9px; border-radius: 10px;
+            font-size: 12px; font-weight: 700; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 4px;
         }
-        .btn-action-delete:active { background: rgba(255, 71, 87, 0.3); }
 
         .order-price { font-size: 18px; font-weight: 900; color: #ffcc00; }
         .order-badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; }
@@ -142,8 +119,9 @@
 
     <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('mapTab', this)">🗺️ Xarita</button>
-        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Faol Buyurtmalar</button>
-        <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchilar</button>
+        <button class="tab-btn" onclick="switchTab('ordersTab', this)">📦 Faol</button>
+        <button class="tab-btn" onclick="switchTab('archiveTab', this)">📂 Arxiv</button>
+        <button class="tab-btn" onclick="switchTab('driversTab', this)">🚖 Haydovchi</button>
         <button class="tab-btn" onclick="switchTab('applicationsTab', this)">
             📑 Arizalar <span id="pendingBadge" style="background:#ff4757; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; display:none;">0</span>
         </button>
@@ -156,7 +134,7 @@
         <div id="mapDriversSummary" style="font-size: 13px; color: #8a8f9d;">Yuklanmoqda...</div>
     </div>
 
-    <!-- 2. BARCHA FAOL BUYURTMALAR -->
+    <!-- 2. FAOL BUYURTMALAR -->
     <div class="tab-view" id="ordersTab">
         <div class="section-header"><div class="section-title">Hozirgi barcha faol buyurtmalar</div></div>
         <div id="ordersListContainer">
@@ -164,13 +142,24 @@
         </div>
     </div>
 
-    <!-- 3. HAYDOVCHILAR -->
+    <!-- 3. ARXIV (SAFARLAR TARIXI) -->
+    <div class="tab-view" id="archiveTab">
+        <div class="section-header">
+            <div class="section-title">📂 Safarlar Arxivi (Tarix)</div>
+            <button onclick="clearArchive()" style="background:rgba(255,71,87,0.15); color:#ff4757; border:1px solid rgba(255,71,87,0.3); padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">Tozalash</button>
+        </div>
+        <div id="archiveListContainer">
+            <div style="text-align: center; color: #8a8f9d; padding: 20px;">Arxivda ma'lumotlar yo'q</div>
+        </div>
+    </div>
+
+    <!-- 4. HAYDOVCHILAR -->
     <div class="tab-view" id="driversTab">
         <div class="section-header"><div class="section-title">Ro'yxatdan o'tgan haydovchilar</div></div>
         <div id="driversListContainer"></div>
     </div>
 
-    <!-- 4. ARIZALAR -->
+    <!-- 5. ARIZALAR -->
     <div class="tab-view" id="applicationsTab">
         <div class="section-header"><div class="section-title">Yangi kelib tushgan arizalar</div></div>
         <div id="applicationsListContainer"></div>
@@ -189,6 +178,7 @@
         let registeredDriversData = {};
         let onlineDriversData = {};
         let activeOrdersData = {};
+        let orderHistoryData = {};
 
         const topViewCarSvg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 64 64">
@@ -237,9 +227,12 @@
             });
 
             db.ref('order_history').on('value', snap => {
-                const history = snap.val() || {};
-                const count = Object.values(history).filter(h => h.status === 'completed').length;
-                document.getElementById("statCompletedCount").innerText = count;
+                orderHistoryData = snap.val() || {};
+                renderArchiveList();
+                
+                const historyList = Object.values(orderHistoryData);
+                const completedCount = historyList.filter(h => h.status === 'completed').length;
+                document.getElementById("statCompletedCount").innerText = completedCount;
             });
         }
 
@@ -306,8 +299,62 @@
             });
         }
 
+        function renderArchiveList() {
+            const container = document.getElementById("archiveListContainer");
+            const keys = Object.keys(orderHistoryData).reverse(); // Eng oxirgi safarlar tepada chiqadi
+
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:#8a8f9d; padding:20px;">Arxivda ma'lumotlar yo'q</div>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            keys.forEach(k => {
+                const h = orderHistoryData[k];
+                const dateStr = h.completed_at ? new Date(h.completed_at).toLocaleString() : "Vaqti noma'lum";
+                const isCompleted = h.status === 'completed';
+                
+                const card = document.createElement("div");
+                card.className = "archive-card";
+                card.innerHTML = `
+                    <div class="order-head">
+                        <div>
+                            <span style="font-size:12px; color:#ffcc00; font-weight:800;">#${h.order_id || '---'}</span>
+                            <div class="order-price">${h.price || '0 UZS'}</div>
+                        </div>
+                        <span class="status-badge ${isCompleted ? 'completed' : 'cancelled'}">${isCompleted ? '✅ YAKUNLANGAN' : '❌ BEKOR QILINGAN'}</span>
+                    </div>
+                    <div class="order-details">
+                        <div>👤 <b>Mijoz:</b> ${h.client_name || 'Mijoz'} (${h.client_phone || ''})</div>
+                        <div>🚖 <b>Haydovchi:</b> ${h.driver_name || 'Tayinlanmagan'} (${h.driver_car || 'Mashina'})</div>
+                        <div>📍 <b>Manzil:</b> ${h.destination || 'Belgilanmagan'}</div>
+                        <div style="font-size:11px; color:#8a8f9d; margin-top:4px;">📅 Vaqti: ${dateStr}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function clearArchive() {
+            if (confirm("Arxivdagi barcha ma'lumotlarni o'chirib yuborishni xohlaysizmi?")) {
+                db.ref('order_history').remove();
+            }
+        }
+
         function cancelOrderByAdmin(orderId) {
             if (confirm("Buyurtmani bekor qilmoqchimisiz?")) {
+                db.ref('orders/active/' + orderId).once('value', snap => {
+                    const order = snap.val();
+                    if (order) {
+                        // Arxivga bekor qilingan sifatida yozish
+                        db.ref('order_history/trip_' + orderId).set({
+                            ...order,
+                            status: 'cancelled_by_admin',
+                            completed_at: Date.now()
+                        });
+                    }
+                });
+
                 db.ref('orders/active/' + orderId).update({
                     status: 'cancelled_by_admin',
                     cancel_reason: "Admin tomonidan bekor qilindi"
