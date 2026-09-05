@@ -372,7 +372,6 @@
         ymaps.ready(() => {
             map = new ymaps.Map("map", { center: startCoords, zoom: 15, type: 'yandex#map', controls: [] });
 
-            // Aylanuvchi shablon
             rotatingClientCarLayout = ymaps.templateLayoutFactory.createClass(
                 '<div style="transform: rotate({{ properties.heading|default:0 }}deg); transform-origin: 19px 19px; transition: transform 0.35s ease; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">' +
                     '<img src="' + topViewBlueCarSvg + '" style="width: 38px; height: 38px; display: block;" />' +
@@ -436,7 +435,7 @@
                     const d = drivers[id];
                     const dLat = parseFloat(d.lat);
                     const dLon = parseFloat(d.lon);
-                    const heading = d.heading || 0;
+                    const heading = Number(d.heading) || 0;
 
                     if (d.is_online && !isNaN(dLat) && !isNaN(dLon)) {
                         const normTariff = normalizeTariff(d.tariff || 'standart');
@@ -602,7 +601,6 @@
             drawOverviewRoute(startCoords, targetCoords);
         }
 
-        // DILANUVCHI (ROTATSIYALI) MASHINA BELGISI
         function updateDriverLivePosition(dLat, dLon, heading) {
             for (let id in driverMarkers) {
                 try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
@@ -612,7 +610,7 @@
             if (!driverLiveMarker) {
                 driverLiveMarker = new ymaps.Placemark([dLat, dLon], {
                     hintContent: "Haydovchi",
-                    heading: heading || 0
+                    heading: Number(heading) || 0
                 }, {
                     iconLayout: rotatingClientCarLayout,
                     iconOffset: [-19, -19],
@@ -621,9 +619,7 @@
                 map.geoObjects.add(driverLiveMarker);
             } else {
                 driverLiveMarker.geometry.setCoordinates([dLat, dLon]);
-                if (heading !== undefined) {
-                    driverLiveMarker.properties.set('heading', heading);
-                }
+                driverLiveMarker.properties.set('heading', Number(heading) || 0);
             }
         }
 
@@ -675,7 +671,7 @@
                     }
 
                     if (data.driver_lat && data.driver_lon) {
-                        updateDriverLivePosition(data.driver_lat, data.driver_lon, data.driver_heading);
+                        updateDriverLivePosition(Number(data.driver_lat), Number(data.driver_lon), data.driver_heading);
                     }
 
                     const header = document.getElementById("tripStatusHeader");
@@ -690,14 +686,14 @@
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
                         if (data.driver_lat && data.driver_lon) {
-                            drawLiveTrackingRoute([data.driver_lat, data.driver_lon], targetCoords);
+                            drawLiveTrackingRoute([Number(data.driver_lat), Number(data.driver_lon)], targetCoords);
                         }
                     } else {
                         header.innerText = "🚖 HAYDOVCHI YO'LGA CHIQDI";
                         timerPill.style.background = "#111";
                         timerPill.style.color = "#ffcc00";
                         if (data.driver_lat && data.driver_lon) {
-                            drawLiveTrackingRoute([data.driver_lat, data.driver_lon], startCoords);
+                            drawLiveTrackingRoute([Number(data.driver_lat), Number(data.driver_lon)], startCoords);
                         }
                     }
                 } else if (data.status === 'completed') {
@@ -783,10 +779,10 @@
                 const initialOrder = {
                     order_id: currentOrderId,
                     client_id: currentUserId,
-                    lat: startCoords[0],
-                    lon: startCoords[1],
-                    dest_lat: targetCoords[0],
-                    dest_lon: targetCoords[1],
+                    lat: Number(startCoords[0]),
+                    lon: Number(startCoords[1]),
+                    dest_lat: Number(targetCoords[0]),
+                    dest_lon: Number(targetCoords[1]),
                     destination: targetName,
                     distance: targetDist.toFixed(1) + " km",
                     tariff: currentTariff,
