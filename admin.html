@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Express Taxi - Admin Dispetcher</title>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&coordorder=latlong&load=package.full" type="text/javascript"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -395,16 +395,11 @@
             db.ref('registered_drivers/' + id).update({ status, reviewed_at: Date.now() });
         }
 
-        // HAYDOVCHINI TIZIMDAN BUTUNLAY O'CHIRISH
         function deleteDriver(id, name) {
             if (confirm(`Haqiqatan ham "${name}" haydovchisini bazadan butunlay o'chirmoqchimisiz?`)) {
-                // 1. Ro'yxatdan o'tganlar bazasidan o'chirish
                 db.ref('registered_drivers/' + id).remove();
-
-                // 2. Faol (online) haydovchilar xaritasidan o'chirish
                 db.ref('drivers/' + id).remove();
 
-                // 3. Agar xaritada markeri bo'lsa darhol olib tashlash
                 if (driverMarkers[id]) {
                     try { adminMap.geoObjects.remove(driverMarkers[id]); } catch(e){}
                     delete driverMarkers[id];
