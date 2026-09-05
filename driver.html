@@ -431,7 +431,7 @@
                         driverRef.set({
                             lat: Number(currentPos[0]),
                             lon: Number(currentPos[1]),
-                            heading: currentHeading,
+                            heading: Number(currentHeading) || 0,
                             name: document.getElementById("dName").innerText,
                             car: document.getElementById("dCar").innerText,
                             phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
@@ -442,11 +442,14 @@
                         driverRef.onDisconnect().remove();
 
                         if (currentOrderData && tripStep !== 'completed') {
-                            db.ref('orders/active/' + currentOrderData.order_id).update({
-                                driver_lat: Number(currentPos[0]),
-                                driver_lon: Number(currentPos[1]),
-                                driver_heading: currentHeading
-                            });
+                            const activeOId = currentOrderData.order_id || localStorage.getItem("ry_active_order_id");
+                            if (activeOId) {
+                                db.ref('orders/active/' + activeOId).update({
+                                    driver_lat: Number(currentPos[0]),
+                                    driver_lon: Number(currentPos[1]),
+                                    driver_heading: Number(currentHeading) || 0
+                                });
+                            }
                         }
                     }
                 }, null, { enableHighAccuracy: true });
@@ -457,7 +460,11 @@
             db.ref('orders/active').on('value', snapshot => {
                 const orders = snapshot.val() || {};
 
-                if (currentOrderData && !currentOrderData.driver_id) {
+                if (currentOrderData && (currentOrderData.driver_id === driverId || currentOrderData.status === 'accepted' || tripStep !== 'to_client')) {
+                    return;
+                }
+
+                if (currentOrderData && currentOrderData.status === 'searching') {
                     const activeOrderStillExists = orders[currentOrderData.order_id];
                     if (!activeOrderStillExists || activeOrderStillExists.status !== 'searching') {
                         dismissOrderUI();
@@ -476,7 +483,7 @@
                         if (normalizeTariff(order.tariff) !== myTariff) continue;
                         if (order.target_driver !== driverId && order.target_driver !== 'ALL') continue;
 
-                        showOrderPopup(order);
+                        showOrderPopup({ ...order, order_id: oId });
                         break;
                     }
                 }
@@ -484,12 +491,14 @@
         }
 
         function checkActiveTripOnStart() {
+            const savedOrderId = localStorage.getItem("ry_active_order_id");
             db.ref('orders/active').once('value', snapshot => {
                 const orders = snapshot.val() || {};
                 for (let oId in orders) {
                     const order = orders[oId];
-                    if (order.driver_id === driverId && order.status === 'accepted') {
-                        currentOrderData = order;
+                    if ((order.driver_id === driverId || oId === savedOrderId) && order.status === 'accepted') {
+                        currentOrderData = { ...order, order_id: oId };
+                        localStorage.setItem("ry_active_order_id", oId);
                         tripStep = order.step || 'to_client';
 
                         document.getElementById("orderSheet").style.display = "none";
@@ -503,10 +512,10 @@
                         }
 
                         const btn = document.getElementById("stepActionBtn");
-                        const clientLat = Number(order.lat);
-                        const clientLon = Number(order.lon);
-                        const destLat = Number(order.dest_lat);
-                        const destLon = Number(order.dest_lon);
+                        const clientLat = Number(order.lat) || 39.0560;
+                        const clientLon = Number(order.lon) || 66.8300;
+                        const destLat = Number(order.dest_lat) || clientLat;
+                        const destLon = Number(order.dest_lon) || clientLon;
 
                         if (tripStep === 'to_client') {
                             btn.className = "btn-step-action";
@@ -548,11 +557,12 @@
             const sheet = document.getElementById("orderSheet");
             sheet.style.display = "flex";
 
-            document.getElementById("ordIndexBadge").innerText = "#" + order.order_id;
+            const oId = order.order_id || order.id || "1";
+            document.getElementById("ordIndexBadge").innerText = "#" + oId;
             document.getElementById("ordPrice").innerText = order.price || "18 500 UZS";
             document.getElementById("ordTariff").innerText = (order.tariff || "STANDART").toUpperCase();
-            document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name} (${order.distance})`;
-            document.getElementById("ordDest").innerText = `Manzil: ${order.destination}`;
+            document.getElementById("ordStart").innerText = `Mijoz: ${order.client_name || 'Mijoz'} (${order.distance || ''})`;
+            document.getElementById("ordDest").innerText = `Manzil: ${order.destination || 'Belgilangan nuqta'}`;
 
             startOrderAlertSound();
 
@@ -591,7 +601,7 @@
                     driverRef.set({
                         lat: Number(currentPos[0]),
                         lon: Number(currentPos[1]),
-                        heading: currentHeading,
+                        heading: Number(currentHeading) || 0,
                         name: document.getElementById("dName").innerText || "Haydovchi",
                         car: document.getElementById("dCar").innerText || "Mashina",
                         phone: regData.phone || localStorage.getItem("ry_driver_phone_" + driverId) || "+998900000000",
@@ -612,7 +622,7 @@
         }
 
         function dismissOrder() {
-            if (currentOrderData) {
+            if (currentOrderData && currentOrderData.order_id) {
                 db.ref(`orders/active/${currentOrderData.order_id}/rejected_drivers/${driverId}`).set(true);
             }
             dismissOrderUI();
@@ -671,7 +681,10 @@
                                 document.getElementById("gpsStatus").innerHTML = `🚗 Manzil tomon: <b>${durationText}</b> (${distanceText})`;
                             }
 
-                            db.ref('orders/active/' + currentOrderData.order_id).update({ eta: durationText });
+                            const activeOId = currentOrderData.order_id || localStorage.getItem("ry_active_order_id");
+                            if (activeOId) {
+                                db.ref('orders/active/' + activeOId).update({ eta: durationText });
+                            }
                         }
                     } catch(e){}
                 });
@@ -692,24 +705,34 @@
             stopOrderAlertSound();
             clearInterval(offerTimer);
 
-            const oId = currentOrderData.order_id;
+            const oId = currentOrderData.order_id || currentOrderData.id || String(currentOrderData.timestamp || Date.now()).slice(-6);
             const orderRef = db.ref('orders/active/' + oId);
 
-            const clientLat = Number(currentOrderData.lat);
-            const clientLon = Number(currentOrderData.lon);
+            const clientLat = Number(currentOrderData.lat) || 39.0560;
+            const clientLon = Number(currentOrderData.lon) || 66.8300;
+            const curLat = (currentPos && currentPos[0]) ? Number(currentPos[0]) : 39.0560;
+            const curLon = (currentPos && currentPos[1]) ? Number(currentPos[1]) : 66.8300;
+            const headingVal = Number(currentHeading) || 0;
 
             const updatePayload = {
                 status: 'accepted',
                 step: 'to_client',
-                driver_id: driverId,
-                driver_name: document.getElementById("dName").innerText || "Haydovchi",
-                driver_car: document.getElementById("dCar").innerText || "Mashina",
-                driver_phone: localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379",
-                driver_lat: Number(currentPos[0]),
-                driver_lon: Number(currentPos[1]),
-                driver_heading: currentHeading,
+                driver_id: String(driverId || 'driver_unknown'),
+                driver_name: String(document.getElementById("dName")?.innerText || "Haydovchi"),
+                driver_car: String(document.getElementById("dCar")?.innerText || "Mashina"),
+                driver_phone: String(localStorage.getItem("ry_driver_phone_" + driverId) || "+998883893379"),
+                driver_lat: curLat,
+                driver_lon: curLon,
+                driver_heading: headingVal,
                 eta: "3 daq"
             };
+
+            currentOrderData = {
+                ...currentOrderData,
+                ...updatePayload,
+                order_id: oId
+            };
+            localStorage.setItem("ry_active_order_id", oId);
 
             orderRef.update(updatePayload).then(() => {
                 document.getElementById("orderSheet").style.display = "none";
@@ -718,20 +741,31 @@
                 tripStep = 'to_client';
 
                 const btn = document.getElementById("stepActionBtn");
-                btn.className = "btn-step-action";
-                btn.innerText = "📍 YETIB KELDIM";
+                if (btn) {
+                    btn.className = "btn-step-action";
+                    btn.innerText = "📍 YETIB KELDIM";
+                }
 
-                document.getElementById("actOrderBadge").innerText = "#" + oId;
-                document.getElementById("actClientName").innerText = currentOrderData.client_name || "Mijoz";
-                document.getElementById("actClientDest").innerText = currentOrderData.destination || "Manzil";
+                const badgeElem = document.getElementById("actOrderBadge");
+                if (badgeElem) badgeElem.innerText = "#" + oId;
+
+                const nameElem = document.getElementById("actClientName");
+                if (nameElem) nameElem.innerText = currentOrderData.client_name || "Mijoz";
+
+                const destElem = document.getElementById("actClientDest");
+                if (destElem) destElem.innerText = currentOrderData.destination || "Manzil";
                 
-                if (currentOrderData.client_phone) {
-                    document.getElementById("actCallBtn").href = "tel:" + currentOrderData.client_phone;
+                const callBtn = document.getElementById("actCallBtn");
+                if (callBtn && currentOrderData.client_phone) {
+                    callBtn.href = "tel:" + currentOrderData.client_phone;
+                }
+
+                const naviBtn = document.getElementById("actNaviBtn");
+                if (naviBtn) {
+                    naviBtn.href = `https://www.google.com/maps/dir/?api=1&origin=${curLat},${curLon}&destination=${clientLat},${clientLon}&travelmode=driving`;
                 }
 
                 if (!isNaN(clientLat) && !isNaN(clientLon)) {
-                    document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${clientLat},${clientLon}&travelmode=driving`;
-
                     if (clientMarker) {
                         try { map.geoObjects.remove(clientMarker); } catch(e){}
                         clientMarker = null;
@@ -746,21 +780,22 @@
                     });
                     map.geoObjects.add(clientMarker);
 
-                    drawRoute(currentPos, [clientLat, clientLon]);
+                    drawRoute([curLat, curLon], [clientLat, clientLon]);
                 }
 
                 listenOrderState(oId);
             }).catch(err => {
-                alert("Xatolik: " + err.message);
+                alert("Xatolik yuz berdi: " + (err.message || "Baza bilan aloqa uzildi"));
                 dismissOrderUI();
             });
         }
 
         function listenOrderState(oId) {
+            if (!oId) return;
             db.ref('orders/active/' + oId).on('value', snap => {
                 const val = snap.val();
-                if (!val || val.status === 'cancelled_by_client' || val.status === 'cancelled_by_admin') {
-                    alert("❌ Mijoz yoki admin buyurtmani bekor qildi!");
+                if (!val || val.status === 'cancelled_by_client' || val.status === 'cancelled_by_admin' || val.status === 'cancelled') {
+                    alert("❌ Buyurtma bekor qilindi!");
                     resetDriverState();
                 }
             });
@@ -768,13 +803,29 @@
 
         function handleStepAction() {
             const btn = document.getElementById("stepActionBtn");
-            const oId = currentOrderData.order_id;
+            const oId = currentOrderData?.order_id || localStorage.getItem("ry_active_order_id");
+
+            if (!oId) {
+                alert("Xatolik: Buyurtma ma'lumotlari topilmadi.");
+                return;
+            }
+
+            if (!currentOrderData) {
+                db.ref('orders/active/' + oId).once('value', snap => {
+                    currentOrderData = snap.val();
+                    if (currentOrderData) {
+                        currentOrderData.order_id = oId;
+                        handleStepAction();
+                    }
+                });
+                return;
+            }
 
             if (tripStep === 'to_client') {
                 const clientLat = Number(currentOrderData.lat);
                 const clientLon = Number(currentOrderData.lon);
 
-                if (!isNaN(clientLat) && !isNaN(clientLon)) {
+                if (!isNaN(clientLat) && !isNaN(clientLon) && currentPos) {
                     const distToClient = getDistanceMeters(currentPos[0], currentPos[1], clientLat, clientLon);
 
                     if (distToClient > 50) {
@@ -798,8 +849,8 @@
                 document.getElementById("gpsStatus").innerHTML = "🚗 Manzil tomon ketmoqdasiz...";
                 db.ref('orders/active/' + oId).update({ step: 'in_trip' });
 
-                const destLat = Number(currentOrderData.dest_lat);
-                const destLon = Number(currentOrderData.dest_lon);
+                const destLat = Number(currentOrderData.dest_lat) || Number(currentOrderData.lat);
+                const destLon = Number(currentOrderData.dest_lon) || Number(currentOrderData.lon);
                 
                 document.getElementById("actNaviBtn").href = `https://www.google.com/maps/dir/?api=1&origin=${currentPos[0]},${currentPos[1]}&destination=${destLat},${destLon}&travelmode=driving`;
                 
@@ -822,7 +873,7 @@
                 const destLat = Number(currentOrderData.dest_lat);
                 const destLon = Number(currentOrderData.dest_lon);
 
-                if (!isNaN(destLat) && !isNaN(destLon)) {
+                if (!isNaN(destLat) && !isNaN(destLon) && currentPos) {
                     const distToDest = getDistanceMeters(currentPos[0], currentPos[1], destLat, destLon);
 
                     if (distToDest > 50) {
@@ -838,7 +889,7 @@
 
         function completeCurrentTrip() {
             completedRides++;
-            const priceNum = parseInt(currentOrderData.price.replace(/\D/g, '')) || 18500;
+            const priceNum = parseInt(String(currentOrderData?.price || '').replace(/\D/g, '')) || 18500;
             totalIncome += priceNum;
 
             localStorage.setItem('ry_driver_trips_' + driverId, completedRides);
@@ -846,17 +897,19 @@
             document.getElementById("tripsCount").innerText = completedRides;
             document.getElementById("todayEarnings").innerText = totalIncome.toLocaleString() + " UZS";
 
-            const oId = currentOrderData.order_id;
-            db.ref('order_history/trip_' + oId).set({
-                ...currentOrderData,
-                driver_name: document.getElementById("dName").innerText,
-                driver_car: document.getElementById("dCar").innerText,
-                status: 'completed',
-                completed_at: Date.now()
-            });
+            const oId = currentOrderData?.order_id || localStorage.getItem("ry_active_order_id");
+            if (oId) {
+                db.ref('order_history/trip_' + oId).set({
+                    ...currentOrderData,
+                    driver_name: document.getElementById("dName").innerText,
+                    driver_car: document.getElementById("dCar").innerText,
+                    status: 'completed',
+                    completed_at: Date.now()
+                });
 
-            db.ref('orders/active/' + oId).update({ status: 'completed' });
-            setTimeout(() => { db.ref('orders/active/' + oId).remove(); }, 2000);
+                db.ref('orders/active/' + oId).update({ status: 'completed' });
+                setTimeout(() => { db.ref('orders/active/' + oId).remove(); }, 2000);
+            }
 
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             alert("✅ Safar muvaffaqiyatli yakunlandi!");
@@ -865,11 +918,17 @@
 
         function resetDriverState() {
             stopOrderAlertSound();
-            if (currentOrderData) db.ref('orders/active/' + currentOrderData.order_id).off();
+            const oId = currentOrderData?.order_id || localStorage.getItem("ry_active_order_id");
+            if (oId) db.ref('orders/active/' + oId).off();
+            localStorage.removeItem("ry_active_order_id");
             currentOrderData = null;
             tripStep = 'to_client';
             document.getElementById("activeTripPanel").style.display = "none";
-            document.getElementById("gpsStatus").innerHTML = "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda...";
+            document.getElementById("orderSheet").style.display = "none";
+            document.getElementById("gpsStatus").innerHTML = isOnline 
+                ? "🟢 Jonli lokatsiya faol • Buyurtmalar kutilmoqda..." 
+                : "Buyurtmalarni qabul qilish uchun 'Offline' tugmasini bosing";
+
             if (multiRoute) try { map.geoObjects.remove(multiRoute); } catch(e){}
             if (clientMarker) try { map.geoObjects.remove(clientMarker); } catch(e){}
         }
