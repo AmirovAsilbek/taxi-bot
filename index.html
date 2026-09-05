@@ -367,8 +367,18 @@
             </svg>
         `);
 
+        let rotatingClientCarLayout;
+
         ymaps.ready(() => {
             map = new ymaps.Map("map", { center: startCoords, zoom: 15, type: 'yandex#map', controls: [] });
+
+            // Aylanuvchi shablon
+            rotatingClientCarLayout = ymaps.templateLayoutFactory.createClass(
+                '<div style="transform: rotate({{ properties.heading|default:0 }}deg); transform-origin: 19px 19px; transition: transform 0.35s ease; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">' +
+                    '<img src="' + topViewBlueCarSvg + '" style="width: 38px; height: 38px; display: block;" />' +
+                '</div>'
+            );
+
             locateMe();
             checkUserAuth();
             listenToLiveDrivers();
@@ -426,6 +436,7 @@
                     const d = drivers[id];
                     const dLat = parseFloat(d.lat);
                     const dLon = parseFloat(d.lon);
+                    const heading = d.heading || 0;
 
                     if (d.is_online && !isNaN(dLat) && !isNaN(dLon)) {
                         const normTariff = normalizeTariff(d.tariff || 'standart');
@@ -434,17 +445,19 @@
                         const hint = `${d.name || 'Haydovchi'} (${d.car || 'Mashina'}) • ${normTariff.toUpperCase()}`;
 
                         if (!driverMarkers[id]) {
-                            const marker = new ymaps.Placemark([dLat, dLon], { hintContent: hint }, {
-                                iconLayout: 'default#image',
-                                iconImageHref: topViewBlueCarSvg,
-                                iconImageSize: [38, 38],
-                                iconImageOffset: [-19, -19],
+                            const marker = new ymaps.Placemark([dLat, dLon], {
+                                hintContent: hint,
+                                heading: heading
+                            }, {
+                                iconLayout: rotatingClientCarLayout,
+                                iconOffset: [-19, -19],
                                 zIndex: 150
                             });
                             driverMarkers[id] = marker;
                             map.geoObjects.add(marker);
                         } else {
                             driverMarkers[id].geometry.setCoordinates([dLat, dLon]);
+                            driverMarkers[id].properties.set('heading', heading);
                             driverMarkers[id].properties.set('hintContent', hint);
                         }
                     }
@@ -589,23 +602,28 @@
             drawOverviewRoute(startCoords, targetCoords);
         }
 
-        function updateDriverLivePosition(dLat, dLon) {
+        // DILANUVCHI (ROTATSIYALI) MASHINA BELGISI
+        function updateDriverLivePosition(dLat, dLon, heading) {
             for (let id in driverMarkers) {
                 try { map.geoObjects.remove(driverMarkers[id]); } catch(e){}
             }
             driverMarkers = {};
 
             if (!driverLiveMarker) {
-                driverLiveMarker = new ymaps.Placemark([dLat, dLon], { hintContent: "Haydovchi" }, {
-                    iconLayout: 'default#image',
-                    iconImageHref: topViewBlueCarSvg,
-                    iconImageSize: [42, 42],
-                    iconImageOffset: [-21, -21],
+                driverLiveMarker = new ymaps.Placemark([dLat, dLon], {
+                    hintContent: "Haydovchi",
+                    heading: heading || 0
+                }, {
+                    iconLayout: rotatingClientCarLayout,
+                    iconOffset: [-19, -19],
                     zIndex: 300
                 });
                 map.geoObjects.add(driverLiveMarker);
             } else {
                 driverLiveMarker.geometry.setCoordinates([dLat, dLon]);
+                if (heading !== undefined) {
+                    driverLiveMarker.properties.set('heading', heading);
+                }
             }
         }
 
@@ -657,7 +675,7 @@
                     }
 
                     if (data.driver_lat && data.driver_lon) {
-                        updateDriverLivePosition(data.driver_lat, data.driver_lon);
+                        updateDriverLivePosition(data.driver_lat, data.driver_lon, data.driver_heading);
                     }
 
                     const header = document.getElementById("tripStatusHeader");
