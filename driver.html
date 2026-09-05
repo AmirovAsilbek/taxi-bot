@@ -889,7 +889,8 @@
 
         function completeCurrentTrip() {
             completedRides++;
-            const priceNum = parseInt(String(currentOrderData?.price || '').replace(/\D/g, '')) || 18500;
+            const priceText = String(currentOrderData?.price || "18500");
+            const priceNum = parseInt(priceText.replace(/\D/g, '')) || 18500;
             totalIncome += priceNum;
 
             localStorage.setItem('ry_driver_trips_' + driverId, completedRides);
@@ -899,10 +900,12 @@
 
             const oId = currentOrderData?.order_id || localStorage.getItem("ry_active_order_id");
             if (oId) {
+                // ARXIVGA TO'G'RIDAN-TO'G'RI YOZISH (Admin panel uchun)
                 db.ref('order_history/trip_' + oId).set({
                     ...currentOrderData,
                     driver_name: document.getElementById("dName").innerText,
                     driver_car: document.getElementById("dCar").innerText,
+                    price: priceNum.toLocaleString() + " UZS",
                     status: 'completed',
                     completed_at: Date.now()
                 });
@@ -912,7 +915,7 @@
             }
 
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            alert("✅ Safar muvaffaqiyatli yakunlandi!");
+            alert(`✅ Safar muvaffaqiyatli yakunlandi!\nNarx: ${priceNum.toLocaleString()} UZS`);
             resetDriverState();
         }
 
